@@ -27,3 +27,10 @@
 *.exe
 *.out
 *.app
+
+# Ament files
+build/
+install/
+
+# Editor files
+*.sublime-*
