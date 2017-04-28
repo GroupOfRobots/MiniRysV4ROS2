@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+	<name>rys_display_sensors</name>
+	<version>0.0.0</version>
+	<description>Node to display sensor readings from MiniRys robot</description>
+	<maintainer email="mjbogusz.email.address@domain.name.com">MJBogusz</maintainer>
+	<license></license>
+
+	<build_depend>rclpy</build_depend>
+
+	<exec_depend>rclpy</exec_depend>
+	<exec_depend>rys_messages</exec_depend>
+	<exec_depend>std_msgs</exec_depend>
+
+	<export>
+		<build_type>ament_python</build_type>
+	</export>
+</package>
