@@ -12,15 +12,15 @@ int main(int argc, char * argv[]) {
 	try {
 		imu.initialize();
 		imu.resetFIFO();
-		imu.calibrate();
+		// imu.calibrate();
 	} catch (std::string & error) {
 		std::cout << "Error initializing: " << error << std::endl;
 		return 1;
 	}
 	usleep(100 * 1000);
 
-	auto node = rclcpp::node::Node::make_shared("rys_node_sensor_IMU");
-	auto imuPublisher = node->create_publisher<rys_messages::msg::ImuYawPitchRoll>("rys_queue_sensor_IMU", rmw_qos_profile_sensor_data);
+	auto node = rclcpp::node::Node::make_shared("rys_node_sensor_imu");
+	auto imuPublisher = node->create_publisher<rys_messages::msg::ImuYawPitchRoll>("rys_imu", rmw_qos_profile_sensor_data);
 
 	auto msg = std::make_shared<rys_messages::msg::ImuYawPitchRoll>();
 

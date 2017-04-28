@@ -168,12 +168,12 @@ void IMU::calibrate() {
 	}
 
 	// Calculate average reading and add it to current offset
-	offsetXAcceleration /= iterations + this->mpu->getXAccelOffset();
-	offsetYAcceleration /= iterations + this->mpu->getYAccelOffset();
-	offsetZAcceleration /= iterations + this->mpu->getZAccelOffset();
-	offsetXRotation /= iterations + this->mpu->getXGyroOffset();
-	offsetYRotation /= iterations + this->mpu->getYGyroOffset();
-	offsetZRotation /= iterations + this->mpu->getZGyroOffset();
+	offsetXAcceleration = offsetXAcceleration/iterations + this->mpu->getXAccelOffset();
+	offsetYAcceleration = offsetYAcceleration/iterations + this->mpu->getYAccelOffset();
+	offsetZAcceleration = offsetZAcceleration/iterations + this->mpu->getZAccelOffset();
+	offsetXRotation = offsetXRotation/iterations + this->mpu->getXGyroOffset();
+	offsetYRotation = offsetYRotation/iterations + this->mpu->getYGyroOffset();
+	offsetZRotation = offsetZRotation/iterations + this->mpu->getZGyroOffset();
 
 	// Write the offset to IMU
 	// this->mpu->setXAccelOffset(offsetXAcceleration);
