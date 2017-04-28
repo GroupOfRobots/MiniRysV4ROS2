@@ -11,27 +11,34 @@
 #include "Controller.h"
 
 volatile float roll;
+volatile float rollPrevious;
 volatile float pitch;
 volatile float yaw;
 
 volatile int steering;
 volatile int throttle;
 
-void usleep(const int milliseconds) {
-	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+void usleep(const int microseconds) {
+	std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
 }
 
 void imuMessageCallback(const rys_messages::msg::ImuYawPitchRoll::SharedPtr message) {
+	// std::cout << "Received: " << message->roll << std::endl;
+	rollPrevious = roll;
+
 	roll = message->roll * 180 / M_PI;
 	pitch = message->pitch * 180 / M_PI;
 	yaw = message->yaw * 180 / M_PI;
 }
 
 int main(int argc, char * argv[]) {
+	std::cout << "Initializing ROS...\n";
 	rclcpp::init(argc, argv);
 
 	Motors motors;
 	Controller controller;
+
+	std::cout << "Initializing motors...\n";
 	try {
 		motors.initialize();
 	} catch (std::string & error) {
@@ -40,13 +47,15 @@ int main(int argc, char * argv[]) {
 	}
 	usleep(100 * 1000);
 
-	std::cout << "Setup...\n";
+	std::cout << "Setting up controller...\n";
 
 	controller.setSpeedPID(0.03, 0.0001, 0.008);
 	controller.setStabilityPID(50, 0.05, 20);
 	controller.setSpeedFilterFactor(0.95);
 	float finalLeftSpeed = 0;
 	float finalRightSpeed = 0;
+
+	std::cout << "Starting motors...\n";
 
 	try {
 		motors.enable();
@@ -56,10 +65,12 @@ int main(int argc, char * argv[]) {
 	}
 
 	auto node = rclcpp::node::Node::make_shared("rys_node_motors_controller");
-	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuYawPitchRoll>("rys_queue_sensor_IMU", imuMessageCallback);
+	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuYawPitchRoll>("rys_imu", imuMessageCallback, rmw_qos_profile_sensor_data);
 
 	auto previous = std::chrono::high_resolution_clock::now();
 	auto now = std::chrono::high_resolution_clock::now();
+
+	std::cout << "Running!\n";
 
 	rclcpp::rate::WallRate loopRate(100);
 	while (rclcpp::ok()) {
@@ -68,11 +79,14 @@ int main(int argc, char * argv[]) {
 		previous = now;
 		float loopTime = loopTimeSpan.count();
 
-		motors.updateOdometry(loopTime);
+		// motors.updateOdometry(loopTime);
+		std::cout << "Running, time: " << loopTime << ", roll: " << roll << std::endl;
 
 		// Set current position
-		if (roll > 40.0 || roll < -40.0) {
+		if ((roll > 40.0 && rollPrevious > 40.0) || (roll < -40.0 && rollPrevious < -40.0)) {
 			// Laying down, stand up!
+			std::cout << "Laying down, trying to stand up\n";
+
 			// Direction multiplier
 			int multiplier = (roll > 40 ? 1 : -1);
 
@@ -92,13 +106,20 @@ int main(int argc, char * argv[]) {
 
 				// Drive forward full-speed, wait until we've passed '0' point
 				motors.setSpeed(-multiplier * 600.0, -multiplier * 600.0, 1);
-				while (true) {
+
+				rclcpp::rate::WallRate standUpLoopRate(200);
+				while (rclcpp::ok()) {
+					std::cout << "Standing up, angle: " << roll << std::endl;
 					// Passing '0' point depends on from which side we're standing up
+					// if (roll > -3 && roll < 3) {
 					if ((multiplier == 1 && roll <= 0) || (multiplier == -1 && roll >= 0)) {
-						std::cout << "Stood up(?), angle: " << roll << std::endl;
 						break;
 					}
+					rclcpp::spin_some(node);
+					standUpLoopRate.sleep();
 				}
+
+				std::cout << "Stood up(?), angle: " << roll << std::endl;
 
 				// Zero-out PID's errors and integrals
 				controller.zeroPIDs();
@@ -125,6 +146,7 @@ int main(int argc, char * argv[]) {
 		loopRate.sleep();
 	}
 
+	std::cout << "Quitting, disabling motors\n";
 	// Disable motors
 	try {
 		motors.setSpeed(0.0, 0.0, 1);
