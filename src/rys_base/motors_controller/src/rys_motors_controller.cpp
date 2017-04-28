@@ -121,8 +121,9 @@ int main(int argc, char * argv[]) {
 
 				std::cout << "Stood up(?), angle: " << roll << std::endl;
 
-				// Zero-out PID's errors and integrals
+				// Zero-out PID's errors and integrals, zero-out loop timer
 				controller.zeroPIDs();
+				previous = std::chrono::high_resolution_clock::now();
 			} catch (std::string & error) {
 				std::cout << "Error standing up from laying: " << error << std::endl;
 				break;
