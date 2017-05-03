@@ -18,8 +18,8 @@ volatile float yaw;
 volatile int steering;
 volatile int throttle;
 
-void usleep(const int microseconds) {
-	std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
+void msleep(const int milliseconds) {
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
 void imuMessageCallback(const rys_messages::msg::ImuYawPitchRoll::SharedPtr message) {
@@ -29,6 +29,10 @@ void imuMessageCallback(const rys_messages::msg::ImuYawPitchRoll::SharedPtr mess
 	roll = message->roll * 180 / M_PI;
 	pitch = message->pitch * 180 / M_PI;
 	yaw = message->yaw * 180 / M_PI;
+}
+
+void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
+	rclcpp::spin(node);
 }
 
 int main(int argc, char * argv[]) {
@@ -45,7 +49,7 @@ int main(int argc, char * argv[]) {
 		std::cout << "Error initializing: " << error << std::endl;
 		return 1;
 	}
-	usleep(100 * 1000);
+	msleep(100);
 
 	std::cout << "Setting up controller...\n";
 
@@ -69,6 +73,8 @@ int main(int argc, char * argv[]) {
 
 	auto previous = std::chrono::high_resolution_clock::now();
 	auto now = std::chrono::high_resolution_clock::now();
+
+	std::thread dataReceiveThread(dataReceiveThreadFn, node);
 
 	std::cout << "Running!\n";
 
@@ -94,15 +100,15 @@ int main(int argc, char * argv[]) {
 				// Disable motors, wait 2s
 				motors.setSpeed(0.0, 0.0, 1);
 				motors.disable();
-				usleep(2000 * 1000);
+				msleep(2000);
 
 				// Enable motors
 				motors.enable();
-				usleep(100 * 1000);
+				msleep(100);
 
 				// Drive backwards half-speed, wait 0.5s
 				motors.setSpeed(multiplier * 400.0, multiplier * 400.0, 1);
-				usleep(500 * 1000);
+				msleep(500);
 
 				// Drive forward full-speed, wait until we've passed '0' point
 				motors.setSpeed(-multiplier * 600.0, -multiplier * 600.0, 1);
@@ -115,7 +121,7 @@ int main(int argc, char * argv[]) {
 					if ((multiplier == 1 && roll <= 0) || (multiplier == -1 && roll >= 0)) {
 						break;
 					}
-					rclcpp::spin_some(node);
+					// rclcpp::spin_some(node);
 					standUpLoopRate.sleep();
 				}
 
@@ -143,9 +149,11 @@ int main(int argc, char * argv[]) {
 			}
 		}
 
-		rclcpp::spin_some(node);
+		// rclcpp::spin_some(node);
 		loopRate.sleep();
 	}
+
+	dataReceiveThread.join();
 
 	std::cout << "Quitting, disabling motors\n";
 	// Disable motors
@@ -156,8 +164,8 @@ int main(int argc, char * argv[]) {
 		std::cout << "Error disabling motors: " << error << std::endl;
 		return 3;
 	}
-	// 1s
-	usleep(1000 * 1000);
+	// 0.5s
+	msleep(500);
 
 	return 0;
 }
