@@ -24,6 +24,8 @@ int main(int argc, char * argv[]) {
 
 	auto msg = std::make_shared<rys_messages::msg::ImuYawPitchRoll>();
 
+	// using DMP sets IMU data reporting rate to 200Hz by default - no need to exceed that
+	rclcpp::rate::WallRate loopRate(200);
 	while (rclcpp::ok()) {
 		try {
 			imu.getYawPitchRoll(&(msg->yaw), &(msg->pitch), &(msg->roll));
@@ -34,6 +36,7 @@ int main(int argc, char * argv[]) {
 
 		imuPublisher->publish(msg);
 		rclcpp::spin_some(node);
+		loopRate.sleep();
 	}
 
 	return 0;
