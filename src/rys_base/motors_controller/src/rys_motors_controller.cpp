@@ -32,6 +32,8 @@ void imuMessageCallback(const rys_messages::msg::ImuYawPitchRoll::SharedPtr mess
 }
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
+	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuYawPitchRoll>("rys_imu", imuMessageCallback, rmw_qos_profile_sensor_data);
+
 	rclcpp::spin(node);
 }
 
@@ -69,14 +71,11 @@ int main(int argc, char * argv[]) {
 	}
 
 	auto node = rclcpp::node::Node::make_shared("rys_node_motors_controller");
-	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuYawPitchRoll>("rys_imu", imuMessageCallback, rmw_qos_profile_sensor_data);
-
-	auto previous = std::chrono::high_resolution_clock::now();
-	auto now = std::chrono::high_resolution_clock::now();
-
 	std::thread dataReceiveThread(dataReceiveThreadFn, node);
 
 	std::cout << "Running!\n";
+	auto previous = std::chrono::high_resolution_clock::now();
+	auto now = std::chrono::high_resolution_clock::now();
 
 	rclcpp::rate::WallRate loopRate(100);
 	while (rclcpp::ok()) {
