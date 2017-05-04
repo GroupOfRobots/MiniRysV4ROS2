@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-from UI import RysRemoteUI
+from src.UI import RysRemoteUI
 
 def main(args = None):
 	if args is None:
