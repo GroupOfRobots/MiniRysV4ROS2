@@ -12,6 +12,7 @@
 
 volatile float roll;
 volatile float rollPrevious;
+volatile float rollPrevious2;
 volatile float pitch;
 volatile float yaw;
 
@@ -24,6 +25,7 @@ void msleep(const int milliseconds) {
 
 void imuMessageCallback(const rys_messages::msg::ImuYawPitchRoll::SharedPtr message) {
 	// std::cout << "Received: " << message->roll << std::endl;
+	rollPrevious2 = rollPrevious;
 	rollPrevious = roll;
 
 	roll = message->roll * 180 / M_PI;
@@ -88,7 +90,7 @@ int main(int argc, char * argv[]) {
 		std::cout << "Running, time: " << loopTime << ", roll: " << roll << std::endl;
 
 		// Set current position
-		if ((roll > 40.0 && rollPrevious > 40.0) || (roll < -40.0 && rollPrevious < -40.0)) {
+		if ((roll > 40.0 && rollPrevious > 40.0 && rollPrevious2 > 40.0) || (roll < -40.0 && rollPrevious < -40.0 && rollPrevious2 < -40.0)) {
 			// Laying down, stand up!
 			std::cout << "Laying down, trying to stand up\n";
 
