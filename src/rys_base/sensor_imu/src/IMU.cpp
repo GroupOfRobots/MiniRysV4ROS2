@@ -36,6 +36,8 @@ void IMU::initialize() {
 
 	// load and configure the DMP
 	devStatus = this->mpu->dmpInitialize();
+	// 1kHz / (1 + 3) = 250Hz
+	this->mpu->setRate(3);
 
 	// make sure it worked (returns 0 if so)
 	if (devStatus == 0) {
@@ -69,12 +71,13 @@ void IMU::readData() {
 	if (fifoCount == 1024) {
 		// reset so we can continue cleanly
 		this->mpu->resetFIFO();
+		fifoCount = 0;
 	}
 
 	// Check for DMP data ready interrupt (this should happen frequently)
 	while (fifoCount < this->packetSize) {
 		fifoCount = this->mpu->getFIFOCount();
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
 
 	// Read a packet from FIFO to buffer
