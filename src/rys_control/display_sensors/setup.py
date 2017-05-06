@@ -1,12 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
 	name='rys_display_sensors',
 	version='0.0.0',
-	packages=[],
-	py_modules=[
-		'src.rys_display_sensors'
-	],
+	packages=find_packages(),
 	install_requires=[
 		'launch',
 		'setuptools',
