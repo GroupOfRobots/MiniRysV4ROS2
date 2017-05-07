@@ -13,6 +13,7 @@ find_package(std_msgs REQUIRED)
 
 set(msg_files
   "msg/ImuYawPitchRoll.msg"
+  "msg/ImuRoll.msg"
 )
 set(srv_files)
 rosidl_generate_interfaces(${PROJECT_NAME}
