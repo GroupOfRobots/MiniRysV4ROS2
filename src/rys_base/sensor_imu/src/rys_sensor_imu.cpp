@@ -3,32 +3,36 @@
 
 #include "IMU.h"
 #include "rclcpp/rclcpp.hpp"
-#include "rys_messages/msg/imu_yaw_pitch_roll.hpp"
+#include "rys_messages/msg/imu_roll.hpp"
 
 int main(int argc, char * argv[]) {
+	const int rate = 100;
+	const float filteringFactor = 0.95f;
+
 	rclcpp::init(argc, argv);
 
 	IMU imu;
 	try {
-		imu.initialize();
+		imu.initialize(rate);
 		imu.resetFIFO();
 		// imu.calibrate();
 	} catch (std::string & error) {
 		std::cout << "Error initializing: " << error << std::endl;
 		return 1;
 	}
-	usleep(100 * 1000);
+	// usleep(100 * 1000);
 
 	auto node = rclcpp::node::Node::make_shared("rys_node_sensor_imu");
-	auto imuPublisher = node->create_publisher<rys_messages::msg::ImuYawPitchRoll>("rys_imu", rmw_qos_profile_sensor_data);
+	auto imuPublisher = node->create_publisher<rys_messages::msg::ImuRoll>("rys_imu", rmw_qos_profile_sensor_data);
 
-	auto msg = std::make_shared<rys_messages::msg::ImuYawPitchRoll>();
+	auto msg = std::make_shared<rys_messages::msg::ImuRoll>();
 
-	// using DMP sets IMU data reporting rate to 200Hz by default - no need to exceed that
-	rclcpp::rate::WallRate loopRate(200);
+	float previousValue = 0;
+	rclcpp::rate::WallRate loopRate(rate);
 	while (rclcpp::ok()) {
 		try {
-			imu.getYawPitchRoll(&(msg->yaw), &(msg->pitch), &(msg->roll));
+			msg->roll = filteringFactor * imu.getRoll() + (1.0f - filteringFactor) * previousValue;
+			previousValue = msg->roll;
 		} catch (std::string & error) {
 			std::cout << "Error getting IMU reading: " << error << std::endl;
 			break;
