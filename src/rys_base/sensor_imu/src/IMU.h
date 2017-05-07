@@ -24,18 +24,23 @@ class IMU {
 		VectorFloat *gravity;
 		// [yaw, pitch, roll] - yaw/pitch/roll container
 		float yawPitchRoll[3];
-
+		// Calibration offsets
+		float yawOffset;
+		float pitchOffset;
+		float rollOffset;
 		bool preHeatingExitFlag;
 		// static void preHeatingThreadFn();
 	public:
 		IMU();
 		~IMU();
-		void initialize();
+		void initialize(int rate = 100);
+		// void initializeNoDMP(int rate = 100);
 		void readData();
+		void getYawPitchRoll(float *, float *, float *);
+		float getYaw();
 		float getPitch();
 		float getRoll();
-		float getYaw();
-		void getYawPitchRoll(float *, float *, float *);
+		// float getRollNoDMP();
 		void resetFIFO();
 		// Static calibration - reads the sensor n times, averages it and sets as offset
 		void calibrate();

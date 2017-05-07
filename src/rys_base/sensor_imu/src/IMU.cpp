@@ -25,7 +25,7 @@ IMU::~IMU() {
 	delete this->gravity;
 }
 
-void IMU::initialize() {
+void IMU::initialize(int rate) {
 	// initialize device
 	this->mpu->initialize();
 
@@ -36,8 +36,9 @@ void IMU::initialize() {
 
 	// load and configure the DMP
 	devStatus = this->mpu->dmpInitialize();
-	// 1kHz / (1 + 3) = 250Hz
-	this->mpu->setRate(3);
+	// setRate accepts factor that works like this: 1kHz / (1 + x)
+	int rateFactor = (1000/rate) - 1;
+	this->mpu->setRate(rateFactor);
 
 	// make sure it worked (returns 0 if so)
 	if (devStatus == 0) {
@@ -57,6 +58,19 @@ void IMU::initialize() {
 		throw(std::string("DMP Initialization failed (code %d)", devStatus));
 	}
 }
+
+/*void IMU::initializeNoDMP(int rate) {
+	// initialize device
+	this->mpu->initialize();
+
+	// verify connection
+	if (!this->mpu->testConnection()) {
+		throw(std::string("MPU6050 connection failed"));
+	}
+
+	int rateFactor = (1000/rate) - 1;
+	this->mpu->setRate(rateFactor);
+}*/
 
 void IMU::readData() {
 	// if programming failed, don't try to do anything
@@ -82,33 +96,62 @@ void IMU::readData() {
 
 	// Read a packet from FIFO to buffer
 	this->mpu->getFIFOBytes(this->fifoBuffer, this->packetSize);
-	// Parse data from FIFO to gravity and pitch/yaw/roll readings
-	this->mpu->dmpGetQuaternion(this->quaternion, this->fifoBuffer);
-	this->mpu->dmpGetGravity(this->gravity, this->quaternion);
-	this->mpu->dmpGetYawPitchRoll(this->yawPitchRoll, this->quaternion, this->gravity);
 }
 
 void IMU::getYawPitchRoll(float * yaw, float * pitch, float * roll) {
-	readData();
-	*yaw = this->yawPitchRoll[0];
-	*pitch = this->yawPitchRoll[1];
-	*roll = this->yawPitchRoll[2];
-}
+	this->readData();
 
-float IMU::getPitch() {
-	readData();
-	return yawPitchRoll[1];
-}
+	// Parse data from FIFO to quaternion
+	this->mpu->dmpGetQuaternion(this->quaternion, this->fifoBuffer);
+	// Get gravity vector based on quaternion (simple float multiplication and addition/subtraction)
+	this->mpu->dmpGetGravity(this->gravity, this->quaternion);
+	// Calculate Yaw/Pitch/Roll based on gravity vector
+	this->mpu->dmpGetYawPitchRoll(this->yawPitchRoll, this->quaternion, this->gravity);
 
-float IMU::getRoll() {
-	readData();
-	return yawPitchRoll[2];
+	*yaw = this->yawPitchRoll[0] - this->yawOffset;
+	*pitch = this->yawPitchRoll[1] - this->pitchOffset;
+	*roll = this->yawPitchRoll[2] - this->rollOffset;
 }
 
 float IMU::getYaw() {
-	readData();
-	return yawPitchRoll[0];
+	this->readData();
+
+	this->mpu->dmpGetQuaternion(this->quaternion, this->fifoBuffer);
+	// Return Yaw (based on MPU's dmpGetYawPitchRoll())
+	float qx = quaternion->x;
+	float qy = quaternion->y;
+	float qz = quaternion->z;
+	float qw = quaternion->w;
+	return atan2(2*qx*qy - 2*qw*qz, 2*qw*qw + 2*qx*qx - 1) - this->yawOffset;
 }
+
+float IMU::getPitch() {
+	this->readData();
+
+	this->mpu->dmpGetQuaternion(this->quaternion, this->fifoBuffer);
+	this->mpu->dmpGetGravity(this->gravity, this->quaternion);
+	float gx = gravity->x;
+	float gy = gravity->y;
+	float gz = gravity->z;
+	return atan(gx / sqrt(gy*gy + gz*gz)) - this->pitchOffset;
+}
+
+float IMU::getRoll() {
+	this->readData();
+
+	this->mpu->dmpGetQuaternion(this->quaternion, this->fifoBuffer);
+	this->mpu->dmpGetGravity(this->gravity, this->quaternion);
+	float gx = gravity->x;
+	float gy = gravity->y;
+	float gz = gravity->z;
+	return atan(gy / sqrt(gx*gx + gz*gz)) - this->rollOffset;
+}
+
+/*float IMU::getRollNoDMP() {
+	uint16_t ax, ay, az, gx, gy, gz;
+	this->mpu->getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+	//todo finish
+}*/
 
 void IMU::resetFIFO() {
 	this->mpu->resetFIFO();
@@ -125,7 +168,12 @@ bool IMU::getPreHeatingExitFlag() {
 }
 
 void IMU::calibrate() {
-	std::cout << "Pre-heating the IMU (30s)...\n";
+	// Zero-out current offsets
+	this->yawOffset = 0;
+	this->pitchOffset = 0;
+	this->rollOffset = 0;
+
+	std::cout << "Pre-heating the IMU (60s)...\n";
 
 	// Create the IMU pre-heating thread
 	this->preHeatingExitFlag = false;
@@ -133,20 +181,20 @@ void IMU::calibrate() {
 
 	// Wait 30s
 	auto now = std::chrono::steady_clock::now();
-	std::this_thread::sleep_until(now + std::chrono::seconds(30));
+	std::this_thread::sleep_until(now + std::chrono::seconds(60));
 
 	// Notify user
 	std::cout << "Fix the position and press enter\n";
 	std::cin.get();
 
-	// Create variables and accumulators for raw read values
-	int16_t ax, ay, az, gx, gy, gz;
-	int offsetXAcceleration = 0;
-	int offsetYAcceleration = 0;
-	int offsetZAcceleration = 0;
-	int offsetXRotation = 0;
-	int offsetYRotation = 0;
-	int offsetZRotation = 0;
+	// Stop pre-heating thread
+	this->preHeatingExitFlag = true;
+	preHeatingThread.join();
+
+	// Create accumulators for values
+	double yawSum = 0;
+	double pitchSum = 0;
+	double rollSum = 0;
 	// Also read counter
 	unsigned int iterations = 0;
 
@@ -157,43 +205,29 @@ void IMU::calibrate() {
 	// Until that timer...
 	while (end > std::chrono::steady_clock::now()) {
 		// Get a reading
-		this->mpu->getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-		// Increase accumulators
-		offsetXAcceleration += ax;
-		offsetYAcceleration += ay;
-		offsetZAcceleration += az;
-		offsetXRotation += gx;
-		offsetYRotation += gy;
-		offsetZRotation += gz;
+		this->readData();
+		yawSum += this->yawPitchRoll[0];
+		pitchSum += this->yawPitchRoll[1];
+		rollSum += this->yawPitchRoll[2];
 
 		// Increase iteration counter
 		++iterations;
 	}
 
-	// Calculate average reading and add it to current offset
-	offsetXAcceleration = offsetXAcceleration/iterations + this->mpu->getXAccelOffset();
-	offsetYAcceleration = offsetYAcceleration/iterations + this->mpu->getYAccelOffset();
-	offsetZAcceleration = offsetZAcceleration/iterations + this->mpu->getZAccelOffset();
-	offsetXRotation = offsetXRotation/iterations + this->mpu->getXGyroOffset();
-	offsetYRotation = offsetYRotation/iterations + this->mpu->getYGyroOffset();
-	offsetZRotation = offsetZRotation/iterations + this->mpu->getZGyroOffset();
+	// Calculate average reading and save it
+	this->yawOffset = yawSum / iterations;
+	this->pitchOffset = pitchSum / iterations;
+	this->rollOffset = rollSum / iterations;
 
-	// Write the offset to IMU
-	// this->mpu->setXAccelOffset(offsetXAcceleration);
-	// this->mpu->setYAccelOffset(offsetYAcceleration);
-	// this->mpu->setZAccelOffset(offsetZAcceleration);
-	this->mpu->setXGyroOffset(offsetXRotation);
-	this->mpu->setYGyroOffset(offsetYRotation);
-	this->mpu->setZGyroOffset(offsetZRotation);
+	// Re-start pre-heating thread
+	this->preHeatingExitFlag = false;
+	preHeatingThread = std::thread(preHeatingThreadFn, this);
 
 	// Notify user
 	std::cout << "calibration done, offsets:\n";
-	std::cout << "\tXAcceleration: " << offsetXAcceleration << std::endl;
-	std::cout << "\tYAcceleration: " << offsetYAcceleration << std::endl;
-	std::cout << "\tZAcceleration: " << offsetZAcceleration << std::endl;
-	std::cout << "\tXRotation: " << offsetXRotation << std::endl;
-	std::cout << "\tYRotation: " << offsetYRotation << std::endl;
-	std::cout << "\tZRotation: " << offsetZRotation << std::endl;
+	std::cout << "\tYaw Offset: " << this->yawOffset << std::endl;
+	std::cout << "\tPitch Offset: " << this->pitchOffset << std::endl;
+	std::cout << "\tRoll Offset: " << this->rollOffset << std::endl;
 	std::cout << "press enter to continue:\n";
 	std::cin.get();
 
