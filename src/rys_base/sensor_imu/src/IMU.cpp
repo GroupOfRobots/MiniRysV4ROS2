@@ -9,20 +9,18 @@ IMU::IMU() {
 	this->dmpReady = false;
 	this->devStatus = 0;
 	this->packetSize = 0;
-	// this->fifoCount = 0;
 	for (int i = 0; i < 64; ++i) {
 		this->fifoBuffer[i] = 0;
 	}
-	this->quaternion = new Quaternion();
-	this->gravity = new VectorFloat();
-	this->yawPitchRoll[0] = this->yawPitchRoll[1] = this->yawPitchRoll[2] = 0;
+
 	this->preHeatingExitFlag = true;
+	this->yawOffset = 0;
+	this->pitchOffset = 0;
+	this->rollOffset = 0;
 }
 
 IMU::~IMU() {
 	delete this->mpu;
-	delete this->quaternion;
-	delete this->gravity;
 }
 
 void IMU::initialize(int rate) {
@@ -59,19 +57,6 @@ void IMU::initialize(int rate) {
 	}
 }
 
-/*void IMU::initializeNoDMP(int rate) {
-	// initialize device
-	this->mpu->initialize();
-
-	// verify connection
-	if (!this->mpu->testConnection()) {
-		throw(std::string("MPU6050 connection failed"));
-	}
-
-	int rateFactor = (1000/rate) - 1;
-	this->mpu->setRate(rateFactor);
-}*/
-
 void IMU::readData() {
 	// if programming failed, don't try to do anything
 	if (!dmpReady) {
@@ -101,57 +86,63 @@ void IMU::readData() {
 void IMU::getYawPitchRoll(float * yaw, float * pitch, float * roll) {
 	this->readData();
 
-	// Parse data from FIFO to quaternion
-	this->mpu->dmpGetQuaternion(this->quaternion, this->fifoBuffer);
-	// Get gravity vector based on quaternion (simple float multiplication and addition/subtraction)
-	this->mpu->dmpGetGravity(this->gravity, this->quaternion);
-	// Calculate Yaw/Pitch/Roll based on gravity vector
-	this->mpu->dmpGetYawPitchRoll(this->yawPitchRoll, this->quaternion, this->gravity);
+	Quaternion quaternion;
+	VectorFloat gravity;
 
-	*yaw = this->yawPitchRoll[0] - this->yawOffset;
-	*pitch = this->yawPitchRoll[1] - this->pitchOffset;
-	*roll = this->yawPitchRoll[2] - this->rollOffset;
+	// Parse data from FIFO to quaternion
+	this->mpu->dmpGetQuaternion(&quaternion, this->fifoBuffer);
+	// Get gravity vector based on quaternion (simple float multiplication and addition/subtraction)
+	this->mpu->dmpGetGravity(&gravity, &quaternion);
+	// Calculate Yaw/Pitch/Roll based on gravity vector
+	float data[3];
+	this->mpu->dmpGetYawPitchRoll(data, &quaternion, &gravity);
+
+	*yaw = data[0] - this->yawOffset;
+	*pitch = data[1] - this->pitchOffset;
+	*roll = data[2] - this->rollOffset;
 }
 
 float IMU::getYaw() {
 	this->readData();
 
-	this->mpu->dmpGetQuaternion(this->quaternion, this->fifoBuffer);
+	Quaternion quaternion;
+
+	this->mpu->dmpGetQuaternion(&quaternion, this->fifoBuffer);
 	// Return Yaw (based on MPU's dmpGetYawPitchRoll())
-	float qx = quaternion->x;
-	float qy = quaternion->y;
-	float qz = quaternion->z;
-	float qw = quaternion->w;
+	float qx = quaternion.x;
+	float qy = quaternion.y;
+	float qz = quaternion.z;
+	float qw = quaternion.w;
 	return atan2(2*qx*qy - 2*qw*qz, 2*qw*qw + 2*qx*qx - 1) - this->yawOffset;
 }
 
 float IMU::getPitch() {
 	this->readData();
 
-	this->mpu->dmpGetQuaternion(this->quaternion, this->fifoBuffer);
-	this->mpu->dmpGetGravity(this->gravity, this->quaternion);
-	float gx = gravity->x;
-	float gy = gravity->y;
-	float gz = gravity->z;
+	Quaternion quaternion;
+	VectorFloat gravity;
+
+	this->mpu->dmpGetQuaternion(&quaternion, this->fifoBuffer);
+	this->mpu->dmpGetGravity(&gravity, &quaternion);
+	float gx = gravity.x;
+	float gy = gravity.y;
+	float gz = gravity.z;
 	return atan(gx / sqrt(gy*gy + gz*gz)) - this->pitchOffset;
 }
 
 float IMU::getRoll() {
 	this->readData();
 
-	this->mpu->dmpGetQuaternion(this->quaternion, this->fifoBuffer);
-	this->mpu->dmpGetGravity(this->gravity, this->quaternion);
-	float gx = gravity->x;
-	float gy = gravity->y;
-	float gz = gravity->z;
+	Quaternion quaternion;
+	VectorFloat gravity;
+
+	this->mpu->dmpGetQuaternion(&quaternion, this->fifoBuffer);
+	this->mpu->dmpGetGravity(&gravity, &quaternion);
+	float gx = gravity.x;
+	float gy = gravity.y;
+	float gz = gravity.z;
 	return atan(gy / sqrt(gx*gx + gz*gz)) - this->rollOffset;
 }
-
-/*float IMU::getRollNoDMP() {
-	uint16_t ax, ay, az, gx, gy, gz;
-	this->mpu->getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-	//todo finish
-}*/
 
 void IMU::resetFIFO() {
 	this->mpu->resetFIFO();
@@ -202,13 +193,14 @@ void IMU::calibrate() {
 	now = std::chrono::steady_clock::now();
 	auto end = now + std::chrono::milliseconds(500);
 
+	float yaw, pitch, roll;
 	// Until that timer...
 	while (end > std::chrono::steady_clock::now()) {
 		// Get a reading
-		this->readData();
-		yawSum += this->yawPitchRoll[0];
-		pitchSum += this->yawPitchRoll[1];
-		rollSum += this->yawPitchRoll[2];
+		this->getYawPitchRoll(&yaw, &pitch, &roll);
+		yawSum += yaw;
+		pitchSum += pitch;
+		rollSum += roll;
 
 		// Increase iteration counter
 		++iterations;

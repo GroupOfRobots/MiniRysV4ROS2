@@ -14,16 +14,8 @@ class IMU {
 		uint8_t devStatus;
 		// expected DMP packet size (default is 42 bytes)
 		uint16_t packetSize;
-		// Number of all bytes currently in FIFO
-		// uint16_t fifoCount;
 		// FIFO storage buffer
 		uint8_t fifoBuffer[64];
-		// [w, x, y, z] - quaternion container
-		Quaternion *quaternion;
-		// [x, y, z] - gravity vector
-		VectorFloat *gravity;
-		// [yaw, pitch, roll] - yaw/pitch/roll container
-		float yawPitchRoll[3];
 		// Calibration offsets
 		float yawOffset;
 		float pitchOffset;

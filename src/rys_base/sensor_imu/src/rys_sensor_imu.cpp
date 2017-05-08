@@ -20,7 +20,6 @@ int main(int argc, char * argv[]) {
 		std::cout << "Error initializing: " << error << std::endl;
 		return 1;
 	}
-	// usleep(100 * 1000);
 
 	auto node = rclcpp::node::Node::make_shared("rys_node_sensor_imu");
 	auto imuPublisher = node->create_publisher<rys_messages::msg::ImuRoll>("rys_imu", rmw_qos_profile_sensor_data);
