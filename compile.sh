@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
-ARGS="--symlink-install"
+#ARGS="--symlink-install"
+ARGS=""
 COMMON_PKGS="rys_messages"
 ROBOT_PKGS="rys_motors_controller "
 ROBOT_PKGS="${ROBOT_PKGS} rys_sensor_imu "
