@@ -1,13 +1,18 @@
 import pygame
 from PyQt5.QtCore import QThread, pyqtSignal
-from src.Gamepad.GamepadAxisEvent import GamepadAxisEvent
-from src.Gamepad.GamepadButtonEvent import GamepadButtonEvent
+from Gamepad.GamepadAxisEvent import GamepadAxisEvent
+from Gamepad.GamepadButtonEvent import GamepadButtonEvent
 
 class GamepadBridge(QThread):
-	"""docstring for GamepadBridge"""
+	"""
+	Gamepad (Joystick) bridge between pygame and PyQt5.
+	Passes gamepad list, axis and button events to PyQt as signals.
+	Inherits from QThread and shall be used as one.
+	"""
 
 	gamepadAxisChanged = pyqtSignal(GamepadAxisEvent)
 	gamepadButtonChanged = pyqtSignal(GamepadButtonEvent)
+	gamepadListUpdated = pyqtSignal(list)
 
 	def __init__(self, parent = None):
 		super(GamepadBridge, self).__init__(parent)
@@ -22,11 +27,15 @@ class GamepadBridge(QThread):
 
 		joysticks = pygame.joystick.get_count()
 		print("%s joystick(s) detected!" % str(joysticks))
+
+		joystickList = list()
 		for i in range(joysticks):
 			joystick = pygame.joystick.Joystick(i)
 			joystick.init()
 			joystickName = joystick.get_name()
+			joystickList.append(joystickName)
 			print("Joystick %s name: %s" % (str(i), joystickName))
+		self.gamepadListUpdated.emit(joystickList)
 
 		while not self.exitFlag:
 			pygame.time.Clock().tick(100)

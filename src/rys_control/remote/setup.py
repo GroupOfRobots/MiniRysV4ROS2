@@ -1,10 +1,22 @@
-from setuptools import setup, find_packages
-# from setuptools import setup
+from setuptools import setup
 
 setup(
 	name='rys_remote',
 	version='0.0.0',
-	packages=find_packages(),
+	packages = [
+		'',
+		'Gamepad',
+		'ROS',
+		'UI',
+		'UI.Layouts',
+	],
+	package_dir = {
+		'': 'src',
+		'Gamepad': 'src/Gamepad',
+		'ROS': 'src/ROS',
+		'UI': 'src/UI',
+		'UI.Layouts': 'src/UI/Layouts',
+	},
 	install_requires=[
 		'launch',
 		'setuptools',
@@ -25,7 +37,7 @@ setup(
 	license='',
 	entry_points={
 		'console_scripts': [
-			'rys_remote = src.rys_remote:main',
+			'rys_remote = rys_remote:main',
 		],
 	},
 )

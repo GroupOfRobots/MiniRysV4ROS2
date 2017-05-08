@@ -1,2 +1,4 @@
-from src.UI.RysRemoteMainWindow import RysRemoteMainWindow
-from src.UI.RysRemoteUI import RysRemoteUI
+from UI.RysRemoteMainWindow import RysRemoteMainWindow
+from UI.RysRemoteUI import RysRemoteUI
+
+__all__ = ['RysRemoteMainWindow', 'RysRemoteUI', ]

@@ -1,3 +1,5 @@
-from src.Gamepad.GamepadAxisEvent import GamepadAxisEvent
-from src.Gamepad.GamepadBridge import GamepadBridge
-from src.Gamepad.GamepadButtonEvent import GamepadButtonEvent
+from Gamepad.GamepadAxisEvent import GamepadAxisEvent
+from Gamepad.GamepadBridge import GamepadBridge
+from Gamepad.GamepadButtonEvent import GamepadButtonEvent
+
+__all__ = ['GamepadAxisEvent', 'GamepadBridge', 'GamepadButtonEvent', ]
