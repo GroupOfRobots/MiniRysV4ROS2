@@ -5,14 +5,13 @@
 #include <thread>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rys_messages/msg/imu_yaw_pitch_roll.hpp"
+#include "rys_messages/msg/imu_roll.hpp"
 
 #include "Motors.h"
 #include "Controller.h"
 
 volatile float roll;
 volatile float rollPrevious;
-volatile float rollPrevious2;
 volatile float pitch;
 volatile float yaw;
 
@@ -23,18 +22,13 @@ void msleep(const int milliseconds) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
-void imuMessageCallback(const rys_messages::msg::ImuYawPitchRoll::SharedPtr message) {
-	// std::cout << "Received: " << message->roll << std::endl;
-	rollPrevious2 = rollPrevious;
+void imuMessageCallback(const rys_messages::msg::ImuRoll::SharedPtr message) {
 	rollPrevious = roll;
-
 	roll = message->roll * 180 / M_PI;
-	pitch = message->pitch * 180 / M_PI;
-	yaw = message->yaw * 180 / M_PI;
 }
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
-	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuYawPitchRoll>("rys_imu", imuMessageCallback, rmw_qos_profile_sensor_data);
+	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuRoll>("rys_imu", imuMessageCallback, rmw_qos_profile_sensor_data);
 
 	rclcpp::spin(node);
 }
@@ -90,7 +84,7 @@ int main(int argc, char * argv[]) {
 		std::cout << "Running, time: " << loopTime << ", roll: " << roll << std::endl;
 
 		// Set current position
-		if ((roll > 40.0 && rollPrevious > 40.0 && rollPrevious2 > 40.0) || (roll < -40.0 && rollPrevious < -40.0 && rollPrevious2 < -40.0)) {
+		if ((roll > 40.0 && rollPrevious > 40.0) || (roll < -40.0 && rollPrevious < -40.0)) {
 			// Laying down, stand up!
 			std::cout << "Laying down, trying to stand up\n";
 
