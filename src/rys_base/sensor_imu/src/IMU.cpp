@@ -76,7 +76,7 @@ void IMU::readData() {
 	// Check for DMP data ready interrupt (this should happen frequently)
 	while (fifoCount < this->packetSize) {
 		fifoCount = this->mpu->getFIFOCount();
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	}
 
 	// Read a packet from FIFO to buffer
