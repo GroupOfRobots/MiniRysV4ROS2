@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <mutex>
 
 #define MAX_BUFFER_SIZE 512
 #define MAX_ACCELERATION 2000
@@ -29,6 +30,7 @@ class Motors {
 		float minMotorSpeed;
 		long distance;
 		std::ofstream pruFile;
+		std::mutex fileAccessMutex;
 	public:
 		Motors();
 		~Motors();

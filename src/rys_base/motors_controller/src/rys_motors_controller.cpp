@@ -6,9 +6,14 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rys_messages/msg/imu_roll.hpp"
+#include "std_msgs/msg/bool.hpp"
 
 #include "Motors.h"
 #include "Controller.h"
+
+volatile bool enabled;
+volatile int enableTimeout = 5000;
+std::chrono::time_point<std::chrono::high_resolution_clock> enableTimerEnd;
 
 volatile float roll;
 volatile float rollPrevious;
@@ -18,8 +23,22 @@ volatile float yaw;
 volatile int steering;
 volatile int throttle;
 
+Motors motors;
+
 void msleep(const int milliseconds) {
-	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+	auto end = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(milliseconds);
+	while (rclcpp::ok() && std::chrono::high_resolution_clock::now() < end) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+}
+
+void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
+	enabled = message->data;
+	if (message->data) {
+		enableTimerEnd = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(enableTimeout);
+	} else {
+		motors.disable();
+	}
 }
 
 void imuMessageCallback(const rys_messages::msg::ImuRoll::SharedPtr message) {
@@ -28,16 +47,61 @@ void imuMessageCallback(const rys_messages::msg::ImuRoll::SharedPtr message) {
 }
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
+	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_enable", enableMessageCallback, rmw_qos_profile_sensor_data);
 	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuRoll>("rys_imu", imuMessageCallback, rmw_qos_profile_sensor_data);
 
 	rclcpp::spin(node);
+}
+
+void standUp() {
+	// Direction multiplier
+	int multiplier = (roll > 40 ? 1 : -1);
+
+	// Disable motors, wait 2s
+	motors.setSpeed(0.0, 0.0, 1);
+	motors.disable();
+	msleep(2000);
+
+	if (!rclcpp::ok()) {
+		return;
+	}
+
+	// Enable motors
+	motors.enable();
+	msleep(100);
+
+	if (!rclcpp::ok()) {
+		return;
+	}
+
+	// Drive backwards half-speed, wait 0.5s
+	motors.setSpeed(multiplier * 400.0, multiplier * 400.0, 1);
+	msleep(500);
+
+	if (!rclcpp::ok()) {
+		return;
+	}
+
+	// Drive forward full-speed, wait until we've passed '0' point
+	motors.setSpeed(-multiplier * 600.0, -multiplier * 600.0, 1);
+
+	rclcpp::rate::WallRate standUpLoopRate(100);
+	while (rclcpp::ok()) {
+		// std::cout << "Standing up, angle: " << roll << std::endl;
+		// Passing '0' point depends on from which side we're standing up
+		if ((multiplier == 1 && roll <= 0) || (multiplier == -1 && roll >= 0)) {
+			break;
+		}
+		standUpLoopRate.sleep();
+	}
+
+	std::cout << "Stood up(?), angle: " << roll << std::endl;
 }
 
 int main(int argc, char * argv[]) {
 	std::cout << "Initializing ROS...\n";
 	rclcpp::init(argc, argv);
 
-	Motors motors;
 	Controller controller;
 
 	std::cout << "Initializing motors...\n";
@@ -60,7 +124,7 @@ int main(int argc, char * argv[]) {
 	std::cout << "Starting motors...\n";
 
 	try {
-		motors.enable();
+		motors.disable();
 	} catch (std::string & error) {
 		std::cout << "Error starting up: " << error << std::endl;
 		return 2;
@@ -80,47 +144,30 @@ int main(int argc, char * argv[]) {
 		previous = now;
 		float loopTime = loopTimeSpan.count();
 
-		// motors.updateOdometry(loopTime);
-		std::cout << "Running, time: " << loopTime << ", roll: " << roll << std::endl;
+		if (!enabled) {
+			motors.disable();
+			loopRate.sleep();
+			continue;
+		}
 
-		// Set current position
+		// Check enable timer
+		if (enableTimerEnd < now) {
+			enabled = false;
+			motors.disable();
+			loopRate.sleep();
+			continue;
+		}
+
+		// Update "odometry"
+		// motors.updateOdometry(loopTime);
+
+		// Detect current position
 		if ((roll > 40.0 && rollPrevious > 40.0) || (roll < -40.0 && rollPrevious < -40.0)) {
 			// Laying down, stand up!
 			std::cout << "Laying down, trying to stand up\n";
 
-			// Direction multiplier
-			int multiplier = (roll > 40 ? 1 : -1);
-
 			try {
-				// Disable motors, wait 2s
-				motors.setSpeed(0.0, 0.0, 1);
-				motors.disable();
-				msleep(2000);
-
-				// Enable motors
-				motors.enable();
-				msleep(100);
-
-				// Drive backwards half-speed, wait 0.5s
-				motors.setSpeed(multiplier * 400.0, multiplier * 400.0, 1);
-				msleep(500);
-
-				// Drive forward full-speed, wait until we've passed '0' point
-				motors.setSpeed(-multiplier * 600.0, -multiplier * 600.0, 1);
-
-				rclcpp::rate::WallRate standUpLoopRate(200);
-				while (rclcpp::ok()) {
-					std::cout << "Standing up, angle: " << roll << std::endl;
-					// Passing '0' point depends on from which side we're standing up
-					// if (roll > -3 && roll < 3) {
-					if ((multiplier == 1 && roll <= 0) || (multiplier == -1 && roll >= 0)) {
-						break;
-					}
-					// rclcpp::spin_some(node);
-					standUpLoopRate.sleep();
-				}
-
-				std::cout << "Stood up(?), angle: " << roll << std::endl;
+				standUp();
 
 				// Zero-out PID's errors and integrals, zero-out loop timer
 				controller.zeroPIDs();
@@ -131,7 +178,6 @@ int main(int argc, char * argv[]) {
 			}
 		} else {
 			// Standing up, balance!
-
 			// Calculate target speeds for motors
 			controller.calculateSpeed(roll, motors.getSpeedLeft(), motors.getSpeedRight(), steering, throttle, finalLeftSpeed, finalRightSpeed, loopTime);
 
@@ -144,7 +190,6 @@ int main(int argc, char * argv[]) {
 			}
 		}
 
-		// rclcpp::spin_some(node);
 		loopRate.sleep();
 	}
 

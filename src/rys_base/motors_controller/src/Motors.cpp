@@ -18,6 +18,8 @@ Motors::~Motors() {
 }
 
 void Motors::initialize() {
+	std::lock_guard<std::mutex> guard(this->fileAccessMutex);
+
 	std::ofstream file;
 	file.open("/sys/class/gpio/export", std::ofstream::out);
 	if (!file.is_open() || !file.good()) {
@@ -135,6 +137,8 @@ void Motors::setSpeed(float speedLeft, float speedRight, int microstep) {
 }
 
 void Motors::enable() {
+	std::lock_guard<std::mutex> guard(this->fileAccessMutex);
+
 	std::ofstream file;
 
 	file.open("/sys/class/gpio/gpio78/value", std::ofstream::out);
@@ -155,6 +159,8 @@ void Motors::enable() {
 }
 
 void Motors::disable() {
+	std::lock_guard<std::mutex> guard(this->fileAccessMutex);
+
 	std::ofstream file;
 
 	file.open("/sys/class/gpio/gpio78/value", std::ofstream::out);
