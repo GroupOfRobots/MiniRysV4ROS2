@@ -227,3 +227,9 @@ void IMU::calibrate() {
 	this->preHeatingExitFlag = true;
 	preHeatingThread.join();
 }
+
+void IMU::setOffsets(float yawOffset, float pitchOffset, float rollOffset) {
+	this->yawOffset = yawOffset;
+	this->pitchOffset = pitchOffset;
+	this->rollOffset = rollOffset;
+}

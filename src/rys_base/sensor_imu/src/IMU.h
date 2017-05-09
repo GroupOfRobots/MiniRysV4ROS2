@@ -37,6 +37,7 @@ class IMU {
 		// Static calibration - reads the sensor n times, averages it and sets as offset
 		void calibrate();
 		bool getPreHeatingExitFlag();
+		void setOffsets(float yawOffset = 0.0f, float pitchOffset = 0.0f, float rollOffset = 0.0f);
 };
 
 #endif
