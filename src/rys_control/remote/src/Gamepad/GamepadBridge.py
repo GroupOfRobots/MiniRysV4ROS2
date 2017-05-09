@@ -43,10 +43,15 @@ class GamepadBridge(QThread):
 			# terminate if any QUIT events are present
 			for event in pygame.event.get(pygame.QUIT):
 				self.exitFlag = True
+				break
 			# terminate if the KEYUP event was for the Esc key
 			for event in pygame.event.get(pygame.KEYUP):
 				if event.key == pygame.K_ESCAPE:
 					self.exitFlag = True
+					break
+
+			if self.exitFlag:
+				break
 
 			# pygame.JOYBALLMOTION
 			# pygame.JOYHATMOTION

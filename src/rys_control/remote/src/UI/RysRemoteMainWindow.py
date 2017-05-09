@@ -14,6 +14,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 		self.node = node
 
+		self.enabled = False
 		self.throttle = 0
 		self.rotation = 0
 		self.gamepadID = -1
@@ -26,6 +27,9 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.throttleComboBox.currentTextChanged.connect(self.throttleAxisChangedHandler)
 		self.ui.rotationComboBox.currentTextChanged.connect(self.rotationAxisChangedHandler)
 		self.ui.gamepadComboBox.currentIndexChanged.connect(self.gamepadChangedHandler)
+
+		self.ui.enableButton.clicked.connect(self.enableClickedHandler)
+		self.ui.imuCalibrateButton.clicked.connect(self.imuCalibrateClickedHandler)
 
 		self.gamepadScene = QtWidgets.QGraphicsScene(self)
 		self.ui.steeringGraphicsView.setScene(self.gamepadScene)
@@ -43,6 +47,9 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.rosBridge.start()
 
 		self.adjustSize()
+
+		# Initialization actions
+		self.rosBridge.setEnabled(False)
 
 	""" UI event handlers """
 
@@ -65,6 +72,18 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			self.gamepadID = int(index)
 		except ValueError:
 			self.gamepadID = -1
+
+	def enableClickedHandler(self):
+		self.enabled = not self.enabled
+		self.rosBridge.setEnabled(self.enabled)
+		text = "Disable" if self.enabled else "Enable"
+
+		self.ui.enableButton.setText(text)
+		color = "red" if self.enabled else "green"
+		self.ui.enableButton.setStyleSheet("background-color: %s;" % color)
+
+	def imuCalibrateClickedHandler(self):
+		self.rosBridge.calibrateImu()
 
 	""" Gamepad bridge event handlers """
 

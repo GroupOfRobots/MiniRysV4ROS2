@@ -12,7 +12,11 @@ def main(args = None):
 	node = rclpy.create_node('rys_remote')
 
 	ui = RysRemoteUI(node)
-	sys.exit(ui.exec_(args))
+	exitValue = ui.exec_(args)
+
+	node.destroy_node()
+	rclpy.shutdown()
+	sys.exit(exitValue)
 
 if __name__ == '__main__':
 	main()
