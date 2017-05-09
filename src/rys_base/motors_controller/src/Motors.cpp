@@ -18,33 +18,35 @@ Motors::~Motors() {
 }
 
 void Motors::initialize() {
-	std::lock_guard<std::mutex> guard(this->fileAccessMutex);
+	{
+		std::lock_guard<std::mutex> guard(this->fileAccessMutex);
 
-	std::ofstream file;
-	file.open("/sys/class/gpio/export", std::ofstream::out);
-	if (!file.is_open() || !file.good()) {
+		std::ofstream file;
+		file.open("/sys/class/gpio/export", std::ofstream::out);
+		if (!file.is_open() || !file.good()) {
+			file.close();
+			throw(std::string("Failed opening file: /sys/class/gpio/export"));
+		}
+		file << "78";
+		file << "79";
 		file.close();
-		throw(std::string("Failed opening file: /sys/class/gpio/export"));
-	}
-	file << "78";
-	file << "79";
-	file.close();
 
-	file.open("/sys/class/gpio/gpio78/direction", std::ofstream::out);
-	if (!file.is_open() || !file.good()) {
+		file.open("/sys/class/gpio/gpio78/direction", std::ofstream::out);
+		if (!file.is_open() || !file.good()) {
+			file.close();
+			throw(std::string("Failed opening file: /sys/class/gpio/gpio78/direction"));
+		}
+		file << "out";
 		file.close();
-		throw(std::string("Failed opening file: /sys/class/gpio/gpio78/direction"));
-	}
-	file << "out";
-	file.close();
 
-	file.open("/sys/class/gpio/gpio79/direction", std::ofstream::out);
-	if (!file.is_open() || !file.good()) {
+		file.open("/sys/class/gpio/gpio79/direction", std::ofstream::out);
+		if (!file.is_open() || !file.good()) {
+			file.close();
+			throw(std::string("Failed opening file: /sys/class/gpio/gpio79/direction"));
+		}
+		file << "out";
 		file.close();
-		throw(std::string("Failed opening file: /sys/class/gpio/gpio79/direction"));
 	}
-	file << "out";
-	file.close();
 
 	this->disable();
 }
