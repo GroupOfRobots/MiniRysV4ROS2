@@ -33,12 +33,17 @@ void msleep(const int milliseconds) {
 }
 
 void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
-	enabled = message->data;
 	if (message->data) {
 		enableTimerEnd = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(enableTimeout);
+		if (!enabled) {
+			std::cout << "Enabling motors...\n";
+			motors.enable();
+		}
 	} else {
+		std::cout << "Disabling motors...\n";
 		motors.disable();
 	}
+	enabled = message->data;
 }
 
 void imuMessageCallback(const rys_messages::msg::ImuRoll::SharedPtr message) {
