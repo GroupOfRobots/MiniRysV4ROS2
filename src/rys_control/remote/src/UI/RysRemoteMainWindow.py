@@ -30,6 +30,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 		self.ui.enableButton.clicked.connect(self.enableClickedHandler)
 		self.ui.imuCalibrateButton.clicked.connect(self.imuCalibrateClickedHandler)
+		self.ui.setPIDsButton.clicked.connect(self.setPIDsClickedHandler)
 
 		self.gamepadScene = QtWidgets.QGraphicsScene(self)
 		self.ui.steeringGraphicsView.setScene(self.gamepadScene)
@@ -84,6 +85,15 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 	def imuCalibrateClickedHandler(self):
 		self.rosBridge.calibrateImu()
+
+	def setPIDsClickedHandler(self):
+		speedP = self.ui.speedPSpinBox.value()
+		speedI = self.ui.speedISpinBox.value()
+		speedD = self.ui.speedDSpinBox.value()
+		angleP = self.ui.anglePSpinBox.value()
+		angleI = self.ui.angleISpinBox.value()
+		angleD = self.ui.angleDSpinBox.value()
+		self.rosBridge.setPIDs(speedP, speedI, speedD, angleP, angleI, angleD)
 
 	""" Gamepad bridge event handlers """
 

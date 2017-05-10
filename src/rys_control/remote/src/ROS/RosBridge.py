@@ -1,8 +1,8 @@
 import rclpy
 from math import pi
 from time import sleep
-from rys_messages.msg import Steering, ImuRoll, Sonars
-from std_msgs import msg
+from rys_messages import msg as RysMsgs
+from std_msgs import msg as RosMsgs
 from PyQt5.QtCore import QThread, pyqtSignal
 
 class RosBridge(QThread):
@@ -24,13 +24,14 @@ class RosBridge(QThread):
 		self.previousRoll = 0.0
 
 		# Create ROS publishers
-		self.publisherEnable = self.node.create_publisher(msg.Bool, 'rys_enable')
-		self.publisherSteering = self.node.create_publisher(Steering, 'rys_steering')
-		self.publisherCalibrateImu = self.node.create_publisher(msg.Empty, 'rys_imu_calibrate')
+		self.publisherEnable = self.node.create_publisher(RosMsgs.Bool, 'rys_enable')
+		self.publisherSteering = self.node.create_publisher(RysMsgs.Steering, 'rys_steering')
+		self.publisherCalibrateImu = self.node.create_publisher(RosMsgs.Empty, 'rys_imu_calibrate')
+		self.publisherSetPIDs = self.node.create_publisher(RosMsgs.Empty, 'rys_set_pids')
 
 		# Create ROS subscribers
-		subscriptionImu = self.node.create_subscription(ImuRoll, 'rys_imu', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
-		subscriptionSonars = self.node.create_subscription(Sonars, 'rys_sonars', self.sonarsSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
+		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRoll, 'rys_imu', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
+		subscriptionSonars = self.node.create_subscription(RysMsgs.Sonars, 'rys_sonars', self.sonarsSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
 		# Prevent unused variable warning
 		assert subscriptionImu, subscriptionSonars
 
@@ -45,8 +46,18 @@ class RosBridge(QThread):
 		self.rotation = float(rotation)
 
 	def calibrateImu(self):
-		message = msg.Empty()
+		message = RosMsgs.Empty()
 		self.publisherCalibrateImu.publish(message)
+
+	def setPIDs(self, speedP, speedI, speedD, angleP, angleI, angleD):
+		message = RysMsgs.PIDSettings()
+		message.speed_p = speedP
+		message.speed_i = speedI
+		message.speed_d = speedD
+		message.angle_p = angleP
+		message.angle_i = angleI
+		message.angle_d = angleD
+		self.publisherSetPIDs.publish(message)
 
 	def stopExecution(self):
 		self.exitFlag = True
@@ -69,13 +80,13 @@ class RosBridge(QThread):
 		if self.enabled is False:
 			return
 
-		message = Steering()
+		message = RysMsgs.Steering()
 		message.throttle = self.throttle
 		message.rotation = self.rotation
 		self.publisherSteering.publish(message)
 
 	def enableTimerCallback(self):
-		message = msg.Bool()
+		message = RosMsgs.Bool()
 		message.data = self.enabled
 		self.publisherEnable.publish(message)
 
@@ -93,7 +104,7 @@ class RosBridge(QThread):
 		while rclpy.ok() and not self.exitFlag:
 			# Timeout of 1 due to RCLPY memory leak bug (https://github.com/ros2/rclpy/issues/74, there is already a PR that fixes it, PR#79)
 			rclpy.spin_once(self.node, 1.0)
-			sleep(0.01)
+			sleep(0.02)
 
 		# Cleanup: disable motors
 		self.setEnabled(False)

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>593</width>
-    <height>598</height>
+    <width>678</width>
+    <height>520</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,10 +27,16 @@
           <layout class="QHBoxLayout" name="horizontalLayout_8">
            <item>
             <widget class="QLabel" name="sonarFrontLabel">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="minimumSize">
               <size>
-               <width>100</width>
-               <height>0</height>
+               <width>50</width>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
@@ -69,10 +75,16 @@
           <layout class="QHBoxLayout" name="horizontalLayout_11">
            <item>
             <widget class="QLabel" name="sonarBackLabel">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="minimumSize">
               <size>
-               <width>100</width>
-               <height>0</height>
+               <width>50</width>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
@@ -111,10 +123,16 @@
           <layout class="QHBoxLayout" name="horizontalLayout_9">
            <item>
             <widget class="QLabel" name="sonarTopLabel">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="minimumSize">
               <size>
-               <width>100</width>
-               <height>0</height>
+               <width>50</width>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
@@ -167,8 +185,8 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>200</width>
-             <height>200</height>
+             <width>150</width>
+             <height>150</height>
             </size>
            </property>
            <property name="minimum">
@@ -208,6 +226,12 @@
          </item>
          <item>
           <widget class="QLabel" name="rollValueLabel">
+           <property name="minimumSize">
+            <size>
+             <width>50</width>
+             <height>30</height>
+            </size>
+           </property>
            <property name="text">
             <string>-90.0</string>
            </property>
@@ -218,6 +242,12 @@
          </item>
          <item>
           <widget class="QLabel" name="rollLabel">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>20</height>
+            </size>
+           </property>
            <property name="text">
             <string>Roll</string>
            </property>
@@ -271,8 +301,8 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>200</width>
-             <height>200</height>
+             <width>150</width>
+             <height>150</height>
             </size>
            </property>
            <property name="sizeIncrement">
@@ -318,8 +348,8 @@
             <widget class="QLabel" name="gamepadComboBoxLabel">
              <property name="minimumSize">
               <size>
-               <width>100</width>
-               <height>0</height>
+               <width>60</width>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
@@ -337,8 +367,8 @@
              </property>
              <property name="minimumSize">
               <size>
-               <width>100</width>
-               <height>0</height>
+               <width>70</width>
+               <height>30</height>
               </size>
              </property>
              <item>
@@ -356,8 +386,8 @@
             <widget class="QLabel" name="throttleComboBoxLabel">
              <property name="minimumSize">
               <size>
-               <width>100</width>
-               <height>0</height>
+               <width>60</width>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
@@ -375,8 +405,8 @@
              </property>
              <property name="minimumSize">
               <size>
-               <width>100</width>
-               <height>0</height>
+               <width>70</width>
+               <height>30</height>
               </size>
              </property>
              <item>
@@ -419,8 +449,8 @@
             <widget class="QLabel" name="rotationComboBoxLabel">
              <property name="minimumSize">
               <size>
-               <width>100</width>
-               <height>0</height>
+               <width>60</width>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
@@ -438,8 +468,8 @@
              </property>
              <property name="minimumSize">
               <size>
-               <width>100</width>
-               <height>0</height>
+               <width>70</width>
+               <height>30</height>
               </size>
              </property>
              <item>
@@ -475,6 +505,153 @@
             </widget>
            </item>
           </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QLabel" name="speedPIDLabel">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Speed PID (speed -&gt; angle)</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="speedPIDHorizontalLayout">
+           <item>
+            <widget class="QDoubleSpinBox" name="speedPSpinBox">
+             <property name="minimumSize">
+              <size>
+               <width>70</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="value">
+              <double>0.030000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="speedISpinBox">
+             <property name="minimumSize">
+              <size>
+               <width>70</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="value">
+              <double>0.000100000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="speedDSpinBox">
+             <property name="minimumSize">
+              <size>
+               <width>70</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="value">
+              <double>0.008000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QLabel" name="anglePIDLabel">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Angle PID (angle -&gt; output)</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="anglePIDHorizontalLayout">
+           <item>
+            <widget class="QDoubleSpinBox" name="anglePSpinBox">
+             <property name="minimumSize">
+              <size>
+               <width>70</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="value">
+              <double>50.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="angleISpinBox">
+             <property name="minimumSize">
+              <size>
+               <width>70</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="value">
+              <double>0.050000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="angleDSpinBox">
+             <property name="minimumSize">
+              <size>
+               <width>70</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="value">
+              <double>20.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QPushButton" name="setPIDsButton">
+           <property name="text">
+            <string>Set PID parameters</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
