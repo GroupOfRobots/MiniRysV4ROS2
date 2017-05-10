@@ -35,30 +35,30 @@ void Controller::init() {
 	this->timePointPrevious = std::chrono::high_resolution_clock::now();
 }
 
-float Controller::angleControl(float value, float setPoint, float dt) {
-	float error = setPoint - value;
-
-	this->anglePIDIntegral += error * dt;
-	clipValue(this->anglePIDIntegral, ANGLE_MAX);
-
-	float derivative = (error - this->anglePIDError) / dt;
-	this->anglePIDError = error;
-
-	float output = anglePIDKp * error + anglePIDKi * this->anglePIDIntegral + anglePIDKd * derivative;
-	clipValue(output, ANGLE_MAX);
-	return output;
-}
-
 float Controller::speedControl(float value, float setPoint, float dt) {
 	float error = setPoint - value;
 
 	this->speedPIDIntegral += error * dt;
-	clipValue(this->anglePIDIntegral, SPEED_MAX);
+	clipValue(this->anglePIDIntegral, ANGLE_MAX);
 
 	float derivative = (error - this->speedPIDError) / dt;
 	this->speedPIDError = error;
 
 	float output = speedPIDKp * error + speedPIDKi * this->speedPIDIntegral + speedPIDKd * derivative;
+	clipValue(output, ANGLE_MAX);
+	return output;
+}
+
+float Controller::angleControl(float value, float setPoint, float dt) {
+	float error = setPoint - value;
+
+	this->anglePIDIntegral += error * dt;
+	clipValue(this->anglePIDIntegral, SPEED_MAX);
+
+	float derivative = (error - this->anglePIDError) / dt;
+	this->anglePIDError = error;
+
+	float output = anglePIDKp * error + anglePIDKi * this->anglePIDIntegral + anglePIDKd * derivative;
 	clipValue(output, SPEED_MAX);
 	return output;
 }
@@ -89,13 +89,13 @@ void Controller::calculateSpeed(float angle, float speedLeft, float speedRight, 
 	// setPoint: estimated and filtered robot speed
 	// output: target robot angle to get the desired speed
 	/*float targetAngle = speedControl(this->speedFiltered, throttle, loopTime);*/
-	float targetAngle = speedControl(this->speed, throttleRaw, loopTime);
+	float targetAngle = this->speedControl(this->speed, throttleRaw, loopTime);
 
 	// Second control layer: angle control PID
 	// input: robot target angle (from SPEED CONTROL)
 	// variable: robot angle
 	// output: Motor speed
-	float output = angleControl(this->angle, targetAngle, loopTime);
+	float output = this->angleControl(this->angle, targetAngle, loopTime);
 
 	// The rotation part from the user is injected directly into the output
 	speedLeftNew = output + rotationRaw;
