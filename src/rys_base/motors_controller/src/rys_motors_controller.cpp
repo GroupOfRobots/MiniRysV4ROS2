@@ -56,27 +56,27 @@ void imuMessageCallback(const rys_messages::msg::ImuRoll::SharedPtr message) {
 
 void setPIDsMessageCallback(const rys_messages::msg::PIDSettings::SharedPtr message) {
 	std::cout << "Setting PIDs:\n";
-	std::cout << "\t Speed->angle: " << message->speed_p << " " << message->speed_i << " " << message->speed_d << std::endl;
-	std::cout << "\t Angle->output: " << message->angle_p << " " << message->angle_i << " " << message->angle_d << std::endl;
+	std::cout << "\t Speed->angle: " << message->speed_kp << " " << message->speed_ki << " " << message->speed_kd << std::endl;
+	std::cout << "\t Angle->output: " << message->angle_kp << " " << message->angle_ki << " " << message->angle_kd << std::endl;
 
-	controller.setSpeedPID(message->speed_p, message->speed_i, message->speed_d);
-	controller.setAnglePID(message->angle_p, message->angle_i, message->angle_d);
+	controller.setSpeedPID(message->speed_kp, message->speed_ki, message->speed_kd);
+	controller.setAnglePID(message->angle_kp, message->angle_ki, message->angle_kd);
 }
 
 void setFiltersMessageCallback(const rys_messages::msg::FilterSettings::SharedPtr message) {
-	std::cout << "Setting filters:\n";
-	std::cout << "\t Speed: " << message->speed_filter << std::endl;
-	std::cout << "\t Roll: " << message->roll_filter << std::endl;
+	std::cout << "Setting filter factors:\n";
+	std::cout << "\t Speed: " << message->speed_filter_factor << std::endl;
+	std::cout << "\t Roll: " << message->roll_filter_factor << std::endl;
 
-	controller.setSpeedFilterFactor(message->speed_filter);
-	controller.setRollFilterFactor(message->roll_filter);
+	controller.setSpeedFilterFactor(message->speed_filter_factor);
+	controller.setRollFilterFactor(message->roll_filter_factor);
 }
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
 	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_enable", enableMessageCallback, rmw_qos_profile_sensor_data);
 	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuRoll>("rys_sensor_imu_roll", imuMessageCallback, rmw_qos_profile_sensor_data);
 	auto setPIDsSubscriber = node->create_subscription<rys_messages::msg::PIDSettings>("rys_control_pids_set", setPIDsMessageCallback);
-	auto setFiltersSubscriber = node->create_subscription<rys_messages::msg::FilterSettings>("rys_control_filter_set", setFiltersMessageCallback);
+	auto setFiltersSubscriber = node->create_subscription<rys_messages::msg::FilterSettings>("rys_control_filters_set", setFiltersMessageCallback);
 
 	rclcpp::spin(node);
 }
