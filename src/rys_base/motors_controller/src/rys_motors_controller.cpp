@@ -60,8 +60,8 @@ void setPIDsMessageCallback(const rys_messages::msg::PIDSettings::SharedPtr mess
 	controller.setAnglePID(message->angle_p, message->angle_i, message->angle_d);
 
 	std::cout << "Setting PIDs:\n";
-	std::cout << "\tSpeed->angle: " << message->speed_p << message->speed_i << message->speed_d << std::endl;
-	std::cout << "\tAngle->output: " << message->angle_p << message->angle_i << message->angle_d << std::endl;
+	std::cout << "\tSpeed->angle: " << message->speed_p << " " << message->speed_i << " " << message->speed_d << std::endl;
+	std::cout << "\tAngle->output: " << message->angle_p << " " << message->angle_i << " " << message->angle_d << std::endl;
 }
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {

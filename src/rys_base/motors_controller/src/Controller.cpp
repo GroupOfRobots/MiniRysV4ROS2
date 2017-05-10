@@ -39,7 +39,7 @@ float Controller::speedControl(float value, float setPoint, float dt) {
 	float error = setPoint - value;
 
 	this->speedPIDIntegral += error * dt;
-	clipValue(this->anglePIDIntegral, ANGLE_MAX);
+	clipValue(this->speedPIDIntegral, ANGLE_MAX);
 
 	float derivative = (error - this->speedPIDError) / dt;
 	this->speedPIDError = error;
