@@ -150,7 +150,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 	def rollChangedHandler(self, value):
 		self.ui.rollDial.setValue(int(value))
-		self.ui.rollValueLabel.setText(str(value))
+		self.ui.rollValueLabel.setText("%f" % value)
 
 	def sonarChangedHandler(self, front, back, top):
 		self.ui.sonarFrontBar.setValue(front)

@@ -27,7 +27,7 @@ class RosBridge(QThread):
 		self.publisherEnable = self.node.create_publisher(RosMsgs.Bool, 'rys_enable')
 		self.publisherSteering = self.node.create_publisher(RysMsgs.Steering, 'rys_steering')
 		self.publisherCalibrateImu = self.node.create_publisher(RosMsgs.Empty, 'rys_imu_calibrate')
-		self.publisherSetPIDs = self.node.create_publisher(RosMsgs.Empty, 'rys_set_pids')
+		self.publisherSetPIDs = self.node.create_publisher(RysMsgs.PIDSettings, 'rys_set_pids')
 
 		# Create ROS subscribers
 		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRoll, 'rys_imu', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
@@ -51,12 +51,12 @@ class RosBridge(QThread):
 
 	def setPIDs(self, speedP, speedI, speedD, angleP, angleI, angleD):
 		message = RysMsgs.PIDSettings()
-		message.speed_p = speedP
-		message.speed_i = speedI
-		message.speed_d = speedD
-		message.angle_p = angleP
-		message.angle_i = angleI
-		message.angle_d = angleD
+		message.speed_p = float(speedP)
+		message.speed_i = float(speedI)
+		message.speed_d = float(speedD)
+		message.angle_p = float(angleP)
+		message.angle_i = float(angleI)
+		message.angle_d = float(angleD)
 		self.publisherSetPIDs.publish(message)
 
 	def stopExecution(self):
