@@ -8,8 +8,7 @@
 #include "std_msgs/msg/empty.hpp"
 
 const int rate = 100;
-const float filteringFactor = 0.99f;
-const int calibrationDuration = 5000;
+const int calibrationDuration = 3000;
 
 bool calibration = false;
 std::chrono::time_point<std::chrono::high_resolution_clock> calibrationEndTime;
@@ -36,18 +35,16 @@ int main(int argc, char * argv[]) {
 	}
 
 	auto node = rclcpp::node::Node::make_shared("rys_node_sensor_imu");
-	auto imuCalibrationSubscriber = node->create_subscription<std_msgs::msg::Empty>("rys_imu_calibrate", imuCalibrateCallback);
-	auto imuPublisher = node->create_publisher<rys_messages::msg::ImuRoll>("rys_imu", rmw_qos_profile_sensor_data);
+	auto imuCalibrationSubscriber = node->create_subscription<std_msgs::msg::Empty>("rys_control_imu_calibrate", imuCalibrateCallback);
+	auto imuPublisher = node->create_publisher<rys_messages::msg::ImuRoll>("rys_sensor_imu_roll", rmw_qos_profile_sensor_data);
 
-	auto msg = std::make_shared<rys_messages::msg::ImuRoll>();
+	auto message = std::make_shared<rys_messages::msg::ImuRoll>();
 
-	float previousValue = 0;
 	rclcpp::rate::WallRate loopRate(rate);
 	while (rclcpp::ok()) {
 		try {
 			float roll = imu.getRoll();
-			msg->roll = filteringFactor * roll + (1.0f - filteringFactor) * previousValue;
-			previousValue = msg->roll;
+			message->roll = roll;
 
 			if (calibration) {
 				calibrationValuesSum += roll;
@@ -63,7 +60,7 @@ int main(int argc, char * argv[]) {
 			break;
 		}
 
-		imuPublisher->publish(msg);
+		imuPublisher->publish(message);
 		rclcpp::spin_some(node);
 		loopRate.sleep();
 	}
