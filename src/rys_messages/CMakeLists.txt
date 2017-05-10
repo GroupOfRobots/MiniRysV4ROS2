@@ -14,6 +14,7 @@ find_package(std_msgs REQUIRED)
 set(msg_files
   "msg/ImuYawPitchRoll.msg"
   "msg/ImuRoll.msg"
+  "msg/PIDSettings.msg"
   "msg/Sonars.msg"
   "msg/Steering.msg"
 )
