@@ -28,6 +28,7 @@ class RosBridge(QThread):
 		self.publisherSteering = self.node.create_publisher(RysMsgs.Steering, 'rys_control_steering')
 		self.publisherCalibrateImu = self.node.create_publisher(RosMsgs.Empty, 'rys_control_imu_calibrate')
 		self.publisherSetPIDs = self.node.create_publisher(RysMsgs.PIDSettings, 'rys_control_pids_set')
+		self.publisherSetFilterFactors = self.node.create_publisher(RysMsgs.FilterSettings, 'rys_control_filters_set')
 
 		# Create ROS subscribers
 		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRoll, 'rys_sensor_imu_roll', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
@@ -49,15 +50,21 @@ class RosBridge(QThread):
 		message = RosMsgs.Empty()
 		self.publisherCalibrateImu.publish(message)
 
-	def setPIDs(self, speedP, speedI, speedD, angleP, angleI, angleD):
+	def setPIDs(self, speedKp, speedKi, speedKd, angleKp, angleKi, angleKd):
 		message = RysMsgs.PIDSettings()
-		message.speed_p = float(speedP)
-		message.speed_i = float(speedI)
-		message.speed_d = float(speedD)
-		message.angle_p = float(angleP)
-		message.angle_i = float(angleI)
-		message.angle_d = float(angleD)
+		message.speed_kp = float(speedKp)
+		message.speed_ki = float(speedKi)
+		message.speed_kd = float(speedKd)
+		message.angle_kp = float(angleKp)
+		message.angle_ki = float(angleKi)
+		message.angle_kd = float(angleKd)
 		self.publisherSetPIDs.publish(message)
+
+	def setFilteringParams(self, speedFilterFactor, rollFilterFactor):
+		message = RysMsgs.FilterSettings()
+		message.speed_filter_factor = speedFilterFactor
+		message.roll_filter_factor = rollFilterFactor
+		self.publisherSetFilterFactors.publish(message)
 
 	def stopExecution(self):
 		self.exitFlag = True

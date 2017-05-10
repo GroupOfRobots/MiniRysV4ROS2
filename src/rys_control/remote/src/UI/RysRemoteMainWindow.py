@@ -31,6 +31,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.enableButton.clicked.connect(self.enableClickedHandler)
 		self.ui.imuCalibrateButton.clicked.connect(self.imuCalibrateClickedHandler)
 		self.ui.setPIDsButton.clicked.connect(self.setPIDsClickedHandler)
+		self.ui.setFilteringParamsButton.clicked.connect(self.setFilteringParamsClickedHandler)
 
 		self.gamepadScene = QtWidgets.QGraphicsScene(self)
 		self.ui.steeringGraphicsView.setScene(self.gamepadScene)
@@ -87,13 +88,18 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.rosBridge.calibrateImu()
 
 	def setPIDsClickedHandler(self):
-		speedP = self.ui.speedPSpinBox.value()
-		speedI = self.ui.speedISpinBox.value()
-		speedD = self.ui.speedDSpinBox.value()
-		angleP = self.ui.anglePSpinBox.value()
-		angleI = self.ui.angleISpinBox.value()
-		angleD = self.ui.angleDSpinBox.value()
-		self.rosBridge.setPIDs(speedP, speedI, speedD, angleP, angleI, angleD)
+		speedKp = self.ui.speedPSpinBox.value()
+		speedKi = self.ui.speedISpinBox.value()
+		speedKd = self.ui.speedDSpinBox.value()
+		angleKp = self.ui.anglePSpinBox.value()
+		angleKi = self.ui.angleISpinBox.value()
+		angleKd = self.ui.angleDSpinBox.value()
+		self.rosBridge.setPIDs(speedKp, speedKi, speedKd, angleKp, angleKi, angleKd)
+
+	def setFilteringParamsClickedHandler(self):
+		speedFilterFactor = self.ui.speedFilteringSpinBox.value()
+		rollFilterFactor = self.ui.rollFilteringSpinBox.value()
+		self.rosBridge.setFilteringParams(speedFilterFactor, rollFilterFactor)
 
 	""" Gamepad bridge event handlers """
 
