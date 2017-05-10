@@ -13,7 +13,7 @@ def main(args = None):
 	rclpy.init(args)
 
 	node = rclpy.create_node('rys_display_sensors')
-	sub = node.create_subscription(ImuRoll, 'rys_imu', sensorsReadingCallback, qos_profile_sensor_data)
+	sub = node.create_subscription(ImuRoll, 'rys_sensor_imu_roll', sensorsReadingCallback, qos_profile_sensor_data)
 	# prevent unused variable warning
 	assert sub
 
