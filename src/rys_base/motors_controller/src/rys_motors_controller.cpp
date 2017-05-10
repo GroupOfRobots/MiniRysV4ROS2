@@ -7,6 +7,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rys_messages/msg/imu_roll.hpp"
 #include "rys_messages/msg/pid_settings.hpp"
+#include "rys_messages/msg/filter_settings.hpp"
 #include "std_msgs/msg/bool.hpp"
 
 #include "Motors.h"
@@ -42,9 +43,7 @@ void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
 			motors.enable();
 		}
 	} else {
-		if (enabled) {
-			std::cout << "Disabling motors...\n";
-		}
+		std::cout << "Disabling motors...\n";
 		motors.disable();
 	}
 	enabled = message->data;
@@ -56,18 +55,28 @@ void imuMessageCallback(const rys_messages::msg::ImuRoll::SharedPtr message) {
 }
 
 void setPIDsMessageCallback(const rys_messages::msg::PIDSettings::SharedPtr message) {
+	std::cout << "Setting PIDs:\n";
+	std::cout << "\t Speed->angle: " << message->speed_p << " " << message->speed_i << " " << message->speed_d << std::endl;
+	std::cout << "\t Angle->output: " << message->angle_p << " " << message->angle_i << " " << message->angle_d << std::endl;
+
 	controller.setSpeedPID(message->speed_p, message->speed_i, message->speed_d);
 	controller.setAnglePID(message->angle_p, message->angle_i, message->angle_d);
+}
 
-	std::cout << "Setting PIDs:\n";
-	std::cout << "\tSpeed->angle: " << message->speed_p << " " << message->speed_i << " " << message->speed_d << std::endl;
-	std::cout << "\tAngle->output: " << message->angle_p << " " << message->angle_i << " " << message->angle_d << std::endl;
+void setFiltersMessageCallback(const rys_messages::msg::FilterSettings::SharedPtr message) {
+	std::cout << "Setting filters:\n";
+	std::cout << "\t Speed: " << message->speed_filter << std::endl;
+	std::cout << "\t Roll: " << message->roll_filter << std::endl;
+
+	controller.setSpeedFilterFactor(message->speed_filter);
+	controller.setRollFilterFactor(message->roll_filter);
 }
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
-	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_enable", enableMessageCallback, rmw_qos_profile_sensor_data);
-	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuRoll>("rys_imu", imuMessageCallback, rmw_qos_profile_sensor_data);
-	auto setPIDsSubscriber = node->create_subscription<rys_messages::msg::PIDSettings>("rys_set_pids", setPIDsMessageCallback);
+	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_enable", enableMessageCallback, rmw_qos_profile_sensor_data);
+	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuRoll>("rys_sensor_imu_roll", imuMessageCallback, rmw_qos_profile_sensor_data);
+	auto setPIDsSubscriber = node->create_subscription<rys_messages::msg::PIDSettings>("rys_control_pids_set", setPIDsMessageCallback);
+	auto setFiltersSubscriber = node->create_subscription<rys_messages::msg::FilterSettings>("rys_control_filter_set", setFiltersMessageCallback);
 
 	rclcpp::spin(node);
 }
@@ -76,82 +85,67 @@ void standUp() {
 	// Direction multiplier
 	int multiplier = (roll > 40 ? 1 : -1);
 
-	// Disable motors, wait 2s
+	// Disable motors, wait 1s
 	motors.setSpeed(0.0, 0.0, 1);
 	motors.disable();
-	msleep(2000);
-
-	if (!rclcpp::ok()) {
+	msleep(1000);
+	if (!rclcpp::ok() || !enabled) {
 		return;
 	}
 
 	// Enable motors
 	motors.enable();
 	msleep(100);
-
-	if (!rclcpp::ok()) {
+	if (!rclcpp::ok() || !enabled) {
 		return;
 	}
 
 	// Drive backwards half-speed, wait 0.5s
 	motors.setSpeed(multiplier * 400.0, multiplier * 400.0, 1);
 	msleep(500);
-
-	if (!rclcpp::ok()) {
+	if (!rclcpp::ok() || !enabled) {
 		return;
 	}
 
 	// Drive forward full-speed, wait until we've passed '0' point
 	motors.setSpeed(-multiplier * 600.0, -multiplier * 600.0, 1);
-
 	rclcpp::rate::WallRate standUpLoopRate(100);
-	while (rclcpp::ok()) {
+	while (rclcpp::ok() && enabled) {
 		// std::cout << "Standing up, angle: " << roll << std::endl;
 		// Passing '0' point depends on from which side we're standing up
 		if ((multiplier == 1 && roll <= 0) || (multiplier == -1 && roll >= 0)) {
+			std::cout << "Stood up(?), angle: " << roll << std::endl;
 			break;
 		}
 		standUpLoopRate.sleep();
 	}
-
-	std::cout << "Stood up(?), angle: " << roll << std::endl;
 }
 
 int main(int argc, char * argv[]) {
 	std::cout << "Initializing ROS...\n";
 	rclcpp::init(argc, argv);
+	auto node = rclcpp::node::Node::make_shared("rys_node_motors_controller");
 
-	std::cout << "Initializing motors...\n";
+	std::cout << "Initializing and disabling motors...\n";
 	try {
 		motors.initialize();
-	} catch (std::string & error) {
-		std::cout << "Error initializing: " << error << std::endl;
-		return 1;
-	}
-	msleep(100);
-
-	std::cout << "Disabling motors...\n";
-
-	try {
+		msleep(100);
 		motors.disable();
 	} catch (std::string & error) {
-		std::cout << "Error starting up: " << error << std::endl;
-		return 2;
+		std::cout << "Error initializing motors: " << error << std::endl;
+		return 1;
 	}
 
-	auto node = rclcpp::node::Node::make_shared("rys_node_motors_controller");
+	std::cout << "Initializing data receiving thread...\n";
 	std::thread dataReceiveThread(dataReceiveThreadFn, node);
 
 	std::cout << "Setting up controller...\n";
-
 	controller.init();
 	controller.setSpeedPID(0.03, 0.0001, 0.008);
 	controller.setAnglePID(50, 0.05, 20);
 
-	// Original: 0.05
-	controller.setSpeedFilterFactor(0.2);
-	float finalLeftSpeed = 0;
-	float finalRightSpeed = 0;
+	controller.setRollFilterFactor(0.95);
+	controller.setSpeedFilterFactor(0.95);
 
 	std::cout << "Running!\n";
 	auto previous = std::chrono::high_resolution_clock::now();
@@ -165,7 +159,7 @@ int main(int argc, char * argv[]) {
 		float loopTime = loopTimeSpan.count();
 
 		if (!enabled) {
-			motors.disable();
+			// motors.disable();
 			loopRate.sleep();
 			continue;
 		}
@@ -177,9 +171,6 @@ int main(int argc, char * argv[]) {
 			loopRate.sleep();
 			continue;
 		}
-
-		// Update "odometry"
-		// motors.updateOdometry(loopTime);
 
 		// Detect current position
 		if ((roll > 40.0 && rollPrevious > 40.0) || (roll < -40.0 && rollPrevious < -40.0)) {
@@ -199,7 +190,10 @@ int main(int argc, char * argv[]) {
 		} else {
 			// Standing up, balance!
 			// Calculate target speeds for motors
-			controller.calculateSpeed(roll, motors.getSpeedLeft(), motors.getSpeedRight(), steering, throttle, finalLeftSpeed, finalRightSpeed, loopTime);
+			float speed = (motors.getSpeedLeft() + motors.getSpeedRight()) / 2;
+			float finalLeftSpeed = 0;
+			float finalRightSpeed = 0;
+			controller.calculateSpeed(roll, speed, steering, throttle, finalLeftSpeed, finalRightSpeed, loopTime);
 
 			// Set target speeds
 			try {

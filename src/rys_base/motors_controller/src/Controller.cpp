@@ -2,17 +2,15 @@
 #include <iostream>
 
 Controller::Controller() {
-	speedFilterFactor = 0.95;
+	rollFilterFactor = 1.0f;
+	speedFilterFactor = 1.0f;
 	angle = 0;
-	anglePrevious = 0;
 	anglePIDKp = 1;
 	anglePIDKi = 0;
 	anglePIDKd = 0;
 	anglePIDIntegral = 0;
 	anglePIDError = 0;
 	speed = 0;
-	speedPrevious = 0;
-	speedFiltered = 0;
 	speedPIDKp = 1;
 	speedPIDKi = 0;
 	speedPIDKd = 0;
@@ -63,34 +61,31 @@ float Controller::angleControl(float value, float setPoint, float dt) {
 	return output;
 }
 
-void Controller::calculateSpeed(float angle, float speedLeft, float speedRight, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
-	this->anglePrevious = this->angle;
-	this->angle = angle;
-	this->speedPrevious = this->speed;
-	this->speed = (speedLeft + speedRight) / 2;
+void Controller::calculateSpeed(float angle, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
+	float anglePrevious = this->angle;
+	this->angle = this->rollFilterFactor * angle + (1.0f - this->rollFilterFactor) * this->angle;
+	this->speed = this->speedFilterFactor * speed + (1.0f - this->speedFilterFactor) * this->speed;
 
 	clipValue(throttle, 1);
 	int throttleRaw = throttle * THROTTLE_MAX;
 	clipValue(rotation, 1);
 	int rotationRaw = rotation * ROTATION_MAX;
 
-	this->speedFiltered = this->speedFilterFactor * this->speed + (1.0f - this->speedFilterFactor) * this->speedFiltered;
+	// Estimate robot's linear velocity based on angle change and speed
+	// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
 
-	/*
-	// Estimate robot's velocity based on angle change and speed
-	// 90 is an empirical extracted factor to adjust for real units
-	float angularVelocity = (this->angle - this->anglePrevious) * 90.0 * loopTime;
-	// We use robot_speed(t-1) to compensate the delay
-	float estimatedSpeed = -this->speedPrevious - angularVelocity;
-	// Low pass / integrating filter on estimated speed
-	this->speedFiltered = this->speedFiltered * this->speedFilterFactor + estimatedSpeed * (1.0 - this->speedFilterFactor);
-	*/
+	// First, calculate robot's angular velocity and normalize it to motors' speed values (thus the constant at the end)
+	///TODO: find proper const
+	float angularVelocity = (this->angle - anglePrevious) / loopTime * 0.009;
+	// Then, subtract the estimated robot's angular velocity from motor's angular velocity
+	// What's left is motor's angular velocity responsible for robot's linear velocity
+	float linearVelocity = -this->speed - angularVelocity;
 
 	// First control layer: speed control PID
 	// input: user throttle (0)
 	// setPoint: estimated and filtered robot speed
 	// output: target robot angle to get the desired speed
-	float targetAngle = this->speedControl(this->speedFiltered, throttleRaw, loopTime);
+	float targetAngle = this->speedControl(linearVelocity, throttleRaw, loopTime);
 
 	// Second control layer: angle control PID
 	// input: robot target angle (from SPEED CONTROL)
@@ -103,9 +98,12 @@ void Controller::calculateSpeed(float angle, float speedLeft, float speedRight, 
 	speedRightNew = output - rotationRaw;
 
 	// std::cout << "Controller:";
-	std::cout << "a: " << targetAngle;
-	std::cout << " o: " << output;
-	std::cout << std::endl;
+	// std::cout << " v: " << angularVelocity;
+	// std::cout << " s: " << this->speed;
+	// std::cout << " f: " << this->speedFiltered;
+	// std::cout << " a: " << targetAngle;
+	// std::cout << " o: " << output;
+	// std::cout << std::endl;
 }
 
 void Controller::zeroPIDs() {
@@ -113,6 +111,10 @@ void Controller::zeroPIDs() {
 	this->anglePIDError = 0;
 	this->speedPIDIntegral = 0;
 	this->speedPIDError = 0;
+}
+
+void Controller::setRollFilterFactor(float factor) {
+	this->rollFilterFactor = factor;
 }
 
 void Controller::setSpeedFilterFactor(float factor) {

@@ -16,10 +16,10 @@ class Controller {
 		std::chrono::high_resolution_clock::time_point timePointPrevious;
 		std::chrono::high_resolution_clock::time_point timePoint;
 
+		float rollFilterFactor;
 		float speedFilterFactor;
 
 		float angle;
-		float anglePrevious;
 		float anglePIDKp;
 		float anglePIDKi;
 		float anglePIDKd;
@@ -27,8 +27,6 @@ class Controller {
 		float anglePIDError;
 
 		float speed;
-		float speedPrevious;
-		float speedFiltered;
 		float speedPIDKp;
 		float speedPIDKi;
 		float speedPIDKd;
@@ -43,10 +41,11 @@ class Controller {
 		Controller();
 		~Controller();
 		void init();
+		void setRollFilterFactor(float factor);
 		void setSpeedFilterFactor(float factor);
 		void setSpeedPID(float kp, float ki, float kd);
 		void setAnglePID(float kp, float ki, float kd);
-		void calculateSpeed(float angle, float speedLeft, float speedRight, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
+		void calculateSpeed(float angle, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 		void zeroPIDs();
 };
 
