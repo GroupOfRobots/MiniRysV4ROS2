@@ -74,6 +74,8 @@ void Controller::calculateSpeed(float angle, float speedLeft, float speedRight, 
 	clipValue(rotation, 1);
 	int rotationRaw = rotation * ROTATION_MAX;
 
+	this->speedFiltered = this->speedFilterFactor * this->speed + (1.0f - this->speedFilterFactor) * this->speedFiltered;
+
 	/*
 	// Estimate robot's velocity based on angle change and speed
 	// 90 is an empirical extracted factor to adjust for real units
@@ -88,8 +90,7 @@ void Controller::calculateSpeed(float angle, float speedLeft, float speedRight, 
 	// input: user throttle (0)
 	// setPoint: estimated and filtered robot speed
 	// output: target robot angle to get the desired speed
-	/*float targetAngle = speedControl(this->speedFiltered, throttle, loopTime);*/
-	float targetAngle = this->speedControl(this->speed, throttleRaw, loopTime);
+	float targetAngle = this->speedControl(this->speedFiltered, throttleRaw, loopTime);
 
 	// Second control layer: angle control PID
 	// input: robot target angle (from SPEED CONTROL)
@@ -100,6 +101,11 @@ void Controller::calculateSpeed(float angle, float speedLeft, float speedRight, 
 	// The rotation part from the user is injected directly into the output
 	speedLeftNew = output + rotationRaw;
 	speedRightNew = output - rotationRaw;
+
+	// std::cout << "Controller:";
+	std::cout << "a: " << targetAngle;
+	std::cout << " o: " << output;
+	std::cout << std::endl;
 }
 
 void Controller::zeroPIDs() {

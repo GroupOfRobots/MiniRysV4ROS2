@@ -58,6 +58,10 @@ void imuMessageCallback(const rys_messages::msg::ImuRoll::SharedPtr message) {
 void setPIDsMessageCallback(const rys_messages::msg::PIDSettings::SharedPtr message) {
 	controller.setSpeedPID(message->speed_p, message->speed_i, message->speed_d);
 	controller.setAnglePID(message->angle_p, message->angle_i, message->angle_d);
+
+	std::cout << "Setting PIDs:\n";
+	std::cout << "\tSpeed->angle: " << message->speed_p << message->speed_i << message->speed_d << std::endl;
+	std::cout << "\tAngle->output: " << message->angle_p << message->angle_i << message->angle_d << std::endl;
 }
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
@@ -144,7 +148,7 @@ int main(int argc, char * argv[]) {
 	controller.setSpeedPID(0.03, 0.0001, 0.008);
 	controller.setAnglePID(50, 0.05, 20);
 
-	controller.setSpeedFilterFactor(0.95);
+	controller.setSpeedFilterFactor(0.99);
 	float finalLeftSpeed = 0;
 	float finalRightSpeed = 0;
 
