@@ -8,7 +8,7 @@
 #include "std_msgs/msg/empty.hpp"
 
 const int rate = 100;
-const float filteringFactor = 0.98f;
+const float filteringFactor = 0.99f;
 const int calibrationDuration = 5000;
 
 bool calibration = false;
