@@ -12,6 +12,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 
 set(msg_files
+  "msg/FilterSettings.msg"
   "msg/ImuYawPitchRoll.msg"
   "msg/ImuRoll.msg"
   "msg/PIDSettings.msg"
