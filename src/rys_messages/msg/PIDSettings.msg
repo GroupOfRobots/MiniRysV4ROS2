@@ -1,8 +1,8 @@
 std_msgs/Header header
 
-float32 speed_p
-float32 speed_i
-float32 speed_d
-float32 angle_p
-float32 angle_i
-float32 angle_d
+float32 speed_kp
+float32 speed_ki
+float32 speed_kd
+float32 angle_kp
+float32 angle_ki
+float32 angle_kd
