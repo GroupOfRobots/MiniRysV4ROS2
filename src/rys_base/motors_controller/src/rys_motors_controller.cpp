@@ -148,7 +148,8 @@ int main(int argc, char * argv[]) {
 	controller.setSpeedPID(0.03, 0.0001, 0.008);
 	controller.setAnglePID(50, 0.05, 20);
 
-	controller.setSpeedFilterFactor(0.99);
+	// Original: 0.05
+	controller.setSpeedFilterFactor(0.2);
 	float finalLeftSpeed = 0;
 	float finalRightSpeed = 0;
 
