@@ -24,14 +24,14 @@ class RosBridge(QThread):
 		self.previousRoll = 0.0
 
 		# Create ROS publishers
-		self.publisherEnable = self.node.create_publisher(RosMsgs.Bool, 'rys_enable')
-		self.publisherSteering = self.node.create_publisher(RysMsgs.Steering, 'rys_steering')
-		self.publisherCalibrateImu = self.node.create_publisher(RosMsgs.Empty, 'rys_imu_calibrate')
-		self.publisherSetPIDs = self.node.create_publisher(RysMsgs.PIDSettings, 'rys_set_pids')
+		self.publisherEnable = self.node.create_publisher(RosMsgs.Bool, 'rys_control_enable')
+		self.publisherSteering = self.node.create_publisher(RysMsgs.Steering, 'rys_control_steering')
+		self.publisherCalibrateImu = self.node.create_publisher(RosMsgs.Empty, 'rys_control_imu_calibrate')
+		self.publisherSetPIDs = self.node.create_publisher(RysMsgs.PIDSettings, 'rys_control_pids_set')
 
 		# Create ROS subscribers
-		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRoll, 'rys_imu', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
-		subscriptionSonars = self.node.create_subscription(RysMsgs.Sonars, 'rys_sonars', self.sonarsSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
+		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRoll, 'rys_sensor_imu_roll', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
+		subscriptionSonars = self.node.create_subscription(RysMsgs.Sonars, 'rys_sensor_sonars', self.sonarsSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
 		# Prevent unused variable warning
 		assert subscriptionImu, subscriptionSonars
 
