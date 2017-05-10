@@ -42,9 +42,10 @@ class Controller {
 	public:
 		Controller();
 		~Controller();
+		void init();
 		void setSpeedFilterFactor(float factor);
 		void setSpeedPID(float kp, float ki, float kd);
-		void setStabilityPID(float kp, float ki, float kd);
+		void setAnglePID(float kp, float ki, float kd);
 		void calculateSpeed(float angle, float speedLeft, float speedRight, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 		void zeroPIDs();
 };

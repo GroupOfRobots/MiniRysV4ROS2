@@ -2,8 +2,6 @@
 #include <iostream>
 
 Controller::Controller() {
-	timePoint = std::chrono::high_resolution_clock::now();
-	timePointPrevious = std::chrono::high_resolution_clock::now();
 	speedFilterFactor = 0.95;
 	angle = 0;
 	anglePrevious = 0;
@@ -30,6 +28,11 @@ void clipValue(float & value, float max) {
 	} else if (value < -max) {
 		value = -max;
 	}
+}
+
+void Controller::init() {
+	this->timePoint = std::chrono::high_resolution_clock::now();
+	this->timePointPrevious = std::chrono::high_resolution_clock::now();
 }
 
 float Controller::angleControl(float value, float setPoint, float dt) {
@@ -116,7 +119,7 @@ void Controller::setSpeedPID(float kp, float ki, float kd) {
 	this->speedPIDKd = ki;
 }
 
-void Controller::setStabilityPID(float kp, float ki, float kd) {
+void Controller::setAnglePID(float kp, float ki, float kd) {
 	this->anglePIDKp = kp;
 	this->anglePIDKi = kd;
 	this->anglePIDKd = ki;

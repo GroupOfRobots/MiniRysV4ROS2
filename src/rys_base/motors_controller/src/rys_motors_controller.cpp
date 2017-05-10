@@ -6,6 +6,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rys_messages/msg/imu_roll.hpp"
+#include "rys_messages/msg/pid_settings.hpp"
 #include "std_msgs/msg/bool.hpp"
 
 #include "Motors.h"
@@ -24,6 +25,7 @@ volatile int steering;
 volatile int throttle;
 
 Motors motors;
+Controller controller;
 
 void msleep(const int milliseconds) {
 	auto end = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(milliseconds);
@@ -40,7 +42,9 @@ void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
 			motors.enable();
 		}
 	} else {
-		std::cout << "Disabling motors...\n";
+		if (enabled) {
+			std::cout << "Disabling motors...\n";
+		}
 		motors.disable();
 	}
 	enabled = message->data;
@@ -51,9 +55,15 @@ void imuMessageCallback(const rys_messages::msg::ImuRoll::SharedPtr message) {
 	roll = message->roll * 180 / M_PI;
 }
 
+void setPIDsMessageCallback(const rys_messages::msg::PIDSettings::SharedPtr message) {
+	controller.setSpeedPID(message->speed_p, message->speed_i, message->speed_d);
+	controller.setAnglePID(message->angle_p, message->angle_i, message->angle_d);
+}
+
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
 	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_enable", enableMessageCallback, rmw_qos_profile_sensor_data);
 	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuRoll>("rys_imu", imuMessageCallback, rmw_qos_profile_sensor_data);
+	auto setPIDsSubscriber = node->create_subscription<rys_messages::msg::PIDSettings>("rys_set_pids", setPIDsMessageCallback);
 
 	rclcpp::spin(node);
 }
@@ -107,8 +117,6 @@ int main(int argc, char * argv[]) {
 	std::cout << "Initializing ROS...\n";
 	rclcpp::init(argc, argv);
 
-	Controller controller;
-
 	std::cout << "Initializing motors...\n";
 	try {
 		motors.initialize();
@@ -118,15 +126,7 @@ int main(int argc, char * argv[]) {
 	}
 	msleep(100);
 
-	std::cout << "Setting up controller...\n";
-
-	controller.setSpeedPID(0.03, 0.0001, 0.008);
-	controller.setStabilityPID(50, 0.05, 20);
-	controller.setSpeedFilterFactor(0.95);
-	float finalLeftSpeed = 0;
-	float finalRightSpeed = 0;
-
-	std::cout << "Starting motors...\n";
+	std::cout << "Disabling motors...\n";
 
 	try {
 		motors.disable();
@@ -137,6 +137,16 @@ int main(int argc, char * argv[]) {
 
 	auto node = rclcpp::node::Node::make_shared("rys_node_motors_controller");
 	std::thread dataReceiveThread(dataReceiveThreadFn, node);
+
+	std::cout << "Setting up controller...\n";
+
+	controller.init();
+	controller.setSpeedPID(0.03, 0.0001, 0.008);
+	controller.setAnglePID(50, 0.05, 20);
+
+	controller.setSpeedFilterFactor(0.95);
+	float finalLeftSpeed = 0;
+	float finalRightSpeed = 0;
 
 	std::cout << "Running!\n";
 	auto previous = std::chrono::high_resolution_clock::now();
