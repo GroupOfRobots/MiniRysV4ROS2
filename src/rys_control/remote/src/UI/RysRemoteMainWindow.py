@@ -99,7 +99,8 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	def setFilteringParamsClickedHandler(self):
 		speedFilterFactor = self.ui.speedFilteringSpinBox.value()
 		rollFilterFactor = self.ui.rollFilteringSpinBox.value()
-		self.rosBridge.setFilteringParams(speedFilterFactor, rollFilterFactor)
+		angularVelocityFactor = self.ui.angularVelocitySpinBox.value()
+		self.rosBridge.setFilteringParams(speedFilterFactor, rollFilterFactor, angularVelocityFactor)
 
 	""" Gamepad bridge event handlers """
 

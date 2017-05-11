@@ -28,7 +28,7 @@
            <item>
             <widget class="QLabel" name="sonarFrontLabel">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -49,6 +49,12 @@
            </item>
            <item>
             <widget class="QProgressBar" name="sonarFrontBar">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="minimumSize">
               <size>
                <width>100</width>
@@ -76,7 +82,7 @@
            <item>
             <widget class="QLabel" name="sonarBackLabel">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -97,6 +103,12 @@
            </item>
            <item>
             <widget class="QProgressBar" name="sonarBackBar">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="minimumSize">
               <size>
                <width>100</width>
@@ -124,7 +136,7 @@
            <item>
             <widget class="QLabel" name="sonarTopLabel">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -145,6 +157,12 @@
            </item>
            <item>
             <widget class="QProgressBar" name="sonarTopBar">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="minimumSize">
               <size>
                <width>100</width>
@@ -175,6 +193,12 @@
           <widget class="QDial" name="rollDial">
            <property name="enabled">
             <bool>false</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
            <property name="minimumSize">
             <size>
@@ -270,7 +294,7 @@
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_5">
                <item>
-                <widget class="QDoubleSpinBox" name="speedDSpinBox">
+                <widget class="QDoubleSpinBox" name="speedPSpinBox">
                  <property name="minimumSize">
                   <size>
                    <width>70</width>
@@ -281,13 +305,13 @@
                   <number>4</number>
                  </property>
                  <property name="maximum">
-                  <double>100.000000000000000</double>
+                  <double>10.000000000000000</double>
                  </property>
                  <property name="singleStep">
                   <double>0.001000000000000</double>
                  </property>
                  <property name="value">
-                  <double>0.008000000000000</double>
+                  <double>0.030000000000000</double>
                  </property>
                 </widget>
                </item>
@@ -314,7 +338,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QDoubleSpinBox" name="speedPSpinBox">
+                <widget class="QDoubleSpinBox" name="speedDSpinBox">
                  <property name="minimumSize">
                   <size>
                    <width>70</width>
@@ -325,13 +349,13 @@
                   <number>4</number>
                  </property>
                  <property name="maximum">
-                  <double>10.000000000000000</double>
+                  <double>100.000000000000000</double>
                  </property>
                  <property name="singleStep">
                   <double>0.001000000000000</double>
                  </property>
                  <property name="value">
-                  <double>0.030000000000000</double>
+                  <double>0.008000000000000</double>
                  </property>
                 </widget>
                </item>
@@ -361,7 +385,7 @@
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_2">
                <item>
-                <widget class="QDoubleSpinBox" name="angleDSpinBox">
+                <widget class="QDoubleSpinBox" name="anglePSpinBox">
                  <property name="minimumSize">
                   <size>
                    <width>70</width>
@@ -372,10 +396,10 @@
                   <number>1</number>
                  </property>
                  <property name="maximum">
-                  <double>100.000000000000000</double>
+                  <double>1000.000000000000000</double>
                  </property>
                  <property name="value">
-                  <double>20.000000000000000</double>
+                  <double>50.000000000000000</double>
                  </property>
                 </widget>
                </item>
@@ -396,7 +420,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QDoubleSpinBox" name="anglePSpinBox">
+                <widget class="QDoubleSpinBox" name="angleDSpinBox">
                  <property name="minimumSize">
                   <size>
                    <width>70</width>
@@ -407,10 +431,10 @@
                   <number>1</number>
                  </property>
                  <property name="maximum">
-                  <double>1000.000000000000000</double>
+                  <double>100.000000000000000</double>
                  </property>
                  <property name="value">
-                  <double>50.000000000000000</double>
+                  <double>20.000000000000000</double>
                  </property>
                 </widget>
                </item>
@@ -433,10 +457,64 @@
         <layout class="QVBoxLayout" name="filteringVerticalLayout">
          <item>
           <widget class="QPushButton" name="imuCalibrateButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="baseSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="text">
             <string>Calibrate IMU</string>
            </property>
           </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="speedFilteringHorizontalLayout_2">
+           <item>
+            <widget class="QLabel" name="angularVelocityLabel">
+             <property name="minimumSize">
+              <size>
+               <width>100</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Angular vel fact</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="angularVelocitySpinBox">
+             <property name="minimumSize">
+              <size>
+               <width>70</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="maximum">
+              <double>1.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.010000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.009000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <layout class="QHBoxLayout" name="speedFilteringHorizontalLayout">
