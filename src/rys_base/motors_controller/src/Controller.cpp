@@ -101,6 +101,7 @@ void Controller::calculateSpeed(float angle, float speed, float throttle, float 
 	speedRightNew = output - rotationRaw;
 
 	// std::cout << "Controller:";
+	std::cout << " t: " << loopTime;
 	std::cout << " v: " << angularVelocity;
 	std::cout << " s: " << speed;
 	std::cout << " a: " << targetAngle;

@@ -67,6 +67,7 @@ void setFiltersMessageCallback(const rys_messages::msg::FilterSettings::SharedPt
 	std::cout << "Setting filter factors:\n";
 	std::cout << "\t Speed: " << message->speed_filter_factor << std::endl;
 	std::cout << "\t Angle: " << message->angle_filter_factor << std::endl;
+	std::cout << "\t AngVelocity: " << message->angular_velocity_factor << std::endl;
 
 	controller.setSpeedFilterFactor(message->speed_filter_factor);
 	controller.setAngleFilterFactor(message->angle_filter_factor);
