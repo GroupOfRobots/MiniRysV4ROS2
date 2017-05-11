@@ -1,4 +1,4 @@
 std_msgs/Header header
 
 float32 speed_filter_factor
-float32 roll_filter_factor
+float32 angle_filter_factor
