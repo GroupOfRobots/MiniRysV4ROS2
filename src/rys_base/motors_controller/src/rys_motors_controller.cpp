@@ -66,10 +66,10 @@ void setPIDsMessageCallback(const rys_messages::msg::PIDSettings::SharedPtr mess
 void setFiltersMessageCallback(const rys_messages::msg::FilterSettings::SharedPtr message) {
 	std::cout << "Setting filter factors:\n";
 	std::cout << "\t Speed: " << message->speed_filter_factor << std::endl;
-	std::cout << "\t Roll: " << message->roll_filter_factor << std::endl;
+	std::cout << "\t Angle: " << message->angle_filter_factor << std::endl;
 
 	controller.setSpeedFilterFactor(message->speed_filter_factor);
-	controller.setRollFilterFactor(message->roll_filter_factor);
+	controller.setAngleFilterFactor(message->angle_filter_factor);
 }
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
@@ -144,7 +144,7 @@ int main(int argc, char * argv[]) {
 	controller.setSpeedPID(0.03, 0.0001, 0.008);
 	controller.setAnglePID(50, 0.05, 20);
 
-	controller.setRollFilterFactor(0.95);
+	controller.setAngleFilterFactor(0.95);
 	controller.setSpeedFilterFactor(0.95);
 
 	std::cout << "Running!\n";
