@@ -60,10 +60,10 @@ class RosBridge(QThread):
 		message.angle_kd = float(angleKd)
 		self.publisherSetPIDs.publish(message)
 
-	def setFilteringParams(self, speedFilterFactor, rollFilterFactor):
+	def setFilteringParams(self, speedFilterFactor, angleFilterFactor):
 		message = RysMsgs.FilterSettings()
 		message.speed_filter_factor = speedFilterFactor
-		message.roll_filter_factor = rollFilterFactor
+		message.angle_filter_factor = angleFilterFactor
 		self.publisherSetFilterFactors.publish(message)
 
 	def stopExecution(self):
