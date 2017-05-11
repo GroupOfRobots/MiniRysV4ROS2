@@ -70,6 +70,7 @@ void setFiltersMessageCallback(const rys_messages::msg::FilterSettings::SharedPt
 
 	controller.setSpeedFilterFactor(message->speed_filter_factor);
 	controller.setAngleFilterFactor(message->angle_filter_factor);
+	controller.setAngularVelocityFactor(message->angular_velocity_factor);
 }
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {

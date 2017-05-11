@@ -4,6 +4,7 @@
 Controller::Controller() {
 	angleFilterFactor = 1.0f;
 	speedFilterFactor = 1.0f;
+	angularVelocityFactor = 0.009f;
 	anglePrevious = 0;
 	anglePIDKp = 1;
 	anglePIDKi = 0;
@@ -72,7 +73,7 @@ void Controller::calculateSpeed(float angle, float speed, float throttle, float 
 
 	// First, calculate robot's angular velocity and normalize it to motors' speed values (thus the constant at the end)
 	///TODO: find proper const
-	float angularVelocity = (angle - this->anglePrevious) / loopTime * 0.009;
+	float angularVelocity = (angle - this->anglePrevious) / loopTime * this->angularVelocityFactor;
 	// Then, subtract the estimated robot's angular velocity from motor's angular velocity
 	// What's left is motor's angular velocity responsible for robot's linear velocity
 	float linearVelocity = -speed - angularVelocity;
@@ -120,6 +121,10 @@ void Controller::setAngleFilterFactor(float factor) {
 
 void Controller::setSpeedFilterFactor(float factor) {
 	this->speedFilterFactor = factor;
+}
+
+void Controller::setAngularVelocityFactor(float factor) {
+	this->angularVelocityFactor = factor;
 }
 
 void Controller::setSpeedPID(float kp, float ki, float kd) {

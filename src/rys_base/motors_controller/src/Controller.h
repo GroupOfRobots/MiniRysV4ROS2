@@ -18,6 +18,7 @@ class Controller {
 
 		float angleFilterFactor;
 		float speedFilterFactor;
+		float angularVelocityFactor;
 
 		float anglePrevious;
 		float anglePIDKp;
@@ -43,6 +44,7 @@ class Controller {
 		void init();
 		void setAngleFilterFactor(float factor);
 		void setSpeedFilterFactor(float factor);
+		void setAngularVelocityFactor(float factor);
 		void setSpeedPID(float kp, float ki, float kd);
 		void setAnglePID(float kp, float ki, float kd);
 		void calculateSpeed(float angle, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
