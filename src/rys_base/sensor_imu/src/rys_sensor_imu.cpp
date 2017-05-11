@@ -16,6 +16,7 @@ float calibrationValuesSum;
 unsigned long int calibrationIterations;
 
 void imuCalibrateCallback(const std_msgs::msg::Empty::SharedPtr message) {
+	std::cout << "Calibration: collecting data (" << calibrationDuration << "ms)...\n";
 	calibrationEndTime = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(calibrationDuration);
 	calibrationValuesSum = 0;
 	calibrationIterations = 0;
@@ -40,6 +41,8 @@ int main(int argc, char * argv[]) {
 
 	auto message = std::make_shared<rys_messages::msg::ImuRoll>();
 
+	std::cout << "Working!\n";
+
 	rclcpp::rate::WallRate loopRate(rate);
 	while (rclcpp::ok()) {
 		try {
@@ -53,6 +56,7 @@ int main(int argc, char * argv[]) {
 					calibration = false;
 					float averageRoll = calibrationValuesSum / calibrationIterations;
 					imu.setOffsets(0, 0, averageRoll);
+					std::cout << "Calibration: data collected, average offset: " << averageRoll << std::endl;
 				}
 			}
 		} catch (std::string & error) {
