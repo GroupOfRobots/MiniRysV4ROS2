@@ -4,7 +4,7 @@
 
 #include "IMU.h"
 #include "rclcpp/rclcpp.hpp"
-#include "rys_messages/msg/imu_roll.hpp"
+#include "rys_interfaces/msg/imu_roll.hpp"
 #include "std_msgs/msg/empty.hpp"
 
 const int rate = 100;
@@ -37,9 +37,9 @@ int main(int argc, char * argv[]) {
 
 	auto node = rclcpp::node::Node::make_shared("rys_node_sensor_imu");
 	auto imuCalibrationSubscriber = node->create_subscription<std_msgs::msg::Empty>("rys_control_imu_calibrate", imuCalibrateCallback);
-	auto imuPublisher = node->create_publisher<rys_messages::msg::ImuRoll>("rys_sensor_imu_roll", rmw_qos_profile_sensor_data);
+	auto imuPublisher = node->create_publisher<rys_interfaces::msg::ImuRoll>("rys_sensor_imu_roll", rmw_qos_profile_sensor_data);
 
-	auto message = std::make_shared<rys_messages::msg::ImuRoll>();
+	auto message = std::make_shared<rys_interfaces::msg::ImuRoll>();
 
 	std::cout << "Working!\n";
 

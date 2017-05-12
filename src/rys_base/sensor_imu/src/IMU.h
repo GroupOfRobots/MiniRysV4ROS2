@@ -26,15 +26,13 @@ class IMU {
 		IMU();
 		~IMU();
 		void initialize(int rate = 100);
-		// void initializeNoDMP(int rate = 100);
 		void readData();
 		void getYawPitchRoll(float *, float *, float *);
 		float getYaw();
 		float getPitch();
 		float getRoll();
-		// float getRollNoDMP();
+		float getAccelerationX(bool getNewData = false);
 		void resetFIFO();
-		// Static calibration - reads the sensor n times, averages it and sets as offset
 		void calibrate();
 		bool getPreHeatingExitFlag();
 		void setOffsets(float yawOffset = 0.0f, float pitchOffset = 0.0f, float rollOffset = 0.0f, bool relative = true);
