@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="2">
-	<name>rys_messages</name>
+	<name>rys_interfaces</name>
 	<version>0.0.0</version>
 	<description>Custom messages for MiniRys robot</description>
 	<maintainer email="mjbogusz.email.address@domain.name.com">MJBogusz</maintainer>
