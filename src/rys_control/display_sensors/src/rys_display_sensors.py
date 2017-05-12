@@ -1,7 +1,7 @@
 import sys
 import rclpy
 from rclpy.qos import qos_profile_sensor_data
-from rys_messages.msg import ImuRoll
+from rys_interfaces.msg import ImuRoll
 
 def sensorsReadingCallback(msg):
 	print('Received: %f' % (msg.roll))
