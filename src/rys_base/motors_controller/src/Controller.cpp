@@ -76,13 +76,11 @@ void Controller::calculateSpeed(float angle, float speed, float throttle, float 
 	float angularVelocity = (angle - this->anglePrevious) / loopTime * this->angularVelocityFactor;
 	// Then, subtract the estimated robot's angular velocity from motor's angular velocity
 	// What's left is motor's angular velocity responsible for robot's linear velocity
-	float linearVelocity = -speed - angularVelocity;
+	float linearVelocity = speed - angularVelocity;
 	// Also, apply low-pass filter on resulting value
-	float linearVelocityFiltered = linearVelocity * this->speedFilterFactor + this->linearVelocityPrevious * (1.0f - this->speedFilterFactor);
-	this->linearVelocityPrevious = linearVelocity;
+	this->linearVelocityPrevious = linearVelocity * this->speedFilterFactor + this->linearVelocityPrevious * (1.0f - this->speedFilterFactor);
 	// Apply low-pass filter on the angle itself too
-	float angleFiltered = angle * this->angleFilterFactor + this->anglePrevious * (1.0f - this->angleFilterFactor);
-	this->anglePrevious = angle;
+	this->anglePrevious = angle * this->angleFilterFactor + this->anglePrevious * (1.0f - this->angleFilterFactor);
 
 	// First control layer: speed control PID
 	// input: user throttle (0)
