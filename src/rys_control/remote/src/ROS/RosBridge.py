@@ -1,7 +1,8 @@
 import rclpy
 from math import pi
 from time import sleep
-from rys_messages import msg as RysMsgs
+from rys_interfaces import msg as RysMsgs
+from rys_interfaces import srv as RysSrvs
 from std_msgs import msg as RosMsgs
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -27,8 +28,10 @@ class RosBridge(QThread):
 		self.publisherEnable = self.node.create_publisher(RosMsgs.Bool, 'rys_control_enable')
 		self.publisherSteering = self.node.create_publisher(RysMsgs.Steering, 'rys_control_steering')
 		self.publisherCalibrateImu = self.node.create_publisher(RosMsgs.Empty, 'rys_control_imu_calibrate')
-		self.publisherSetPIDs = self.node.create_publisher(RysMsgs.PIDSettings, 'rys_control_pids_set')
-		self.publisherSetFilterFactors = self.node.create_publisher(RysMsgs.FilterSettings, 'rys_control_filters_set')
+
+		# Create ROS service clients
+		self.clientSetRegulatorSettings = self.node.create_client(RysSrvs.SetRegulatorSettings, 'rys_set_regulator_settings')
+		self.clientGetRegulatorSettings = self.node.create_client(RysSrvs.GetRegulatorSettings, 'rys_get_regulator_settings')
 
 		# Create ROS subscribers
 		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRoll, 'rys_sensor_imu_roll', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
@@ -50,22 +53,29 @@ class RosBridge(QThread):
 		message = RosMsgs.Empty()
 		self.publisherCalibrateImu.publish(message)
 
-	def setPIDs(self, speedKp, speedKi, speedKd, angleKp, angleKi, angleKd):
-		message = RysMsgs.PIDSettings()
-		message.speed_kp = float(speedKp)
-		message.speed_ki = float(speedKi)
-		message.speed_kd = float(speedKd)
-		message.angle_kp = float(angleKp)
-		message.angle_ki = float(angleKi)
-		message.angle_kd = float(angleKd)
-		self.publisherSetPIDs.publish(message)
+	def setRegulatorParameters(self, parameters):
+		request = RysSrvs.SetRegulatorSettings.Request()
+		request.speed_kp = parameters['speedKp']
+		request.speed_ki = parameters['speedKi']
+		request.speed_kd = parameters['speedKd']
+		request.angle_kp = parameters['angleKp']
+		request.angle_ki = parameters['angleKi']
+		request.angle_kd = parameters['angleKd']
 
-	def setFilteringParams(self, speedFilterFactor, angleFilterFactor, angularVelocityFactor):
-		message = RysMsgs.FilterSettings()
-		message.speed_filter_factor = speedFilterFactor
-		message.angle_filter_factor = angleFilterFactor
-		message.angular_velocity_factor = angularVelocityFactor
-		self.publisherSetFilterFactors.publish(message)
+		request.speed_filter_factor = parameters['speedFilterFactor']
+		request.angle_filter_factor = parameters['rollFilterFactor']
+		request.angular_velocity_factor = parameters['angularVelocityFactor']
+
+		request.speed_regulator_enabled = parameters['speedRegulatorEnabled']
+
+		self.clientSetRegulatorSettings.call(request)
+		# disable until async way is found
+		# self.clientSetRegulatorSettings.wait_for_future()
+		# response = self.clientSetRegulatorSettings.response
+		# return (response.success, response.error_text)
+
+	def getRegulatorParameters(self):
+		return None
 
 	def stopExecution(self):
 		self.exitFlag = True

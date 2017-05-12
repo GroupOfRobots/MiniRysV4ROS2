@@ -13,6 +13,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		super(RysRemoteMainWindow, self).__init__(parent)
 
 		self.node = node
+		self.qtParent = parent
 
 		self.enabled = False
 		self.throttle = 0
@@ -30,8 +31,8 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 		self.ui.enableButton.clicked.connect(self.enableClickedHandler)
 		self.ui.imuCalibrateButton.clicked.connect(self.imuCalibrateClickedHandler)
-		self.ui.setPIDsButton.clicked.connect(self.setPIDsClickedHandler)
-		self.ui.setFilteringParamsButton.clicked.connect(self.setFilteringParamsClickedHandler)
+		self.ui.setRegulatorParametersButton.clicked.connect(self.setRegulatorParametersClickedHandler)
+		self.ui.getRegulatorParametersButton.clicked.connect(self.getRegulatorParametersClickedHandler)
 
 		self.gamepadScene = QtWidgets.QGraphicsScene(self)
 		self.ui.steeringGraphicsView.setScene(self.gamepadScene)
@@ -87,20 +88,30 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	def imuCalibrateClickedHandler(self):
 		self.rosBridge.calibrateImu()
 
-	def setPIDsClickedHandler(self):
-		speedKp = self.ui.speedPSpinBox.value()
-		speedKi = self.ui.speedISpinBox.value()
-		speedKd = self.ui.speedDSpinBox.value()
-		angleKp = self.ui.anglePSpinBox.value()
-		angleKi = self.ui.angleISpinBox.value()
-		angleKd = self.ui.angleDSpinBox.value()
-		self.rosBridge.setPIDs(speedKp, speedKi, speedKd, angleKp, angleKi, angleKd)
+	def setRegulatorParametersClickedHandler(self):
+		parameters = {
+			'speedKp': self.ui.speedPSpinBox.value(),
+			'speedKi': self.ui.speedISpinBox.value(),
+			'speedKd': self.ui.speedDSpinBox.value(),
+			'angleKp': self.ui.anglePSpinBox.value(),
+			'angleKi': self.ui.angleISpinBox.value(),
+			'angleKd': self.ui.angleDSpinBox.value(),
+			'speedRegulatorEnabled': self.ui.speedRegulatorEnabledCheckBox.isChecked(),
+			'speedFilterFactor': self.ui.speedFilteringSpinBox.value(),
+			'rollFilterFactor': self.ui.rollFilteringSpinBox.value(),
+			'angularVelocityFactor': self.ui.angularVelocitySpinBox.value(),
+		}
 
-	def setFilteringParamsClickedHandler(self):
-		speedFilterFactor = self.ui.speedFilteringSpinBox.value()
-		rollFilterFactor = self.ui.rollFilteringSpinBox.value()
-		angularVelocityFactor = self.ui.angularVelocitySpinBox.value()
-		self.rosBridge.setFilteringParams(speedFilterFactor, rollFilterFactor, angularVelocityFactor)
+		self.rosBridge.setRegulatorParameters(parameters)
+		# disabled until a way to handle this in async way is found
+		# (success, errorText) = self.rosBridge.setRegulatorParameters(parameters)
+		# if not success:
+		# 	QtWidgets.QMessageBox.Error(self.qtParent, "Error setting regulator parameters: %s" % errorText)
+
+	def getRegulatorParametersClickedHandler(self):
+		parameters = self.rosBridge.getRegulatorParameters()
+		assert parameters
+		# TODO implement
 
 	""" Gamepad bridge event handlers """
 
