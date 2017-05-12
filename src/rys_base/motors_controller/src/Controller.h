@@ -20,19 +20,21 @@ class Controller {
 		float speedFilterFactor;
 		float angularVelocityFactor;
 
-		float anglePrevious;
-		float anglePIDKp;
-		float anglePIDKi;
-		float anglePIDKd;
-		float anglePIDIntegral;
-		float anglePIDError;
-
-		float linearVelocityPrevious;
+		float linearVelocityFiltered;
+		bool speedRegulatorEnabled;
 		float speedPIDKp;
 		float speedPIDKi;
 		float speedPIDKd;
 		float speedPIDIntegral;
 		float speedPIDError;
+
+		float anglePrevious;
+		float angleFiltered;
+		float anglePIDKp;
+		float anglePIDKi;
+		float anglePIDKd;
+		float anglePIDIntegral;
+		float anglePIDError;
 
 		// PI controller implementation (Proportional, integral). DT is in miliseconds
 		float speedControl(float value, float setPoint, float dt);
@@ -42,13 +44,21 @@ class Controller {
 		Controller();
 		~Controller();
 		void init();
-		void setAngleFilterFactor(float factor);
 		void setSpeedFilterFactor(float factor);
+		void setAngleFilterFactor(float factor);
 		void setAngularVelocityFactor(float factor);
+		void setSpeedRegulatorEnabled(bool enabled);
 		void setSpeedPID(float kp, float ki, float kd);
 		void setAnglePID(float kp, float ki, float kd);
 		void calculateSpeed(float angle, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 		void zeroPIDs();
+
+		float getSpeedFilterFactor();
+		float getAngleFilterFactor();
+		float getAngularVelocityFactor();
+		bool getSpeedRegulatorEnabled();
+		void getSpeedPID(float & kp, float & ki, float & kd);
+		void getAnglePID(float & kp, float & ki, float & kd);
 };
 
 #endif

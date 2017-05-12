@@ -5,10 +5,10 @@
 #include <thread>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rys_messages/msg/imu_roll.hpp"
-#include "rys_messages/msg/pid_settings.hpp"
-#include "rys_messages/msg/filter_settings.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "rys_interfaces/msg/imu_roll.hpp"
+#include "rys_interfaces/srv/set_regulator_settings.hpp"
+#include "rys_interfaces/srv/get_regulator_settings.hpp"
 
 #include "Motors.h"
 #include "Controller.h"
@@ -49,36 +49,80 @@ void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
 	enabled = message->data;
 }
 
-void imuMessageCallback(const rys_messages::msg::ImuRoll::SharedPtr message) {
+void imuMessageCallback(const rys_interfaces::msg::ImuRoll::SharedPtr message) {
 	rollPrevious = roll;
 	roll = message->roll * 180 / M_PI;
 }
 
-void setPIDsMessageCallback(const rys_messages::msg::PIDSettings::SharedPtr message) {
-	std::cout << "Setting PIDs:\n";
-	std::cout << "\t Speed->angle: " << message->speed_kp << " " << message->speed_ki << " " << message->speed_kd << std::endl;
-	std::cout << "\t Angle->output: " << message->angle_kp << " " << message->angle_ki << " " << message->angle_kd << std::endl;
+void setRegulatorSettingsCallback(
+	const std::shared_ptr<rmw_request_id_t> requestHeader,
+	const std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Request> request,
+	std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Response> response
+) {
+	// Suppress unused parameter warning
+	(void) requestHeader;
 
-	controller.setSpeedPID(message->speed_kp, message->speed_ki, message->speed_kd);
-	controller.setAnglePID(message->angle_kp, message->angle_ki, message->angle_kd);
+	// Check values validness
+	if (request->speed_kp < 0 || request->speed_kp > 1000 || request->speed_ki < 0 || request->speed_ki > 1000 || request->speed_kd < 0 || request->speed_kd > 1000) {
+		response->success = false;
+		response->error_text = std::string("Invalid speed PID parameters");
+		return;
+	}
+	if (request->angle_kp < 0 || request->angle_kp > 1000 || request->angle_ki < 0 || request->angle_ki > 1000 || request->angle_kd < 0 || request->angle_kd > 1000) {
+		response->success = false;
+		response->error_text = std::string("Invalid angle PID parameters");
+		return;
+	}
+
+	if (request->speed_filter_factor <= 0 || request->speed_filter_factor > 1 || request->angle_filter_factor <= 0 || request->angle_filter_factor > 1 || request->angular_velocity_factor < 0) {
+		response->success = false;
+		response->error_text = std::string("Invalid filtering parameters");
+		return;
+	}
+
+	// Inform user (for logging purposes)
+	std::cout << "Setting regulator parameters:\n";
+	std::cout << "\t Speed->angle PID:  " << request->speed_kp << " " << request->speed_ki << " " << request->speed_kd << std::endl;
+	std::cout << "\t Angle->output PID: " << request->angle_kp << " " << request->angle_ki << " " << request->angle_kd << std::endl;
+	std::cout << "\t Speed filter factor: " << request->speed_filter_factor << std::endl;
+	std::cout << "\t Angle filter factor: " << request->angle_filter_factor << std::endl;
+	std::cout << "\t Angular velocity factor: " << request->angular_velocity_factor << std::endl;
+	std::cout << "\t Speed regulator enabled: " << request->speed_regulator_enabled << std::endl;
+
+	// Set values
+	controller.setSpeedPID(request->speed_kp, request->speed_ki, request->speed_kd);
+	controller.setAnglePID(request->angle_kp, request->angle_ki, request->angle_kd);
+	controller.setSpeedFilterFactor(request->speed_filter_factor);
+	controller.setAngleFilterFactor(request->angle_filter_factor);
+	controller.setAngularVelocityFactor(request->angular_velocity_factor);
+	controller.setSpeedRegulatorEnabled(request->speed_regulator_enabled);
+
+	// Set response
+	response->success = true;
 }
 
-void setFiltersMessageCallback(const rys_messages::msg::FilterSettings::SharedPtr message) {
-	std::cout << "Setting filter factors:\n";
-	std::cout << "\t Speed: " << message->speed_filter_factor << std::endl;
-	std::cout << "\t Angle: " << message->angle_filter_factor << std::endl;
-	std::cout << "\t AngVelocity: " << message->angular_velocity_factor << std::endl;
+void getRegulatorSettingsCallback(
+	const std::shared_ptr<rmw_request_id_t> requestHeader,
+	const std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Request> request,
+	std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Response> response
+) {
+	// Suppress unused parameter warning
+	(void) requestHeader;
+	(void) request;
 
-	controller.setSpeedFilterFactor(message->speed_filter_factor);
-	controller.setAngleFilterFactor(message->angle_filter_factor);
-	controller.setAngularVelocityFactor(message->angular_velocity_factor);
+	response->speed_filter_factor = controller.getSpeedFilterFactor();
+	response->angle_filter_factor = controller.getAngleFilterFactor();
+	response->angular_velocity_factor = controller.getAngularVelocityFactor();
+	response->speed_regulator_enabled = controller.getSpeedRegulatorEnabled();
+	controller.getSpeedPID(response->speed_kp, response->speed_ki, response->speed_kd);
+	controller.getAnglePID(response->angle_kp, response->angle_ki, response->angle_kd);
 }
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
 	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_enable", enableMessageCallback, rmw_qos_profile_sensor_data);
-	auto imuSubscriber = node->create_subscription<rys_messages::msg::ImuRoll>("rys_sensor_imu_roll", imuMessageCallback, rmw_qos_profile_sensor_data);
-	auto setPIDsSubscriber = node->create_subscription<rys_messages::msg::PIDSettings>("rys_control_pids_set", setPIDsMessageCallback);
-	auto setFiltersSubscriber = node->create_subscription<rys_messages::msg::FilterSettings>("rys_control_filters_set", setFiltersMessageCallback);
+	auto imuSubscriber = node->create_subscription<rys_interfaces::msg::ImuRoll>("rys_sensor_imu_roll", imuMessageCallback, rmw_qos_profile_sensor_data);
+	auto setRegulatorSettingsServer = node->create_service<rys_interfaces::srv::SetRegulatorSettings>("rys_set_regulator_settings", setRegulatorSettingsCallback);
+	auto getRegulatorSettingsServer = node->create_service<rys_interfaces::srv::GetRegulatorSettings>("rys_get_regulator_settings", getRegulatorSettingsCallback);
 
 	rclcpp::spin(node);
 }
