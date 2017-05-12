@@ -228,7 +228,7 @@ class Ui_RysRemoteMainWindow(object):
         self.angularVelocitySpinBox = QtWidgets.QDoubleSpinBox(self.groupBox)
         self.angularVelocitySpinBox.setMinimumSize(QtCore.QSize(70, 0))
         self.angularVelocitySpinBox.setDecimals(3)
-        self.angularVelocitySpinBox.setMaximum(1.0)
+        self.angularVelocitySpinBox.setMaximum(1000.0)
         self.angularVelocitySpinBox.setSingleStep(0.01)
         self.angularVelocitySpinBox.setProperty("value", 0.009)
         self.angularVelocitySpinBox.setObjectName("angularVelocitySpinBox")
