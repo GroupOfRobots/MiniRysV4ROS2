@@ -17,7 +17,7 @@ int main(int argc, char * argv[]) {
 
 	std::cout << "Working!\n";
 
-	rclcpp::rate::WallRate loopRate(30);
+	rclcpp::rate::WallRate loopRate(25);
 	while(rclcpp::ok()) {
 		unsigned int front, back, top;
 		try {
@@ -29,7 +29,6 @@ int main(int argc, char * argv[]) {
 			message->back = back;
 			message->top = top;
 
-			std::cout << "Readings: " << front << " " << back << " " << top << std::endl;
 			sensorsPublisher->publish(message);
 		} catch (std::string & error) {
 			std::cout << "Error reading distances from sonars: " << error << std::endl;

@@ -12,7 +12,9 @@ void Sonars::getDistances(unsigned int * front, unsigned int * back, unsigned in
 	file.open(DEVICE_FILE_NAME, std::fstream::out | std::fstream::binary);
 	if (!file.is_open() || !file.good()) {
 		file.close();
-		throw(std::string("Failed opening file: ", DEVICE_FILE_NAME));
+		std::string error("Failed opening file: ");
+		error += std::string(DEVICE_FILE_NAME);
+		throw(error);
 	}
 	file.write("h", 13);
 	file.close();
@@ -20,7 +22,9 @@ void Sonars::getDistances(unsigned int * front, unsigned int * back, unsigned in
 	file.open(DEVICE_FILE_NAME, std::fstream::in | std::fstream::binary);
 	if (!file.is_open() || !file.good()) {
 		file.close();
-		throw(std::string("Failed opening file: ", DEVICE_FILE_NAME));
+		std::string error("Failed opening file: ");
+		error += std::string(DEVICE_FILE_NAME);
+		throw(error);
 	}
 
 	DistanceFrame frame;
