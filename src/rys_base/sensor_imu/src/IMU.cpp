@@ -144,14 +144,16 @@ float IMU::getRoll() {
 	return atan(gy / sqrt(gx*gx + gz*gz)) - this->rollOffset;
 }
 
-float IMU::getAccelerationX(bool getNewData) {
+void IMU::getGyro(float * rotationX, float * rotationY, float * rotationZ, bool getNewData) {
 	if (getNewData) {
 		this->readData();
 	}
 
-	VectorInt16 acceleration;
-	this->mpu->dmpGetAccel(&acceleration, this->fifoBuffer);
-	return acceleration.x;
+	VectorInt16 gyro;
+	this->mpu->dmpGetGyro(&gyro, this->fifoBuffer);
+	*rotationX = float(gyro.x) / 16.4f;
+	*rotationY = float(gyro.y) / 16.4f;
+	*rotationZ = float(gyro.z) / 16.4f;
 }
 
 void IMU::resetFIFO() {

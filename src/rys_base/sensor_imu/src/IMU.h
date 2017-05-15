@@ -31,7 +31,7 @@ class IMU {
 		float getYaw();
 		float getPitch();
 		float getRoll();
-		float getAccelerationX(bool getNewData = false);
+		void getGyro(float * rotationX, float * rotationY, float * rotationZ, bool getNewData = false);
 		void resetFIFO();
 		void calibrate();
 		bool getPreHeatingExitFlag();

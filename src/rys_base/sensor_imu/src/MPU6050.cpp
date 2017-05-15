@@ -3609,17 +3609,17 @@ uint8_t MPU6050::dmpGetGyro(int32_t *data, const uint8_t* packet) {
 uint8_t MPU6050::dmpGetGyro(int16_t *data, const uint8_t* packet) {
     // TODO: accommodate different arrangements of sent data (ONLY default supported now)
     if (packet == 0) packet = dmpPacketBuffer;
-    data[0] = (packet[16] << 8) | packet[17];
-    data[1] = (packet[20] << 8) | packet[21];
-    data[2] = (packet[24] << 8) | packet[25];
+    data[0] = ((uint16_t)packet[16] << 8) | packet[17];
+    data[1] = ((uint16_t)packet[20] << 8) | packet[21];
+    data[2] = ((uint16_t)packet[24] << 8) | packet[25];
     return 0;
 }
 uint8_t MPU6050::dmpGetGyro(VectorInt16 *v, const uint8_t* packet) {
     // TODO: accommodate different arrangements of sent data (ONLY default supported now)
     if (packet == 0) packet = dmpPacketBuffer;
-    v -> x = (packet[16] << 8) | packet[17];
-    v -> y = (packet[20] << 8) | packet[21];
-    v -> z = (packet[24] << 8) | packet[25];
+    v -> x = ((uint16_t)packet[16] << 8) | packet[17];
+    v -> y = ((uint16_t)packet[20] << 8) | packet[21];
+    v -> z = ((uint16_t)packet[24] << 8) | packet[25];
     return 0;
 }
 // uint8_t MPU6050::dmpSetLinearAccelFilterCoefficient(float coef);
