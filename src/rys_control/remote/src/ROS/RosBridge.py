@@ -9,7 +9,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 class RosBridge(QThread):
 	"""docstring for RosBridge"""
 
-	rollChanged = pyqtSignal(float)
+	imuChanged = pyqtSignal(float, float)
 	sonarChanged = pyqtSignal(int, int, int)
 
 	def __init__(self, node, parent = None, steeringMessageRate = 10, enableMessageRate = 0.5):
@@ -23,6 +23,7 @@ class RosBridge(QThread):
 		self.throttle = 0.0
 		self.rotation = 0.0
 		self.previousRoll = 0.0
+		self.previousRotationX = 0.0
 
 		# Create ROS publishers
 		self.publisherEnable = self.node.create_publisher(RosMsgs.Bool, 'rys_control_enable')
@@ -34,7 +35,7 @@ class RosBridge(QThread):
 		self.clientGetRegulatorSettings = self.node.create_client(RysSrvs.GetRegulatorSettings, 'rys_get_regulator_settings')
 
 		# Create ROS subscribers
-		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRoll, 'rys_sensor_imu_roll', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
+		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRollRotation, 'rys_sensor_imu_roll', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
 		subscriptionSonars = self.node.create_subscription(RysMsgs.Sonars, 'rys_sensor_sonars', self.sonarsSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
 		# Prevent unused variable warning
 		assert subscriptionImu, subscriptionSonars
@@ -84,10 +85,13 @@ class RosBridge(QThread):
 
 	def imuSubscriptionCallback(self, message):
 		roll = message.roll * 180 / pi
-		if roll is self.previousRoll:
+		rotationX = message.rotation_x
+		if roll is self.previousRoll and rotationX is self.previousRotationX:
 			return
 		self.previousRoll = roll
-		self.rollChanged.emit(roll)
+		self.previousRotationX = rotationX
+
+		self.imuChanged.emit(roll, rotationX)
 
 	def sonarsSubscriptionCallback(self, message):
 		self.sonarChanged.emit(message.front, message.back, message.top)

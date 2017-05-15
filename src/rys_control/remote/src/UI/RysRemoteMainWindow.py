@@ -45,7 +45,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.gamepadBridge.start()
 
 		self.rosBridge = RosBridge(node, self)
-		self.rosBridge.rollChanged.connect(self.rollChangedHandler)
+		self.rosBridge.imuChanged.connect(self.imuChangedHandler)
 		self.rosBridge.sonarChanged.connect(self.sonarChangedHandler)
 		self.rosBridge.start()
 
@@ -166,9 +166,10 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 	""" ROS event handlers """
 
-	def rollChangedHandler(self, value):
-		self.ui.rollDial.setValue(int(value))
-		self.ui.rollValueLabel.setText("%f" % value)
+	def imuChangedHandler(self, roll, rotationX):
+		self.ui.rollDial.setValue(float(roll))
+		self.ui.rollValueLabel.setText("    Roll: %f" % roll)
+		self.ui.rotationXValueLabel.setText("Rotation: %f" % rotationX)
 
 	def sonarChangedHandler(self, front, back, top):
 		self.ui.sonarFrontBar.setValue(front)
