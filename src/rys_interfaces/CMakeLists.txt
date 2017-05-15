@@ -12,7 +12,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 
 set(msg_files
-	"msg/ImuRoll.msg"
+	"msg/ImuRollRotation.msg"
 	"msg/ImuYawPitchRoll.msg"
 	"msg/Sonars.msg"
 	"msg/Steering.msg"
