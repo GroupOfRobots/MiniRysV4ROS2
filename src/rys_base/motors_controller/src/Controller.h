@@ -50,7 +50,7 @@ class Controller {
 		void setSpeedRegulatorEnabled(bool enabled);
 		void setSpeedPID(float kp, float ki, float kd);
 		void setAnglePID(float kp, float ki, float kd);
-		void calculateSpeed(float angle, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
+		void calculateSpeed(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 		void zeroPIDs();
 
 		float getSpeedFilterFactor();

@@ -6,7 +6,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
-#include "rys_interfaces/msg/imu_roll.hpp"
+#include "rys_interfaces/msg/imu_roll_rotation.hpp"
 #include "rys_interfaces/srv/set_regulator_settings.hpp"
 #include "rys_interfaces/srv/get_regulator_settings.hpp"
 
@@ -19,10 +19,9 @@ std::chrono::time_point<std::chrono::high_resolution_clock> enableTimerEnd;
 
 volatile float roll;
 volatile float rollPrevious;
-volatile float pitch;
-volatile float yaw;
+volatile float rotationX;
 
-volatile int steering;
+volatile int rotation;
 volatile int throttle;
 
 Motors motors;
@@ -49,9 +48,10 @@ void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
 	enabled = message->data;
 }
 
-void imuMessageCallback(const rys_interfaces::msg::ImuRoll::SharedPtr message) {
+void imuMessageCallback(const rys_interfaces::msg::ImuRollRotation::SharedPtr message) {
 	rollPrevious = roll;
 	roll = message->roll * 180 / M_PI;
+	rotationX = message->rotation_x;
 }
 
 void setRegulatorSettingsCallback(
@@ -126,7 +126,7 @@ void getRegulatorSettingsCallback(
 
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
 	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_enable", enableMessageCallback, rmw_qos_profile_sensor_data);
-	auto imuSubscriber = node->create_subscription<rys_interfaces::msg::ImuRoll>("rys_sensor_imu_roll", imuMessageCallback, rmw_qos_profile_sensor_data);
+	auto imuSubscriber = node->create_subscription<rys_interfaces::msg::ImuRollRotation>("rys_sensor_imu_roll", imuMessageCallback, rmw_qos_profile_sensor_data);
 	auto setRegulatorSettingsServer = node->create_service<rys_interfaces::srv::SetRegulatorSettings>("rys_set_regulator_settings", setRegulatorSettingsCallback);
 	auto getRegulatorSettingsServer = node->create_service<rys_interfaces::srv::GetRegulatorSettings>("rys_get_regulator_settings", getRegulatorSettingsCallback);
 
@@ -245,7 +245,7 @@ int main(int argc, char * argv[]) {
 			float speed = (motors.getSpeedLeft() + motors.getSpeedRight()) / 2;
 			float finalLeftSpeed = 0;
 			float finalRightSpeed = 0;
-			controller.calculateSpeed(roll, speed, steering, throttle, finalLeftSpeed, finalRightSpeed, loopTime);
+			controller.calculateSpeed(roll, rotationX, speed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTime);
 
 			// Set target speeds
 			try {

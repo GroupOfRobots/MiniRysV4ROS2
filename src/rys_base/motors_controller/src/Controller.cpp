@@ -64,21 +64,21 @@ float Controller::angleControl(float value, float setPoint, float dt) {
 	return output;
 }
 
-void Controller::calculateSpeed(float angle, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
+void Controller::calculateSpeed(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
 	clipValue(throttle, 1);
 	float throttleRaw = throttle * THROTTLE_MAX;
 	clipValue(rotation, 1);
 	float rotationRaw = rotation * ROTATION_MAX;
 
 	float targetAngle = 0.0f;
+	float angularVelocity = 0;
 	if (this->speedRegulatorEnabled) {
 		// Estimate robot's linear velocity based on angle change and speed
 		// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
 
 		// First, calculate robot's angular velocity and normalize it to motors' speed values (thus the constant at the end)
 		///TODO: find proper const
-		float angularVelocity = (angle - this->anglePrevious) / loopTime * this->angularVelocityFactor;
-		this->anglePrevious = angle;
+		angularVelocity = rotationX * this->angularVelocityFactor;
 		// Then, subtract the estimated robot's angular velocity from motor's angular velocity
 		// What's left is motor's angular velocity responsible for robot's linear velocity
 		float linearVelocity = speed - angularVelocity;
@@ -106,11 +106,11 @@ void Controller::calculateSpeed(float angle, float speed, float throttle, float 
 
 	// std::cout << "Controller:";
 	// std::cout << " t: " << loopTime;
-	// std::cout << " v: " << angularVelocity;
-	// std::cout << " s: " << speed;
-	// std::cout << " a: " << targetAngle;
-	// std::cout << " o: " << output;
-	// std::cout << std::endl;
+	std::cout << " v: " << angularVelocity;
+	std::cout << " s: " << speed;
+	std::cout << " a: " << targetAngle;
+	std::cout << " o: " << output;
+	std::cout << std::endl;
 }
 
 void Controller::zeroPIDs() {
