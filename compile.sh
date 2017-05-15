@@ -2,7 +2,7 @@
 
 #ARGS="--symlink-install"
 ARGS=""
-COMMON_PKGS="rys_messages"
+COMMON_PKGS="rys_interfaces"
 ROBOT_PKGS="rys_motors_controller "
 ROBOT_PKGS="${ROBOT_PKGS} rys_sensor_imu "
 CONTROL_PKGS="rys_display_sensors "
