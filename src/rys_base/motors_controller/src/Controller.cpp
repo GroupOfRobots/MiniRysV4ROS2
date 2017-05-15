@@ -70,24 +70,27 @@ void Controller::calculateSpeed(float angle, float speed, float throttle, float 
 	clipValue(rotation, 1);
 	float rotationRaw = rotation * ROTATION_MAX;
 
-	// Estimate robot's linear velocity based on angle change and speed
-	// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
+	float targetAngle = 0.0f;
+	if (this->speedRegulatorEnabled) {
+		// Estimate robot's linear velocity based on angle change and speed
+		// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
 
-	// First, calculate robot's angular velocity and normalize it to motors' speed values (thus the constant at the end)
-	///TODO: find proper const
-	float angularVelocity = (angle - this->anglePrevious) / loopTime * this->angularVelocityFactor;
-	this->anglePrevious = angle;
-	// Then, subtract the estimated robot's angular velocity from motor's angular velocity
-	// What's left is motor's angular velocity responsible for robot's linear velocity
-	float linearVelocity = speed - angularVelocity;
+		// First, calculate robot's angular velocity and normalize it to motors' speed values (thus the constant at the end)
+		///TODO: find proper const
+		float angularVelocity = (angle - this->anglePrevious) / loopTime * this->angularVelocityFactor;
+		this->anglePrevious = angle;
+		// Then, subtract the estimated robot's angular velocity from motor's angular velocity
+		// What's left is motor's angular velocity responsible for robot's linear velocity
+		float linearVelocity = speed - angularVelocity;
 
-	// Also, apply low-pass filter on resulting value
-	this->linearVelocityFiltered = linearVelocity * this->speedFilterFactor + this->linearVelocityFiltered * (1.0f - this->speedFilterFactor);
-	// First control layer: speed control PID
-	// input: user throttle (0)
-	// setPoint: estimated and filtered robot speed
-	// output: target robot angle to get the desired speed
-	float targetAngle = this->speedControl(this->linearVelocityFiltered, throttleRaw, loopTime);
+		// Also, apply low-pass filter on resulting value
+		this->linearVelocityFiltered = linearVelocity * this->speedFilterFactor + this->linearVelocityFiltered * (1.0f - this->speedFilterFactor);
+		// First control layer: speed control PID
+		// input: user throttle (0)
+		// setPoint: estimated and filtered robot speed
+		// output: target robot angle to get the desired speed
+		targetAngle = this->speedControl(this->linearVelocityFiltered, throttleRaw, loopTime);
+	}
 
 	// Apply low-pass filter on the angle itself too
 	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
