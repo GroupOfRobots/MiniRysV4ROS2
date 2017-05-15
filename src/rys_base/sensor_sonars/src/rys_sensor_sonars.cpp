@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "rclcpp/rclcpp.hpp"
 #include "Sonars.h"
 #include "rys_interfaces/msg/sonars.hpp"
@@ -18,12 +20,21 @@ int main(int argc, char * argv[]) {
 	rclcpp::rate::WallRate loopRate(30);
 	while(rclcpp::ok()) {
 		unsigned int front, back, top;
-		sonars.getDistances(&front, &back, &top);
-		message->front = front;
-		message->back = back;
-		message->top = top;
+		try {
+			// This can throw
+			sonars.getDistances(&front, &back, &top);
 
-		sensorsPublisher->publish(message);
+			// This should not
+			message->front = front;
+			message->back = back;
+			message->top = top;
+
+			std::cout << "Readings: " << front << " " << back << " " << top << std::endl;
+			sensorsPublisher->publish(message);
+		} catch (std::string & error) {
+			std::cout << "Error reading distances from sonars: " << error << std::endl;
+		}
+
 		rclcpp::spin_some(node);
 		loopRate.sleep();
 	}
