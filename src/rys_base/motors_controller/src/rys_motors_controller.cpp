@@ -62,32 +62,38 @@ void setRegulatorSettingsCallback(
 	// Suppress unused parameter warning
 	(void) requestHeader;
 
-	// Check values validness
-	if (request->speed_kp < 0 || request->speed_kp > 1000 || request->speed_ki < 0 || request->speed_ki > 1000 || request->speed_kd < 0 || request->speed_kd > 1000) {
-		response->success = false;
-		response->error_text = std::string("Invalid speed PID parameters");
-		return;
-	}
-	if (request->angle_kp < 0 || request->angle_kp > 1000 || request->angle_ki < 0 || request->angle_ki > 1000 || request->angle_kd < 0 || request->angle_kd > 1000) {
-		response->success = false;
-		response->error_text = std::string("Invalid angle PID parameters");
-		return;
-	}
-
-	if (request->speed_filter_factor <= 0 || request->speed_filter_factor > 1 || request->angle_filter_factor <= 0 || request->angle_filter_factor > 1 || request->angular_velocity_factor < 0) {
-		response->success = false;
-		response->error_text = std::string("Invalid filtering parameters");
-		return;
-	}
-
 	// Inform user (for logging purposes)
-	std::cout << "Setting regulator parameters:\n";
+	std::cout << "Received regulator parameters:\n";
 	std::cout << "\t Speed->angle PID:  " << request->speed_kp << " " << request->speed_ki << " " << request->speed_kd << std::endl;
 	std::cout << "\t Angle->output PID: " << request->angle_kp << " " << request->angle_ki << " " << request->angle_kd << std::endl;
 	std::cout << "\t Speed filter factor: " << request->speed_filter_factor << std::endl;
 	std::cout << "\t Angle filter factor: " << request->angle_filter_factor << std::endl;
 	std::cout << "\t Angular velocity factor: " << request->angular_velocity_factor << std::endl;
 	std::cout << "\t Speed regulator enabled: " << request->speed_regulator_enabled << std::endl;
+
+	// Check values validness
+	if (request->speed_kp < 0 || request->speed_kp > 1000 || request->speed_ki < 0 || request->speed_ki > 1000 || request->speed_kd < 0 || request->speed_kd > 1000) {
+		response->success = false;
+		response->error_text = std::string("Invalid speed PID parameters");
+		std::cout << "Invalid speed PID parameters.\n";
+		return;
+	}
+	if (request->angle_kp < 0 || request->angle_kp > 1000 || request->angle_ki < 0 || request->angle_ki > 1000 || request->angle_kd < 0 || request->angle_kd > 1000) {
+		response->success = false;
+		response->error_text = std::string("Invalid angle PID parameters");
+		std::cout << "Invalid angle PID parameters.\n";
+		return;
+	}
+
+	if (request->speed_filter_factor <= 0 || request->speed_filter_factor > 1 || request->angle_filter_factor <= 0 || request->angle_filter_factor > 1 || request->angular_velocity_factor < 0) {
+		response->success = false;
+		response->error_text = std::string("Invalid filtering parameters");
+		std::cout << "Invalid filtering parameters.\n";
+		return;
+	}
+
+	// Inform user (for logging purposes)
+	std::cout << "Setting regulator parameters!\n";
 
 	// Set values
 	controller.setSpeedPID(request->speed_kp, request->speed_ki, request->speed_kd);
