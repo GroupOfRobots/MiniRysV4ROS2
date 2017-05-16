@@ -27,7 +27,16 @@ void imuCalibrateCallback(const std_msgs::msg::Empty::SharedPtr message) {
 }
 
 int main(int argc, char * argv[]) {
+	std::cout << "Initializing ROS...\n";
 	rclcpp::init(argc, argv);
+
+	auto node = rclcpp::node::Node::make_shared("rys_node_sensor_imu");
+	auto imuCalibrationSubscriber = node->create_subscription<std_msgs::msg::Empty>("rys_control_imu_calibrate", imuCalibrateCallback);
+	auto imuPublisher = node->create_publisher<rys_interfaces::msg::ImuRollRotation>("rys_sensor_imu_roll", rmw_qos_profile_sensor_data);
+
+	auto message = std::make_shared<rys_interfaces::msg::ImuRollRotation>();
+
+	std::cout << "Initializing IMU...\n";
 
 	IMU imu;
 	try {
@@ -37,12 +46,6 @@ int main(int argc, char * argv[]) {
 		std::cout << "Error initializing: " << error << std::endl;
 		return 1;
 	}
-
-	auto node = rclcpp::node::Node::make_shared("rys_node_sensor_imu");
-	auto imuCalibrationSubscriber = node->create_subscription<std_msgs::msg::Empty>("rys_control_imu_calibrate", imuCalibrateCallback);
-	auto imuPublisher = node->create_publisher<rys_interfaces::msg::ImuRollRotation>("rys_sensor_imu_roll", rmw_qos_profile_sensor_data);
-
-	auto message = std::make_shared<rys_interfaces::msg::ImuRollRotation>();
 
 	std::cout << "Working!\n";
 
