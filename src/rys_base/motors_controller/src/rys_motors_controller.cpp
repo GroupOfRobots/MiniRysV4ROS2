@@ -42,7 +42,9 @@ void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
 			motors.enable();
 		}
 	} else {
-		std::cout << "Disabling motors...\n";
+		if (enabled) {
+			std::cout << "Disabling motors...\n";
+		}
 		motors.disable();
 	}
 	enabled = message->data;
