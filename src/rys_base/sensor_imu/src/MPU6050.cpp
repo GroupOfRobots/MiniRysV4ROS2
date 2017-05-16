@@ -3601,25 +3601,25 @@ uint8_t MPU6050::dmpGetQuaternion(Quaternion *q, const uint8_t* packet) {
 uint8_t MPU6050::dmpGetGyro(int32_t *data, const uint8_t* packet) {
     // TODO: accommodate different arrangements of sent data (ONLY default supported now)
     if (packet == 0) packet = dmpPacketBuffer;
-    data[0] = (((uint32_t)packet[16] << 24) | ((uint32_t)packet[17] << 16) | ((uint32_t)packet[18] << 8) | packet[19]);
-    data[1] = (((uint32_t)packet[20] << 24) | ((uint32_t)packet[21] << 16) | ((uint32_t)packet[22] << 8) | packet[23]);
-    data[2] = (((uint32_t)packet[24] << 24) | ((uint32_t)packet[25] << 16) | ((uint32_t)packet[26] << 8) | packet[27]);
+    data[0] = (((int32_t)packet[16] << 24) | ((int32_t)packet[17] << 16) | ((int32_t)packet[18] << 8) | packet[19]);
+    data[1] = (((int32_t)packet[20] << 24) | ((int32_t)packet[21] << 16) | ((int32_t)packet[22] << 8) | packet[23]);
+    data[2] = (((int32_t)packet[24] << 24) | ((int32_t)packet[25] << 16) | ((int32_t)packet[26] << 8) | packet[27]);
     return 0;
 }
 uint8_t MPU6050::dmpGetGyro(int16_t *data, const uint8_t* packet) {
     // TODO: accommodate different arrangements of sent data (ONLY default supported now)
     if (packet == 0) packet = dmpPacketBuffer;
-    data[0] = ((uint16_t)packet[16] << 8) | packet[17];
-    data[1] = ((uint16_t)packet[20] << 8) | packet[21];
-    data[2] = ((uint16_t)packet[24] << 8) | packet[25];
+    data[0] = ((int16_t)packet[16] << 8) | packet[17];
+    data[1] = ((int16_t)packet[20] << 8) | packet[21];
+    data[2] = ((int16_t)packet[24] << 8) | packet[25];
     return 0;
 }
 uint8_t MPU6050::dmpGetGyro(VectorInt16 *v, const uint8_t* packet) {
     // TODO: accommodate different arrangements of sent data (ONLY default supported now)
     if (packet == 0) packet = dmpPacketBuffer;
-    v -> x = ((uint16_t)packet[16] << 8) | packet[17];
-    v -> y = ((uint16_t)packet[20] << 8) | packet[21];
-    v -> z = ((uint16_t)packet[24] << 8) | packet[25];
+    v -> x = ((int16_t)packet[16] << 8) | packet[17];
+    v -> y = ((int16_t)packet[20] << 8) | packet[21];
+    v -> z = ((int16_t)packet[24] << 8) | packet[25];
     return 0;
 }
 // uint8_t MPU6050::dmpSetLinearAccelFilterCoefficient(float coef);

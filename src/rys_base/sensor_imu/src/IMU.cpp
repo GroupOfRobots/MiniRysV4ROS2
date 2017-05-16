@@ -37,6 +37,7 @@ void IMU::initialize(int rate) {
 	// setRate accepts factor that works like this: 1kHz / (1 + x)
 	int rateFactor = (1000/rate) - 1;
 	this->mpu->setRate(rateFactor);
+	this->mpu->setFullScaleGyroRange(MPU6050_GYRO_FS_500);
 
 	// make sure it worked (returns 0 if so)
 	if (devStatus == 0) {
@@ -149,11 +150,13 @@ void IMU::getGyro(float * rotationX, float * rotationY, float * rotationZ, bool 
 		this->readData();
 	}
 
-	VectorInt16 gyro;
-	this->mpu->dmpGetGyro(&gyro, this->fifoBuffer);
-	*rotationX = float(gyro.x) / 16.4f;
-	*rotationY = float(gyro.y) / 16.4f;
-	*rotationZ = float(gyro.z) / 16.4f;
+	int32_t gyro[3];
+	this->mpu->dmpGetGyro(gyro, this->fifoBuffer);
+	// float divider = 16.4f;
+	float divider = 65.5f;
+	*rotationX = float(gyro[0]) / divider;
+	*rotationY = float(gyro[1]) / divider;
+	*rotationZ = float(gyro[2]) / divider;
 }
 
 void IMU::resetFIFO() {
