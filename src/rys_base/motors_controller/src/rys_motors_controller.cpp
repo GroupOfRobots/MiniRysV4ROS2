@@ -201,6 +201,9 @@ int main(int argc, char * argv[]) {
 	controller.setAngleFilterFactor(0.95);
 	controller.setSpeedFilterFactor(0.95);
 
+	// for LQR controller
+	controller.setLQR(-0.0601,-31.6277);
+
 	std::cout << "Running!\n";
 	auto previous = std::chrono::high_resolution_clock::now();
 	auto now = std::chrono::high_resolution_clock::now();
@@ -247,7 +250,8 @@ int main(int argc, char * argv[]) {
 			float speed = (motors.getSpeedLeft() + motors.getSpeedRight()) / 2;
 			float finalLeftSpeed = 0;
 			float finalRightSpeed = 0;
-			controller.calculateSpeed(roll, rotationX, speed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTime);
+			//controller.calculateSpeed(roll, rotationX, speed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTime);
+			controller.calculateSpeedLQR(roll, rotationX, speed, throttle, rotation, finalLeftSpeed, finalRightSpeed);
 
 			// Set target speeds
 			try {
