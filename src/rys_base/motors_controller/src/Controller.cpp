@@ -2,6 +2,8 @@
 #include <iostream>
 
 Controller::Controller() {
+	balancing = true;
+	lqrEnabled = true;
 	angleFilterFactor = 1.0f;
 	speedFilterFactor = 1.0f;
 	angularVelocityFactor = 0.009f;
@@ -38,6 +40,14 @@ void Controller::init() {
 	this->timePointPrevious = std::chrono::high_resolution_clock::now();
 }
 
+void Controller::setBalancing(bool value) {
+	this->balancing = value;
+}
+
+void Controller::setLQREnabled(bool value) {
+	this->lqrEnabled = value;
+}
+
 float Controller::speedControl(float value, float setPoint, float dt) {
 	float error = setPoint - value;
 
@@ -66,36 +76,51 @@ float Controller::angleControl(float value, float setPoint, float dt) {
 	return output;
 }
 
-void Controller::calculateSpeed(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
+void Controller::calculateSpeeds(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
 	clipValue(throttle, 1);
 	float throttleRaw = throttle * THROTTLE_MAX;
 	clipValue(rotation, 1);
 	float rotationRaw = rotation * ROTATION_MAX;
 
+	if (!this->balancing) {
+		speedLeftNew = throttleRaw + rotationRaw;
+		speedRightNew = throttleRaw - rotationRaw;
+		return;
+	}
+
+	if (this->lqrEnabled) {
+		this->calculateSpeedsLQR(angle, rotationX, speed, throttleRaw, rotationRaw, speedLeftNew, speedRightNew);
+	} else {
+		this->calculateSpeedsPID(angle, rotationX, speed, throttleRaw, rotationRaw, speedLeftNew, speedRightNew, loopTime);
+	}
+}
+
+void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
 	float targetAngle = 0.0f;
-	float angularVelocity = 0;
+	// If speed regulator (first PID layer) is enabled
 	if (this->speedRegulatorEnabled) {
 		// Estimate robot's linear velocity based on angle change and speed
 		// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
-
 		// First, calculate robot's angular velocity and normalize it to motors' speed values (thus the constant at the end)
-		///TODO: find proper const
-		angularVelocity = rotationX * this->angularVelocityFactor;
+		float angularVelocity = rotationX * this->angularVelocityFactor;
+
 		// Then, subtract the estimated robot's angular velocity from motor's angular velocity
 		// What's left is motor's angular velocity responsible for robot's linear velocity
 		float linearVelocity = speed - angularVelocity;
 
 		// Also, apply low-pass filter on resulting value
 		this->linearVelocityFiltered = linearVelocity * this->speedFilterFactor + this->linearVelocityFiltered * (1.0f - this->speedFilterFactor);
+
 		// First control layer: speed control PID
 		// input: user throttle (0)
 		// setPoint: estimated and filtered robot speed
 		// output: target robot angle to get the desired speed
-		targetAngle = this->speedControl(this->linearVelocityFiltered, throttleRaw, loopTime);
+		targetAngle = this->speedControl(this->linearVelocityFiltered, throttle, loopTime);
 	}
 
 	// Apply low-pass filter on the angle itself too
 	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
+
 	// Second control layer: angle control PID
 	// input: robot target angle (from SPEED CONTROL)
 	// variable: robot angle
@@ -103,16 +128,30 @@ void Controller::calculateSpeed(float angle, float rotationX, float speed, float
 	float output = this->angleControl(this->angleFiltered, targetAngle, loopTime);
 
 	// The rotation part from the user is injected directly into the output
-	speedLeftNew = output + rotationRaw;
-	speedRightNew = output - rotationRaw;
+	speedLeftNew = output + rotation;
+	speedRightNew = output - rotation;
 
-	// std::cout << "Controller:";
-	// std::cout << " t: " << loopTime;
-	std::cout << " v: " << angularVelocity;
-	std::cout << " s: " << speed;
-	std::cout << " a: " << targetAngle;
-	std::cout << " o: " << output;
-	std::cout << std::endl;
+	// std::cout << " v: " << angularVelocity;
+	// std::cout << " s: " << speed;
+	// std::cout << " a: " << targetAngle;
+	// std::cout << " o: " << output;
+	// std::cout << std::endl;
+}
+
+void Controller::calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew) {
+	// Apply low-pass filter on the angle itself too
+	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
+	//calculate output: Motor speed change
+	float outputChange = - (this->lqrAngularVelocityK * rotationX + this->lqrAngleK * angle) / 22.5;
+	// The rotation part from the user is injected directly into the output
+	speedLeftNew = speed + outputChange + rotation;
+	speedRightNew = speed + outputChange - rotation;
+
+	// std::cout << " v: " << angularVelocity;
+	// std::cout << " s: " << speed;
+	// std::cout << " a: " << targetAngle;
+	// std::cout << " o: " << speed+outputChange;
+	// std::cout << std::endl;
 }
 
 void Controller::zeroPIDs() {
@@ -181,27 +220,4 @@ void Controller::getAnglePID(float & kp, float & ki, float & kd) {
 void Controller::setLQR(float angularVelocityK, float angleK) {
 	this->lqrAngularVelocityK = angularVelocityK;
 	this->lqrAngleK = angleK;
-}
-
-void Controller::calculateSpeedLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew) {
-	clipValue(throttle, 1);
-	float throttleRaw = throttle * THROTTLE_MAX;
-	clipValue(rotation, 1);
-	float rotationRaw = rotation * ROTATION_MAX;
-
-	// Apply low-pass filter on the angle itself too
-	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
-	//calculate output: Motor speed change
-	float outputChange = - (this->lqrAngularVelocityK * rotationX + this->lqrAngleK * angle) / 22.5;
-	// The rotation part from the user is injected directly into the output
-	speedLeftNew = speed + outputChange + rotationRaw;
-	speedRightNew = speed + outputChange - rotationRaw;
-
-	// std::cout << "Controller:";
-	// std::cout << " t: " << loopTime;
-	//std::cout << " v: " << angularVelocity;
-	std::cout << " s: " << speed;
-	//std::cout << " a: " << targetAngle;
-	std::cout << " o: " << speed+outputChange;
-	std::cout << std::endl;
 }

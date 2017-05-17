@@ -17,6 +17,8 @@ volatile bool enabled;
 volatile int enableTimeout = 5000;
 std::chrono::time_point<std::chrono::high_resolution_clock> enableTimerEnd;
 
+volatile bool balancing = true;
+
 volatile float roll;
 volatile float rollPrevious;
 volatile float rotationX;
@@ -56,11 +58,7 @@ void imuMessageCallback(const rys_interfaces::msg::ImuRollRotation::SharedPtr me
 	rotationX = message->rotation_x;
 }
 
-void setRegulatorSettingsCallback(
-	const std::shared_ptr<rmw_request_id_t> requestHeader,
-	const std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Request> request,
-	std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Response> response
-) {
+void setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> requestHeader, const std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Request> request, std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Response> response) {
 	// Suppress unused parameter warning
 	(void) requestHeader;
 
@@ -109,11 +107,7 @@ void setRegulatorSettingsCallback(
 	response->success = true;
 }
 
-void getRegulatorSettingsCallback(
-	const std::shared_ptr<rmw_request_id_t> requestHeader,
-	const std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Request> request,
-	std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Response> response
-) {
+void getRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> requestHeader, const std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Request> request, std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Response> response) {
 	// Suppress unused parameter warning
 	(void) requestHeader;
 	(void) request;
@@ -126,9 +120,18 @@ void getRegulatorSettingsCallback(
 	controller.getAnglePID(response->angle_kp, response->angle_ki, response->angle_kd);
 }
 
+void setBalancingMode(const std_msgs::msg::Bool::SharedPtr message) {
+	if (message->data != balancing) {
+		balancing = message->data;
+		std::cout << "Changing balancing mode to: " << balancing << std::endl;
+		controller.setBalancing(balancing);
+	}
+}
+
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
-	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_enable", enableMessageCallback, rmw_qos_profile_sensor_data);
+	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_enable", enableMessageCallback);
 	auto imuSubscriber = node->create_subscription<rys_interfaces::msg::ImuRollRotation>("rys_sensor_imu_roll", imuMessageCallback, rmw_qos_profile_sensor_data);
+	auto balancingModeSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_balancing_enabled", setBalancingMode);
 	auto setRegulatorSettingsServer = node->create_service<rys_interfaces::srv::SetRegulatorSettings>("rys_set_regulator_settings", setRegulatorSettingsCallback);
 	auto getRegulatorSettingsServer = node->create_service<rys_interfaces::srv::GetRegulatorSettings>("rys_get_regulator_settings", getRegulatorSettingsCallback);
 
@@ -195,14 +198,17 @@ int main(int argc, char * argv[]) {
 
 	std::cout << "Setting up controller...\n";
 	controller.init();
+	controller.setBalancing(balancing);
+	// Set PID regulator factors
 	controller.setSpeedPID(0.03, 0.0001, 0.008);
 	controller.setAnglePID(50, 0.05, 20);
+	// Set LQR regulator factors
+	controller.setLQREnabled(true);
+	controller.setLQR(-0.0601,-31.6277);
 
 	controller.setAngleFilterFactor(0.95);
 	controller.setSpeedFilterFactor(0.95);
 
-	// for LQR controller
-	controller.setLQR(-0.0601,-31.6277);
 
 	std::cout << "Running!\n";
 	auto previous = std::chrono::high_resolution_clock::now();
@@ -250,8 +256,7 @@ int main(int argc, char * argv[]) {
 			float speed = (motors.getSpeedLeft() + motors.getSpeedRight()) / 2;
 			float finalLeftSpeed = 0;
 			float finalRightSpeed = 0;
-			//controller.calculateSpeed(roll, rotationX, speed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTime);
-			controller.calculateSpeedLQR(roll, rotationX, speed, throttle, rotation, finalLeftSpeed, finalRightSpeed);
+			controller.calculateSpeeds(roll, rotationX, speed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTime);
 
 			// Set target speeds
 			try {

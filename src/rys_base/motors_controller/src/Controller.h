@@ -16,6 +16,9 @@ class Controller {
 		std::chrono::high_resolution_clock::time_point timePointPrevious;
 		std::chrono::high_resolution_clock::time_point timePoint;
 
+		bool balancing;
+		bool lqrEnabled;
+
 		float angleFilterFactor;
 		float speedFilterFactor;
 		float angularVelocityFactor;
@@ -47,13 +50,17 @@ class Controller {
 		Controller();
 		~Controller();
 		void init();
+		void setBalancing(bool value);
+		void setLQREnabled(bool value);
 		void setSpeedFilterFactor(float factor);
 		void setAngleFilterFactor(float factor);
 		void setAngularVelocityFactor(float factor);
 		void setSpeedRegulatorEnabled(bool enabled);
 		void setSpeedPID(float kp, float ki, float kd);
 		void setAnglePID(float kp, float ki, float kd);
-		void calculateSpeed(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
+		void calculateSpeeds(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
+		void calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
+		void calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew);
 		void zeroPIDs();
 
 		float getSpeedFilterFactor();
@@ -62,9 +69,7 @@ class Controller {
 		bool getSpeedRegulatorEnabled();
 		void getSpeedPID(float & kp, float & ki, float & kd);
 		void getAnglePID(float & kp, float & ki, float & kd);
-
 		void setLQR(float angularVelocityK, float angleK);
-		void calculateSpeedLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew);
 };
 
 #endif
