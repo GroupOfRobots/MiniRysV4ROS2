@@ -199,9 +199,9 @@ void Controller::calculateSpeedLQR(float angle, float rotationX, float speed, fl
 
 	// std::cout << "Controller:";
 	// std::cout << " t: " << loopTime;
-	std::cout << " v: " << angularVelocity;
+	//std::cout << " v: " << angularVelocity;
 	std::cout << " s: " << speed;
-	std::cout << " a: " << targetAngle;
-	std::cout << " o: " << output;
+	//std::cout << " a: " << targetAngle;
+	std::cout << " o: " << speed+outputChange;
 	std::cout << std::endl;
 }
