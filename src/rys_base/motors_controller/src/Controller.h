@@ -36,6 +36,9 @@ class Controller {
 		float anglePIDIntegral;
 		float anglePIDError;
 
+		float lqrAngularVelocityK;
+		float lqrAngleK;
+
 		// PI controller implementation (Proportional, integral). DT is in miliseconds
 		float speedControl(float value, float setPoint, float dt);
 		// PD controller implementation(Proportional, derivative). DT is in miliseconds
@@ -59,6 +62,9 @@ class Controller {
 		bool getSpeedRegulatorEnabled();
 		void getSpeedPID(float & kp, float & ki, float & kd);
 		void getAnglePID(float & kp, float & ki, float & kd);
+
+		void setLQR(float angularVelocityK, float angleK);
+		void calculateSpeedLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 };
 
 #endif

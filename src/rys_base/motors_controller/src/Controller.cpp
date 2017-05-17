@@ -19,6 +19,8 @@ Controller::Controller() {
 	anglePIDKd = 0;
 	anglePIDIntegral = 0;
 	anglePIDError = 0;
+	lqrAngularVelocityK=0;
+	lqrAngleK=0;
 }
 
 Controller::~Controller() {}
@@ -174,4 +176,59 @@ void Controller::getAnglePID(float & kp, float & ki, float & kd) {
 	kp = this->anglePIDKp;
 	ki = this->anglePIDKi;
 	kd = this->anglePIDKd;
+}
+
+void Controller::setLQR(float angularVelocityK, float angleK) {
+	this->lqrAngularVelocityK = angularVelocityK;
+	this->lqrAngleK = angleK;
+}
+
+void calculateSpeedLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew) {
+	clipValue(throttle, 1);
+	float throttleRaw = throttle * THROTTLE_MAX;
+	clipValue(rotation, 1);
+	float rotationRaw = rotation * ROTATION_MAX;
+
+	/*float angularVelocity = 0;
+	if (this->speedRegulatorEnabled) {
+		// Estimate robot's linear velocity based on angle change and speed
+		// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
+
+		// First, calculate robot's angular velocity and normalize it to motors' speed values (thus the constant at the end)
+		///TODO: find proper const
+		angularVelocity = rotationX * this->angularVelocityFactor;
+		// Then, subtract the estimated robot's angular velocity from motor's angular velocity
+		// What's left is motor's angular velocity responsible for robot's linear velocity
+		float linearVelocity = speed - angularVelocity;
+
+		// Also, apply low-pass filter on resulting value
+		this->linearVelocityFiltered = linearVelocity * this->speedFilterFactor + this->linearVelocityFiltered * (1.0f - this->speedFilterFactor);
+		// First control layer: speed control PID
+		// input: user throttle (0)
+		// setPoint: estimated and filtered robot speed
+		// output: target robot angle to get the desired speed
+		targetAngle = this->speedControl(this->linearVelocityFiltered, throttleRaw, loopTime);
+	}
+
+	// Second control layer: angle control PID
+	// input: robot target angle (from SPEED CONTROL)
+	// variable: robot angle
+	// output: Motor speed
+	float output = this->angleControl(this->angleFiltered, targetAngle, loopTime);
+*/
+	// Apply low-pass filter on the angle itself too
+	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
+	//calculate output: Motor speed change
+	float outputChange = - (this->lqrAngularVelocityK * rotationX + this->lqrAngleK * angle) / 22.5;
+	// The rotation part from the user is injected directly into the output
+	speedLeftNew = speed + outputChange + rotationRaw;
+	speedRightNew = speed + outputChange - rotationRaw;
+
+	// std::cout << "Controller:";
+	// std::cout << " t: " << loopTime;
+	std::cout << " v: " << angularVelocity;
+	std::cout << " s: " << speed;
+	std::cout << " a: " << targetAngle;
+	std::cout << " o: " << output;
+	std::cout << std::endl;
 }
