@@ -183,7 +183,7 @@ void Controller::setLQR(float angularVelocityK, float angleK) {
 	this->lqrAngleK = angleK;
 }
 
-void calculateSpeedLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew) {
+void Controller::calculateSpeedLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew) {
 	clipValue(throttle, 1);
 	float throttleRaw = throttle * THROTTLE_MAX;
 	clipValue(rotation, 1);
