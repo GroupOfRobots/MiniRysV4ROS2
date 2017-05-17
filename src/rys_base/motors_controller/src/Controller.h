@@ -64,7 +64,7 @@ class Controller {
 		void getAnglePID(float & kp, float & ki, float & kd);
 
 		void setLQR(float angularVelocityK, float angleK);
-		void calculateSpeedLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
+		void calculateSpeedLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew);
 };
 
 #endif

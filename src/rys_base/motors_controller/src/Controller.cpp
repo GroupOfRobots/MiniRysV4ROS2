@@ -189,33 +189,6 @@ void calculateSpeedLQR(float angle, float rotationX, float speed, float throttle
 	clipValue(rotation, 1);
 	float rotationRaw = rotation * ROTATION_MAX;
 
-	/*float angularVelocity = 0;
-	if (this->speedRegulatorEnabled) {
-		// Estimate robot's linear velocity based on angle change and speed
-		// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
-
-		// First, calculate robot's angular velocity and normalize it to motors' speed values (thus the constant at the end)
-		///TODO: find proper const
-		angularVelocity = rotationX * this->angularVelocityFactor;
-		// Then, subtract the estimated robot's angular velocity from motor's angular velocity
-		// What's left is motor's angular velocity responsible for robot's linear velocity
-		float linearVelocity = speed - angularVelocity;
-
-		// Also, apply low-pass filter on resulting value
-		this->linearVelocityFiltered = linearVelocity * this->speedFilterFactor + this->linearVelocityFiltered * (1.0f - this->speedFilterFactor);
-		// First control layer: speed control PID
-		// input: user throttle (0)
-		// setPoint: estimated and filtered robot speed
-		// output: target robot angle to get the desired speed
-		targetAngle = this->speedControl(this->linearVelocityFiltered, throttleRaw, loopTime);
-	}
-
-	// Second control layer: angle control PID
-	// input: robot target angle (from SPEED CONTROL)
-	// variable: robot angle
-	// output: Motor speed
-	float output = this->angleControl(this->angleFiltered, targetAngle, loopTime);
-*/
 	// Apply low-pass filter on the angle itself too
 	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
 	//calculate output: Motor speed change
