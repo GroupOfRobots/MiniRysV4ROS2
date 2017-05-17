@@ -7,6 +7,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "rys_interfaces/msg/imu_roll_rotation.hpp"
+#include "rys_interfaces/msg/steering.hpp"
 #include "rys_interfaces/srv/set_regulator_settings.hpp"
 #include "rys_interfaces/srv/get_regulator_settings.hpp"
 
@@ -128,10 +129,17 @@ void setBalancingMode(const std_msgs::msg::Bool::SharedPtr message) {
 	}
 }
 
+void setSteering(const rys_interfaces::msg::Steering::SharedPtr message) {
+	throttle = message->throttle;
+	rotation = message->rotation;
+}
+
 void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
 	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_enable", enableMessageCallback);
 	auto imuSubscriber = node->create_subscription<rys_interfaces::msg::ImuRollRotation>("rys_sensor_imu_roll", imuMessageCallback, rmw_qos_profile_sensor_data);
 	auto balancingModeSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_balancing_enabled", setBalancingMode);
+	auto steeringSubscriber = node->create_subscription<rys_interfaces::msg::Steering>("rys_control_steering", setSteering);
+
 	auto setRegulatorSettingsServer = node->create_service<rys_interfaces::srv::SetRegulatorSettings>("rys_set_regulator_settings", setRegulatorSettingsCallback);
 	auto getRegulatorSettingsServer = node->create_service<rys_interfaces::srv::GetRegulatorSettings>("rys_get_regulator_settings", getRegulatorSettingsCallback);
 
@@ -209,7 +217,6 @@ int main(int argc, char * argv[]) {
 	controller.setAngleFilterFactor(0.95);
 	controller.setSpeedFilterFactor(0.95);
 
-
 	std::cout << "Running!\n";
 	auto previous = std::chrono::high_resolution_clock::now();
 	auto now = std::chrono::high_resolution_clock::now();
@@ -235,9 +242,10 @@ int main(int argc, char * argv[]) {
 			continue;
 		}
 
-		// Detect current position
-		if ((roll > 40.0 && rollPrevious > 40.0) || (roll < -40.0 && rollPrevious < -40.0)) {
-			// Laying down, stand up!
+		// Detect current position, use 2 consecutive reads
+		bool layingDown = (roll > 40.0 && rollPrevious > 40.0) || (roll < -40.0 && rollPrevious < -40.0);
+		if (balancing && layingDown) {
+			// Laying down and wanting to balance, stand up!
 			std::cout << "Laying down, trying to stand up\n";
 
 			try {
@@ -251,7 +259,7 @@ int main(int argc, char * argv[]) {
 				break;
 			}
 		} else {
-			// Standing up, balance!
+			// Standing up or not balancing - use controller
 			// Calculate target speeds for motors
 			float speed = (motors.getSpeedLeft() + motors.getSpeedRight()) / 2;
 			float finalLeftSpeed = 0;
