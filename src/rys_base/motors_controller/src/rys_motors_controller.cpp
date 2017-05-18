@@ -24,8 +24,8 @@ volatile float roll;
 volatile float rollPrevious;
 volatile float rotationX;
 
-volatile int rotation;
-volatile int throttle;
+volatile float rotation;
+volatile float throttle;
 
 Motors motors;
 Controller controller;
