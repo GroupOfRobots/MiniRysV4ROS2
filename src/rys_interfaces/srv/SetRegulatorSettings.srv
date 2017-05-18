@@ -1,15 +1,19 @@
-float32 speed_kp
-float32 speed_ki
-float32 speed_kd
-float32 angle_kp
-float32 angle_ki
-float32 angle_kd
-
 float32 speed_filter_factor
 float32 angle_filter_factor
-float32 angular_velocity_factor
 
-bool speed_regulator_enabled
+bool lqr_enabled
+
+bool pid_speed_regulator_enabled
+float32 pid_angular_velocity_factor
+float32 pid_speed_kp
+float32 pid_speed_ki
+float32 pid_speed_kd
+float32 pid_angle_kp
+float32 pid_angle_ki
+float32 pid_angle_kd
+
+float32 lqr_angular_velocity_k
+float32 lqr_angle_k
 
 ---
 
