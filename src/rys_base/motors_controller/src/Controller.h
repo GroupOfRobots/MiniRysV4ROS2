@@ -19,33 +19,26 @@ class Controller {
 		bool balancing;
 		bool lqrEnabled;
 
-		float angleFilterFactor;
 		float speedFilterFactor;
-		float angularVelocityFactor;
-
-		float linearVelocityFiltered;
-		bool speedRegulatorEnabled;
-		float speedPIDKp;
-		float speedPIDKi;
-		float speedPIDKd;
-		float speedPIDIntegral;
-		float speedPIDError;
-
-		float anglePrevious;
+		float angleFilterFactor;
 		float angleFiltered;
-		float anglePIDKp;
-		float anglePIDKi;
-		float anglePIDKd;
-		float anglePIDIntegral;
-		float anglePIDError;
+
+		bool pidSpeedRegulatorEnabled;
+		float pidAngularVelocityFactor;
+		float pidLinearVelocityFiltered;
+		float pidSpeedKp;
+		float pidSpeedKi;
+		float pidSpeedKd;
+		float pidSpeedIntegral;
+		float pidSpeedError;
+		float pidAngleKp;
+		float pidAngleKi;
+		float pidAngleKd;
+		float pidAngleIntegral;
+		float pidAngleError;
 
 		float lqrAngularVelocityK;
 		float lqrAngleK;
-
-		// PI controller implementation (Proportional, integral). DT is in miliseconds
-		float speedControl(float value, float setPoint, float dt);
-		// PD controller implementation(Proportional, derivative). DT is in miliseconds
-		float angleControl(float value, float setPoint, float dt);
 	public:
 		Controller();
 		~Controller();
@@ -54,22 +47,22 @@ class Controller {
 		void setLQREnabled(bool value);
 		void setSpeedFilterFactor(float factor);
 		void setAngleFilterFactor(float factor);
-		void setAngularVelocityFactor(float factor);
-		void setSpeedRegulatorEnabled(bool enabled);
-		void setSpeedPID(float kp, float ki, float kd);
-		void setAnglePID(float kp, float ki, float kd);
+		void setPIDAngularVelocityFactor(float factor);
+		void setPIDSpeedRegulatorEnabled(bool enabled);
+		void setPIDParameters(float speedKp, float speedKi, float speedKd, float angleKp, float angleKi, float kangleK);
+		void setLQRParameters(float angularVelocityK, float angleK);
+		void zeroPIDs();
+		float getSpeedFilterFactor();
+		float getAngleFilterFactor();
+		bool getLQREnabled();
+		float getPIDAngularVelocityFactor();
+		bool getPIDSpeedRegulatorEnabled();
+		void getPIDParameters(float & speedKp, float & speedKi, float & speedKd, float & angleKp, float & angleKi, float & angleKd);
+		void getLQRParameters(float & angularVelocityK, float & angleK);
+
 		void calculateSpeeds(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 		void calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 		void calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew);
-		void zeroPIDs();
-
-		float getSpeedFilterFactor();
-		float getAngleFilterFactor();
-		float getAngularVelocityFactor();
-		bool getSpeedRegulatorEnabled();
-		void getSpeedPID(float & kp, float & ki, float & kd);
-		void getAnglePID(float & kp, float & ki, float & kd);
-		void setLQR(float angularVelocityK, float angleK);
 };
 
 #endif

@@ -65,13 +65,18 @@ void setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> reques
 
 	// Inform user (for logging purposes)
 	std::cout << "Received regulator parameters:\n";
-	std::cout << "\t Speed->angle PID:  " << request->speed_kp << " " << request->speed_ki << " " << request->speed_kd << std::endl;
-	std::cout << "\t Angle->output PID: " << request->angle_kp << " " << request->angle_ki << " " << request->angle_kd << std::endl;
 	std::cout << "\t Speed filter factor: " << request->speed_filter_factor << std::endl;
 	std::cout << "\t Angle filter factor: " << request->angle_filter_factor << std::endl;
-	std::cout << "\t Angular velocity factor: " << request->angular_velocity_factor << std::endl;
-	std::cout << "\t Speed regulator enabled: " << request->speed_regulator_enabled << std::endl;
+	std::cout << "\t LQR enabled: " << (request->lqr_enabled ? "True" : "False") << std::endl;
+	std::cout << "\t PID: Speed regulator enabled: " << (request->pid_speed_regulator_enabled ? "True" : "False") << std::endl;
+	std::cout << "\t PID: Angular velocity factor: " << request->pid_angular_velocity_factor << std::endl;
+	std::cout << "\t PID: 1st stage (speed->angle):  " << request->pid_speed_kp << " " << request->pid_speed_ki << " " << request->pid_speed_kd << std::endl;
+	std::cout << "\t PID: 2nd stage (angle->output): " << request->pid_angle_kp << " " << request->pid_angle_ki << " " << request->pid_angle_kd << std::endl;
+	std::cout << "\t LQR: Angular velocity K: " << request->lqr_angular_velocity_k << std::endl;
+	std::cout << "\t LQR: Angle K: " << request->lqr_angle_k << std::endl;
 
+	// Disabled until rewritten and sane limits found
+	/*
 	// Check values validness
 	if (request->speed_kp < 0 || request->speed_kp > 1000 || request->speed_ki < 0 || request->speed_ki > 1000 || request->speed_kd < 0 || request->speed_kd > 1000) {
 		response->success = false;
@@ -95,17 +100,20 @@ void setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> reques
 
 	// Inform user (for logging purposes)
 	std::cout << "Setting regulator parameters!\n";
+	*/
 
 	// Set values
-	controller.setSpeedPID(request->speed_kp, request->speed_ki, request->speed_kd);
-	controller.setAnglePID(request->angle_kp, request->angle_ki, request->angle_kd);
 	controller.setSpeedFilterFactor(request->speed_filter_factor);
 	controller.setAngleFilterFactor(request->angle_filter_factor);
-	controller.setAngularVelocityFactor(request->angular_velocity_factor);
-	controller.setSpeedRegulatorEnabled(request->speed_regulator_enabled);
+	controller.setLQREnabled(request->lqr_enabled);
+	controller.setPIDSpeedRegulatorEnabled(request->pid_speed_regulator_enabled);
+	controller.setPIDAngularVelocityFactor(request->pid_angular_velocity_factor);
+	controller.setPIDParameters(request->pid_speed_kp, request->pid_speed_ki, request->pid_speed_kd, request->pid_angle_kp, request->pid_angle_ki, request->pid_angle_kd);
+	controller.setLQRParameters(request->lqr_angular_velocity_k, request->lqr_angle_k);
 
 	// Set response
 	response->success = true;
+	response->error_text = std::string("success");
 }
 
 void getRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> requestHeader, const std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Request> request, std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Response> response) {
@@ -115,10 +123,13 @@ void getRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> reques
 
 	response->speed_filter_factor = controller.getSpeedFilterFactor();
 	response->angle_filter_factor = controller.getAngleFilterFactor();
-	response->angular_velocity_factor = controller.getAngularVelocityFactor();
-	response->speed_regulator_enabled = controller.getSpeedRegulatorEnabled();
-	controller.getSpeedPID(response->speed_kp, response->speed_ki, response->speed_kd);
-	controller.getAnglePID(response->angle_kp, response->angle_ki, response->angle_kd);
+
+	response->lqr_enabled = controller.getLQREnabled();
+
+	response->pid_angular_velocity_factor = controller.getPIDAngularVelocityFactor();
+	response->pid_speed_regulator_enabled = controller.getPIDSpeedRegulatorEnabled();
+	controller.getPIDParameters(response->pid_speed_kp, response->pid_speed_ki, response->pid_speed_kd, response->pid_angle_kp, response->pid_angle_ki, response->pid_angle_kd);
+	controller.getLQRParameters(response->lqr_angular_velocity_k, response->lqr_angle_k);
 }
 
 void setBalancingMode(const std_msgs::msg::Bool::SharedPtr message) {
@@ -206,16 +217,14 @@ int main(int argc, char * argv[]) {
 
 	std::cout << "Setting up controller...\n";
 	controller.init();
-	controller.setBalancing(balancing);
-	// Set PID regulator factors
-	controller.setSpeedPID(0.03, 0.0001, 0.008);
-	controller.setAnglePID(50, 0.05, 20);
-	// Set LQR regulator factors
-	controller.setLQREnabled(true);
-	controller.setLQR(-0.0601,-31.6277);
 
-	controller.setAngleFilterFactor(0.95);
-	controller.setSpeedFilterFactor(0.95);
+	controller.setBalancing(balancing);
+	controller.setLQREnabled(false);
+
+	controller.setSpeedFilterFactor(1);
+	controller.setAngleFilterFactor(1);
+	controller.setPIDParameters(0.03, 0.0001, 0.008, 50, 0.05, 20);
+	controller.setLQRParameters(-0.0601,-31.6277);
 
 	std::cout << "Running!\n";
 	auto previous = std::chrono::high_resolution_clock::now();
