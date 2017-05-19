@@ -9,7 +9,7 @@
 #define ANGLE_MAX 15
 #define DEG_TO_RAD 0.017453f
 #define RAD_TO_DEG 57.295779f
-#define SPEED_TO_DEG 1800.0f
+#define SPEED_TO_DEG 900.0f
 
 class Controller {
 	private:

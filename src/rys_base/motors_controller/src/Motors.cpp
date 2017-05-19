@@ -71,7 +71,7 @@ void Motors::setSpeed(float speedLeft, float speedRight, int microstep) {
 	}
 
 	// Validate microstep value
-	if (microstep % 2 || microstep > 8) {
+	if (microstep != 1 && (microstep % 2 || microstep > 8)) {
 		throw(std::string("Bad microstep value!"));
 	}
 

@@ -6,7 +6,7 @@
 #include <mutex>
 
 #define MAX_ACCELERATION 0.1f
-#define MAX_MOTOR_SPEED 200000
+#define MAX_MOTOR_SPEED 400000
 #define DEVICE_NAME "/dev/rpmsg_pru31"
 
 struct DataFrame {
