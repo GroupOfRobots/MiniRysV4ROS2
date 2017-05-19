@@ -113,6 +113,7 @@ class RosBridge(QThread):
 		request.pid_angle_kp = parameters['pidAngleKi']
 		request.pid_angle_ki = parameters['pidAngleKd']
 		request.pid_angle_kd = parameters['pidAngularVelocityFactor']
+		request.lqr_linear_velocity_k = parameters['lqrLinearVelocityK']
 		request.lqr_angular_velocity_k = parameters['lqrAngularVelocityK']
 		request.lqr_angle_k = parameters['lqrAngleK']
 
@@ -145,6 +146,11 @@ class RosBridge(QThread):
 		while rclpy.ok() and not self.exitFlag:
 			# Timeout of 1 due to RCLPY memory leak bug (https://github.com/ros2/rclpy/issues/74, there is already a PR that fixes it, PR#79)
 			rclpy.spin_once(self.node, 1.0)
+
+			response = self.clientSetRegulatorSettings.response
+			if response is not None:
+				self.regulatorSettingsSetDone(response.success, response.error_text)
+
 			sleep(0.02)
 
 		# Cleanup: disable motors
