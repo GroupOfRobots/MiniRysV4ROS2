@@ -15,5 +15,6 @@ float32 pid_angle_kp
 float32 pid_angle_ki
 float32 pid_angle_kd
 
+float32 lqr_linear_velocity_k
 float32 lqr_angular_velocity_k
 float32 lqr_angle_k
