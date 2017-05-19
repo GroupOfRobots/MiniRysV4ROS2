@@ -72,6 +72,7 @@ void setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> reques
 	std::cout << "\t PID: Angular velocity factor: " << request->pid_angular_velocity_factor << std::endl;
 	std::cout << "\t PID: 1st stage (speed->angle):  " << request->pid_speed_kp << " " << request->pid_speed_ki << " " << request->pid_speed_kd << std::endl;
 	std::cout << "\t PID: 2nd stage (angle->output): " << request->pid_angle_kp << " " << request->pid_angle_ki << " " << request->pid_angle_kd << std::endl;
+	std::cout << "\t LQR: Linear velocity K: " << request->lqr_linear_velocity_k << std::endl;
 	std::cout << "\t LQR: Angular velocity K: " << request->lqr_angular_velocity_k << std::endl;
 	std::cout << "\t LQR: Angle K: " << request->lqr_angle_k << std::endl;
 
@@ -162,7 +163,7 @@ void standUp() {
 	int multiplier = (roll > 40 ? 1 : -1);
 
 	// Disable motors, wait 1s
-	motors.setSpeed(0.0, 0.0, 1);
+	motors.setSpeed(0.0f, 0.0f, 1);
 	motors.disable();
 	msleep(1000);
 	if (!rclcpp::ok() || !enabled) {
@@ -177,14 +178,14 @@ void standUp() {
 	}
 
 	// Drive backwards half-speed, wait 0.5s
-	motors.setSpeed(multiplier * 400.0, multiplier * 400.0, 1);
+	motors.setSpeed(multiplier * 0.5f, multiplier * 0.5f, 1);
 	msleep(500);
 	if (!rclcpp::ok() || !enabled) {
 		return;
 	}
 
 	// Drive forward full-speed, wait until we've passed '0' point
-	motors.setSpeed(-multiplier * 600.0, -multiplier * 600.0, 1);
+	motors.setSpeed(-multiplier * 0.8f, -multiplier * 0.8f, 1);
 	rclcpp::rate::WallRate standUpLoopRate(100);
 	while (rclcpp::ok() && enabled) {
 		// std::cout << "Standing up, angle: " << roll << std::endl;
@@ -277,7 +278,7 @@ int main(int argc, char * argv[]) {
 
 			// Set target speeds
 			try {
-				motors.setSpeed(finalLeftSpeed, finalRightSpeed, 4);
+				motors.setSpeed(finalLeftSpeed, finalRightSpeed, 8);
 			} catch (std::string & error) {
 				std::cout << "Error setting motors speed: " << error << std::endl;
 				break;

@@ -9,7 +9,6 @@ Motors::Motors() {
 	this->speedRight = 0;
 	this->microstep = 0;
 	this->maxMotorSpeed = MAX_MOTOR_SPEED;
-	this->minMotorSpeed = MIN_MOTOR_SPEED;
 }
 
 Motors::~Motors() {
@@ -56,30 +55,35 @@ void Motors::updateOdometry(float dt) {
 }
 
 void Motors::setSpeed(float speedLeft, float speedRight, int microstep) {
+	// Deduplicate calls
 	if (speedLeft == this->speedLeft && speedRight == this->speedRight && microstep == this->microstep) {
 		return;
 	}
+	if (speedLeft > 1.0f) {
+		speedLeft = 1.0f;
+	} else if (speedLeft < -1.0f) {
+		speedLeft = -1.0f;
+	}
+	if (speedRight > 1.0f) {
+		speedRight = 1.0f;
+	} else if (speedRight < -1.0f) {
+		speedRight = -1.0f;
+	}
 
-	DataFrame dataFrame;
-
-	// Calculate max speeds for given microstep value
-	if (microstep == 1) {
-		this->maxMotorSpeed = MAX_MOTOR_SPEED;
-		this->minMotorSpeed = MIN_MOTOR_SPEED;
-	} else if (microstep == 2) {
-		this->maxMotorSpeed = MAX_MOTOR_SPEED/2;
-		this->minMotorSpeed = MIN_MOTOR_SPEED/2;
-	} else if (microstep == 3) {
-		this->maxMotorSpeed = MAX_MOTOR_SPEED/4;
-		this->minMotorSpeed = MIN_MOTOR_SPEED/4;
-	} else if (microstep == 4) {
-		this->maxMotorSpeed = MAX_MOTOR_SPEED/8;
-		this->minMotorSpeed = MIN_MOTOR_SPEED/8;
-	} else {
+	// Validate microstep value
+	if (microstep % 2 || microstep > 8) {
 		throw(std::string("Bad microstep value!"));
 	}
+
+	// Create data frame for PRU
+	DataFrame dataFrame;
+
+	// Save microstep value
 	this->microstep = microstep;
 	dataFrame.microstep = microstep;
+
+	// Calculate max speeds for given microstep value
+	this->maxMotorSpeed = MAX_MOTOR_SPEED / microstep;
 
 	// Left motor speed
 	// Clip acceleration (change of value), set target speed
@@ -96,11 +100,7 @@ void Motors::setSpeed(float speedLeft, float speedRight, int microstep) {
 	if (this->speedLeft == 0) {
 		dataFrame.speedLeft = 0;
 	} else {
-		dataFrame.speedLeft = this->minMotorSpeed / std::abs(this->speedLeft);
-	}
-	// Clip value
-	if (dataFrame.speedLeft != 0 && dataFrame.speedLeft < this->maxMotorSpeed) {
-		dataFrame.speedLeft = (unsigned int)(this->maxMotorSpeed);
+		dataFrame.speedLeft = this->maxMotorSpeed / std::abs(this->speedLeft);
 	}
 
 	// Right motor speed
@@ -118,11 +118,7 @@ void Motors::setSpeed(float speedLeft, float speedRight, int microstep) {
 	if (this->speedRight == 0) {
 		dataFrame.speedRight = 0;
 	} else {
-		dataFrame.speedRight = this->minMotorSpeed / std::abs(this->speedRight);
-	}
-	// Clip value
-	if (dataFrame.speedRight != 0 && dataFrame.speedRight < this->maxMotorSpeed) {
-		dataFrame.speedRight = (unsigned int)(this->maxMotorSpeed);
+		dataFrame.speedRight = this->maxMotorSpeed / std::abs(this->speedRight);
 	}
 
 	// Write data frame to file (PRU communication)

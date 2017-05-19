@@ -6,13 +6,10 @@
 #include <chrono>
 #include <cstdio>
 
-#define THROTTLE_MAX 580
-#define ROTATION_MAX 150
 #define ANGLE_MAX 15
-#define SPEED_MAX 900
 #define DEG_TO_RAD 0.017453f
 #define RAD_TO_DEG 57.295779f
-#define SPEED_TO_DEG 22.5f
+#define SPEED_TO_DEG 1800.0f
 
 class Controller {
 	private:
@@ -23,6 +20,7 @@ class Controller {
 		bool lqrEnabled;
 
 		float speedFilterFactor;
+		float speedFiltered;
 		float angleFilterFactor;
 		float angleFiltered;
 

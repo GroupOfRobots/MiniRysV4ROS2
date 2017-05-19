@@ -6,6 +6,7 @@ Controller::Controller() {
 	lqrEnabled = true;
 
 	speedFilterFactor = 1.0f;
+	speedFiltered = 0.0f;
 	angleFilterFactor = 1.0f;
 	angleFiltered = 0.0f;
 
@@ -124,21 +125,24 @@ void Controller::getLQRParameters(float & linearVelocityK, float & angularVeloci
 }
 
 void Controller::calculateSpeeds(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
-	clipValue(throttle, 1);
-	float throttleRaw = throttle * THROTTLE_MAX;
-	clipValue(rotation, 1);
-	float rotationRaw = rotation * ROTATION_MAX;
+	clipValue(throttle, 1.0f);
+	clipValue(rotation, 1.0f);
 
 	if (!this->balancing) {
-		speedLeftNew = throttleRaw + rotationRaw;
-		speedRightNew = throttleRaw - rotationRaw;
+		speedLeftNew = throttle + rotation;
+		speedRightNew = throttle - rotation;
+		clipValue(speedLeftNew, 1.0f);
+		clipValue(speedRightNew, 1.0f);
 		return;
 	}
 
+	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
+	this->speedFiltered = speed * this->speedFilterFactor + this->speedFiltered * (1.0f - this->speedFilterFactor);
+
 	if (this->lqrEnabled) {
-		this->calculateSpeedsLQR(angle, rotationX, speed, throttleRaw, rotationRaw, speedLeftNew, speedRightNew);
+		this->calculateSpeedsLQR(angle, rotationX, speed, throttle, rotation, speedLeftNew, speedRightNew);
 	} else {
-		this->calculateSpeedsPID(angle, rotationX, speed, throttleRaw, rotationRaw, speedLeftNew, speedRightNew, loopTime);
+		this->calculateSpeedsPID(angle, rotationX, speed, throttle, rotation, speedLeftNew, speedRightNew, loopTime);
 	}
 }
 
@@ -165,8 +169,9 @@ void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, f
 
 		float speedError = throttle - this->pidLinearVelocityFiltered;
 		this->pidSpeedIntegral += speedError * loopTime;
+		// Integral anti-windup
 		if (this->pidSpeedIntegral > ANGLE_MAX || this->pidSpeedIntegral < -ANGLE_MAX) {
-			this->pidSpeedIntegral = 0;
+			this->pidSpeedIntegral = 0.0f;
 		}
 
 		float speedDerivative = (speedError - this->pidSpeedError) / loopTime;
@@ -186,15 +191,16 @@ void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, f
 
 	float angleError = targetAngle - this->angleFiltered;
 	this->pidAngleIntegral += angleError * loopTime;
-	if (this->pidAngleIntegral > SPEED_MAX || this->pidAngleIntegral < -SPEED_MAX) {
-		this->pidAngleIntegral = 0;
+	// Integral anti-windup, 1 is max output value
+	if (this->pidAngleIntegral > 1.0f || this->pidAngleIntegral < -1.0f) {
+		this->pidAngleIntegral = 0.0f;
 	}
 
 	float angleDerivative = (angleError - this->pidAngleError) / loopTime;
 	this->pidAngleError = angleError;
 
 	float output = pidAngleKp * angleError + pidAngleKi * this->pidAngleIntegral + pidAngleKd * angleDerivative;
-	clipValue(output, SPEED_MAX);
+	clipValue(output, 1.0f);
 
 	// The rotation part from the user is injected directly into the output
 	speedLeftNew = output + rotation;
@@ -205,11 +211,15 @@ void Controller::calculateSpeedsLQR(float angle, float rotationX, float speed, f
 	// Apply low-pass filter on the angle
 	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
 	//calculate linear velocity for regulator, 0.05 is wheel radius
-	float linearVelocity = (speed * SPEED_TO_DEG - rotationX) * DEG_TO_RAD / 0.05;
+	float linearVelocity = (speed * SPEED_TO_DEG - rotationX) * DEG_TO_RAD / 0.05f;
 	// Calculate output: Motor speed change
-	float outputChange = - (this->lqrAngularVelocityK * rotationX + this->lqrAngleK * angle) * DEG_TO_RAD + this->lqrLinearVelocityK * (throttle - linearVelocity);
-	outputChange = outputChange * RAD_TO_DEG / SPEED_TO_DEG;
+	float linearVelocityComponent = this->lqrLinearVelocityK * (throttle - linearVelocity);
+	float angularVelocityComponent = this->lqrAngularVelocityK * rotationX * DEG_TO_RAD;
+	float angleComponent = this->lqrAngleK * this->angleFiltered * DEG_TO_RAD;
+	float outputChange = (linearVelocityComponent - angularVelocityComponent - angleComponent) * RAD_TO_DEG / SPEED_TO_DEG;
 	// The rotation part from the user is injected directly into the output
 	speedLeftNew = speed + outputChange + rotation;
 	speedRightNew = speed + outputChange - rotation;
+
+	std::cout << "LQR o: " << (speed + outputChange) << std::endl;
 }
