@@ -149,7 +149,7 @@ class RosBridge(QThread):
 
 			response = self.clientSetRegulatorSettings.response
 			if response is not None:
-				self.regulatorSettingsSetDone(response.success, response.error_text)
+				self.regulatorSettingsSetDone.emit(response.success, response.error_text)
 
 			sleep(0.02)
 

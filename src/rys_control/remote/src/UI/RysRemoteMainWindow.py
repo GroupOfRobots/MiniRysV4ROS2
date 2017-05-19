@@ -18,7 +18,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.node = node
 		self.qtParent = parent
 
-		self.balancingEnabled = True
+		self.enabled = True
 		self.throttle = 0
 		self.rotation = 0
 		self.gamepadID = -1
