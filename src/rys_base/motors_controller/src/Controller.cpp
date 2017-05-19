@@ -75,7 +75,8 @@ void Controller::setPIDParameters(float speedKp, float speedKi, float speedKd, f
 	this->pidAngleKd = angleKd;
 }
 
-void Controller::setLQRParameters(float angularVelocityK, float angleK) {
+void Controller::setLQRParameters(float linearVelocityK, float angularVelocityK, float angleK) {
+	this->lqrLinearVelocityK = linearVelocityK;
 	this->lqrAngularVelocityK = angularVelocityK;
 	this->lqrAngleK = angleK;
 }
@@ -116,7 +117,8 @@ void Controller::getPIDParameters(float & speedKp, float & speedKi, float & spee
 	angleKd = this->pidAngleKd;
 }
 
-void Controller::getLQRParameters(float & angularVelocityK, float & angleK) {
+void Controller::getLQRParameters(float & linearVelocityK, float & angularVelocityK, float & angleK) {
+	linearVelocityK = this->lqrLinearVelocityK;
 	angularVelocityK = this->lqrAngularVelocityK;
 	angleK = this->lqrAngleK;
 }
@@ -202,8 +204,11 @@ void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, f
 void Controller::calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew) {
 	// Apply low-pass filter on the angle
 	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
+	//calculate linear velocity for regulator, 0.05 is wheel radius
+	float linearVelocity = (speed * SPEED_TO_DEG - rotationX) * DEG_TO_RAD / 0.05;
 	// Calculate output: Motor speed change
-	float outputChange = - (this->lqrAngularVelocityK * rotationX + this->lqrAngleK * angle) / 22.5;
+	float outputChange = - (this->lqrAngularVelocityK * rotationX + this->lqrAngleK * angle) * DEG_TO_RAD + this->lqrLinearVelocityK * (throttle - linearVelocity);
+	outputChange = outputChange * RAD_TO_DEG / SPEED_TO_DEG;
 	// The rotation part from the user is injected directly into the output
 	speedLeftNew = speed + outputChange + rotation;
 	speedRightNew = speed + outputChange - rotation;

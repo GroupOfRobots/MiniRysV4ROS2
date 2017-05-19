@@ -10,6 +10,9 @@
 #define ROTATION_MAX 150
 #define ANGLE_MAX 15
 #define SPEED_MAX 900
+#define DEG_TO_RAD 0.017453f
+#define RAD_TO_DEG 57.295779f
+#define SPEED_TO_DEG 22.5f
 
 class Controller {
 	private:
@@ -37,6 +40,7 @@ class Controller {
 		float pidAngleIntegral;
 		float pidAngleError;
 
+		float lqrLinearVelocityK;
 		float lqrAngularVelocityK;
 		float lqrAngleK;
 	public:
@@ -50,7 +54,7 @@ class Controller {
 		void setPIDAngularVelocityFactor(float factor);
 		void setPIDSpeedRegulatorEnabled(bool enabled);
 		void setPIDParameters(float speedKp, float speedKi, float speedKd, float angleKp, float angleKi, float kangleK);
-		void setLQRParameters(float angularVelocityK, float angleK);
+		void setLQRParameters(float linearVelocityK, float angularVelocityK, float angleK);
 		void zeroPIDs();
 		float getSpeedFilterFactor();
 		float getAngleFilterFactor();
@@ -58,7 +62,7 @@ class Controller {
 		float getPIDAngularVelocityFactor();
 		bool getPIDSpeedRegulatorEnabled();
 		void getPIDParameters(float & speedKp, float & speedKi, float & speedKd, float & angleKp, float & angleKi, float & angleKd);
-		void getLQRParameters(float & angularVelocityK, float & angleK);
+		void getLQRParameters(float & linearVelocityK, float & angularVelocityK, float & angleK);
 
 		void calculateSpeeds(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 		void calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
