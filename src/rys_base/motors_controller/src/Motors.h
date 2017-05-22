@@ -5,8 +5,8 @@
 #include <fstream>
 #include <mutex>
 
-#define MAX_ACCELERATION 0.1f
-#define MAX_MOTOR_SPEED 400000
+#define MAX_ACCELERATION 0.5f
+#define MAX_MOTOR_SPEED 200000
 #define DEVICE_NAME "/dev/rpmsg_pru31"
 
 struct DataFrame {
@@ -22,7 +22,7 @@ class Motors {
 		float speedLeft;
 		float speedRight;
 		uint8_t microstep;
-		float maxMotorSpeed;
+		int32_t maxMotorSpeed;
 		long distance;
 		std::ofstream pruFile;
 		std::mutex fileAccessMutex;
