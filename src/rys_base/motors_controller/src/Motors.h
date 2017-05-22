@@ -10,8 +10,8 @@
 #define DEVICE_NAME "/dev/rpmsg_pru31"
 
 struct DataFrame {
-	float speedLeft;
-	float speedRight;
+	uint32_t speedLeft;
+	uint32_t speedRight;
 	uint8_t directionLeft;
 	uint8_t directionRight;
 	uint8_t microstep;
@@ -33,7 +33,7 @@ class Motors {
 		void enable();
 		void disable();
 		void updateOdometry(float);
-		//speed from -1000 to 1000
+		// speed from -1.0f to 1.0f
 		void setSpeed(float, float, int);
 		float getDistance();
 		void resetDistance();
