@@ -5,8 +5,8 @@
 #include <fstream>
 #include <mutex>
 
-#define MAX_ACCELERATION 0.5f
-#define MAX_MOTOR_SPEED 200000
+#define MAX_ACCELERATION 1.0f
+#define MAX_MOTOR_SPEED 300000
 #define DEVICE_NAME "/dev/rpmsg_pru31"
 
 struct DataFrame {
