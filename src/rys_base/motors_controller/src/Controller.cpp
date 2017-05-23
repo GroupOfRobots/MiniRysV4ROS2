@@ -11,8 +11,6 @@ Controller::Controller() {
 	angleFiltered = 0.0f;
 
 	pidSpeedRegulatorEnabled = true;
-	pidAngularVelocityFactor = 1.0f;
-	pidLinearVelocityFiltered = 0;
 	pidSpeedKp = 1;
 	pidSpeedKi = 0;
 	pidSpeedKd = 0;
@@ -59,10 +57,6 @@ void Controller::setAngleFilterFactor(float factor) {
 	this->angleFilterFactor = factor;
 }
 
-void Controller::setPIDAngularVelocityFactor(float factor) {
-	this->pidAngularVelocityFactor = factor;
-}
-
 void Controller::setPIDSpeedRegulatorEnabled(bool enabled) {
 	this->pidSpeedRegulatorEnabled = enabled;
 }
@@ -82,7 +76,7 @@ void Controller::setLQRParameters(float linearVelocityK, float angularVelocityK,
 	this->lqrAngleK = angleK;
 }
 
-void Controller::zeroPIDs() {
+void Controller::zeroRegulators() {
 	this->pidAngleIntegral = 0;
 	this->pidAngleError = 0;
 	this->pidSpeedIntegral = 0;
@@ -99,10 +93,6 @@ float Controller::getAngleFilterFactor() {
 
 bool Controller::getLQREnabled() {
 	return this->lqrEnabled;
-}
-
-float Controller::getPIDAngularVelocityFactor() {
-	return this->pidAngularVelocityFactor;
 }
 
 bool Controller::getPIDSpeedRegulatorEnabled() {
@@ -140,9 +130,9 @@ void Controller::calculateSpeeds(float angle, float rotationX, float speed, floa
 	this->speedFiltered = speed * this->speedFilterFactor + this->speedFiltered * (1.0f - this->speedFilterFactor);
 
 	if (this->lqrEnabled) {
-		this->calculateSpeedsLQR(angle, rotationX, speed, throttle, rotation, speedLeftNew, speedRightNew);
+		this->calculateSpeedsLQR(this->angleFiltered, rotationX, this->speedFiltered, throttle, rotation, speedLeftNew, speedRightNew);
 	} else {
-		this->calculateSpeedsPID(angle, rotationX, speed, throttle, rotation, speedLeftNew, speedRightNew, loopTime);
+		this->calculateSpeedsPID(this->angleFiltered, rotationX, this->speedFiltered, throttle, rotation, speedLeftNew, speedRightNew, loopTime);
 	}
 }
 
@@ -152,22 +142,15 @@ void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, f
 	if (this->pidSpeedRegulatorEnabled) {
 		// Estimate robot's linear velocity based on angle change and speed
 		// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
-		// First, calculate robot's angular velocity and normalize it to motors' speed values (thus the constant at the end)
-		float angularVelocity = rotationX * this->pidAngularVelocityFactor;
-
-		// Then, subtract the estimated robot's angular velocity from motor's angular velocity
 		// What's left is motor's angular velocity responsible for robot's linear velocity
-		float linearVelocity = speed - angularVelocity;
-
-		// Also, apply low-pass filter on resulting value
-		this->pidLinearVelocityFiltered = linearVelocity * this->speedFilterFactor + this->pidLinearVelocityFiltered * (1.0f - this->speedFilterFactor);
+		float linearVelocity = speed - rotationX / SPEED_TO_DEG;
 
 		// First control layer: speed control PID
 		// setpoint: user throttle
-		// current value: estimated and filtered robot speed
+		// current value: robot's linear speed
 		// output: target robot angle to get the desired speed
 
-		float speedError = throttle - this->pidLinearVelocityFiltered;
+		float speedError = throttle - linearVelocity;
 		this->pidSpeedIntegral += speedError * loopTime;
 		// Integral anti-windup
 		if (this->pidSpeedIntegral > ANGLE_MAX || this->pidSpeedIntegral < -ANGLE_MAX) {
@@ -181,15 +164,12 @@ void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, f
 		clipValue(targetAngle, ANGLE_MAX);
 	}
 
-	// Apply low-pass filter on the angle
-	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
-
 	// Second control layer: angle control PID
 	// setpoint: robot target angle (from SPEED CONTROL)
 	// current value: robot angle (filtered)
 	// output: motor speed
 
-	float angleError = targetAngle - this->angleFiltered;
+	float angleError = targetAngle - angle;
 	this->pidAngleIntegral += angleError * loopTime;
 	// Integral anti-windup, 1 is max output value
 	if (this->pidAngleIntegral > 1.0f || this->pidAngleIntegral < -1.0f) {
@@ -208,9 +188,7 @@ void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, f
 }
 
 void Controller::calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew) {
-	// Apply low-pass filter on the angle
-	this->angleFiltered = angle * this->angleFilterFactor + this->angleFiltered * (1.0f - this->angleFilterFactor);
-	//calculate linear velocity for regulator, 0.05 is wheel radius
+	// Calculate linear velocity for regulator, 0.05 is wheel radius
 	float linearVelocity = (speed * SPEED_TO_DEG - rotationX) * DEG_TO_RAD / 0.05f;
 	// Calculate output: Motor speed change
 	float linearVelocityComponent = this->lqrLinearVelocityK * (throttle - linearVelocity);

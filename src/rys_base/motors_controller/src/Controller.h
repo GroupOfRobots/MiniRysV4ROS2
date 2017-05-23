@@ -25,8 +25,6 @@ class Controller {
 		float angleFiltered;
 
 		bool pidSpeedRegulatorEnabled;
-		float pidAngularVelocityFactor;
-		float pidLinearVelocityFiltered;
 		float pidSpeedKp;
 		float pidSpeedKi;
 		float pidSpeedKd;
@@ -49,11 +47,10 @@ class Controller {
 		void setLQREnabled(bool value);
 		void setSpeedFilterFactor(float factor);
 		void setAngleFilterFactor(float factor);
-		void setPIDAngularVelocityFactor(float factor);
 		void setPIDSpeedRegulatorEnabled(bool enabled);
 		void setPIDParameters(float speedKp, float speedKi, float speedKd, float angleKp, float angleKi, float kangleK);
 		void setLQRParameters(float linearVelocityK, float angularVelocityK, float angleK);
-		void zeroPIDs();
+		void zeroRegulators();
 		float getSpeedFilterFactor();
 		float getAngleFilterFactor();
 		bool getLQREnabled();

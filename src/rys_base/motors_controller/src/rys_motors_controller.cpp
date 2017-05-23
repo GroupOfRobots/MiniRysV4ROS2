@@ -37,6 +37,14 @@ void msleep(const int milliseconds) {
 	}
 }
 
+void motorsRunTimed(const float leftSpeed, const float rightSpeed, const int microstep, const int milliseconds) {
+	auto end = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(milliseconds);
+	while (rclcpp::ok() && std::chrono::high_resolution_clock::now() < end) {
+		motors.setSpeed(leftSpeed, rightSpeed, microstep);
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+}
+
 void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
 	if (message->data) {
 		enableTimerEnd = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(enableTimeout);
@@ -69,46 +77,17 @@ void setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> reques
 	std::cout << "\t Angle filter factor: " << request->angle_filter_factor << std::endl;
 	std::cout << "\t LQR enabled: " << (request->lqr_enabled ? "True" : "False") << std::endl;
 	std::cout << "\t PID: Speed regulator enabled: " << (request->pid_speed_regulator_enabled ? "True" : "False") << std::endl;
-	std::cout << "\t PID: Angular velocity factor: " << request->pid_angular_velocity_factor << std::endl;
 	std::cout << "\t PID: 1st stage (speed->angle):  " << request->pid_speed_kp << " " << request->pid_speed_ki << " " << request->pid_speed_kd << std::endl;
 	std::cout << "\t PID: 2nd stage (angle->output): " << request->pid_angle_kp << " " << request->pid_angle_ki << " " << request->pid_angle_kd << std::endl;
 	std::cout << "\t LQR: Linear velocity K: " << request->lqr_linear_velocity_k << std::endl;
 	std::cout << "\t LQR: Angular velocity K: " << request->lqr_angular_velocity_k << std::endl;
 	std::cout << "\t LQR: Angle K: " << request->lqr_angle_k << std::endl;
 
-	// Disabled until rewritten and sane limits found
-	/*
-	// Check values validness
-	if (request->speed_kp < 0 || request->speed_kp > 1000 || request->speed_ki < 0 || request->speed_ki > 1000 || request->speed_kd < 0 || request->speed_kd > 1000) {
-		response->success = false;
-		response->error_text = std::string("Invalid speed PID parameters");
-		std::cout << "Invalid speed PID parameters.\n";
-		return;
-	}
-	if (request->angle_kp < 0 || request->angle_kp > 1000 || request->angle_ki < 0 || request->angle_ki > 1000 || request->angle_kd < 0 || request->angle_kd > 1000) {
-		response->success = false;
-		response->error_text = std::string("Invalid angle PID parameters");
-		std::cout << "Invalid angle PID parameters.\n";
-		return;
-	}
-
-	if (request->speed_filter_factor <= 0 || request->speed_filter_factor > 1 || request->angle_filter_factor <= 0 || request->angle_filter_factor > 1 || request->angular_velocity_factor < 0) {
-		response->success = false;
-		response->error_text = std::string("Invalid filtering parameters");
-		std::cout << "Invalid filtering parameters.\n";
-		return;
-	}
-
-	// Inform user (for logging purposes)
-	std::cout << "Setting regulator parameters!\n";
-	*/
-
 	// Set values
 	controller.setSpeedFilterFactor(request->speed_filter_factor);
 	controller.setAngleFilterFactor(request->angle_filter_factor);
 	controller.setLQREnabled(request->lqr_enabled);
 	controller.setPIDSpeedRegulatorEnabled(request->pid_speed_regulator_enabled);
-	controller.setPIDAngularVelocityFactor(request->pid_angular_velocity_factor);
 	controller.setPIDParameters(request->pid_speed_kp, request->pid_speed_ki, request->pid_speed_kd, request->pid_angle_kp, request->pid_angle_ki, request->pid_angle_kd);
 	controller.setLQRParameters(request->lqr_linear_velocity_k, request->lqr_angular_velocity_k, request->lqr_angle_k);
 
@@ -127,7 +106,6 @@ void getRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> reques
 
 	response->lqr_enabled = controller.getLQREnabled();
 
-	response->pid_angular_velocity_factor = controller.getPIDAngularVelocityFactor();
 	response->pid_speed_regulator_enabled = controller.getPIDSpeedRegulatorEnabled();
 	controller.getPIDParameters(response->pid_speed_kp, response->pid_speed_ki, response->pid_speed_kd, response->pid_angle_kp, response->pid_angle_ki, response->pid_angle_kd);
 	controller.getLQRParameters(response->lqr_linear_velocity_k, response->lqr_angular_velocity_k, response->lqr_angle_k);
@@ -163,7 +141,7 @@ void standUp() {
 	int multiplier = (roll > 40 ? 1 : -1);
 
 	// Disable motors, wait 1s
-	motors.setSpeed(0.0f, 0.0f, 1);
+	motorsRunTimed(0.0f, 0.0f, 1, 100);
 	motors.disable();
 	msleep(1000);
 	if (!rclcpp::ok() || !enabled) {
@@ -177,9 +155,8 @@ void standUp() {
 		return;
 	}
 
-	// Drive backwards half-speed, wait 0.5s
-	motors.setSpeed(multiplier * 0.5f, multiplier * 0.5f, 1);
-	msleep(500);
+	// Drive backwards half-speed for 0.5s
+	motorsRunTimed(multiplier * 0.5f, multiplier * 0.5f, 1, 500);
 	if (!rclcpp::ok() || !enabled) {
 		return;
 	}
@@ -261,8 +238,8 @@ int main(int argc, char * argv[]) {
 			try {
 				standUp();
 
-				// Zero-out PID's errors and integrals, zero-out loop timer
-				controller.zeroPIDs();
+				// Zero-out regulators: PID's errors and integrals, loop timer etc
+				controller.zeroRegulators();
 				previous = std::chrono::high_resolution_clock::now();
 			} catch (std::string & error) {
 				std::cout << "Error standing up from laying: " << error << std::endl;
