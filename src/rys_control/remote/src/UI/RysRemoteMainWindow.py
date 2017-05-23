@@ -80,7 +80,6 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			'pidAngleKp': self.ui.pidAngleKpSpinBox.value(),
 			'pidAngleKi': self.ui.pidAngleKiSpinBox.value(),
 			'pidAngleKd': self.ui.pidAngleKdSpinBox.value(),
-			'pidAngularVelocityFactor': self.ui.pidAngularVelocitySpinBox.value(),
 			'lqrLinearVelocityK': self.ui.lqrLinearVelocityKSpinBox.value(),
 			'lqrAngularVelocityK': self.ui.lqrAngularVelocityKSpinBox.value(),
 			'lqrAngleK': self.ui.lqrAngleKSpinBox.value(),
