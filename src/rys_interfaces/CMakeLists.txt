@@ -14,7 +14,7 @@ find_package(std_msgs REQUIRED)
 set(msg_files
 	"msg/ImuRollRotation.msg"
 	"msg/ImuYawPitchRoll.msg"
-	"msg/Sonars.msg"
+	"msg/Ranges.msg"
 	"msg/Steering.msg"
 )
 set(srv_files
