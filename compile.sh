@@ -4,7 +4,7 @@
 ARGS=""
 COMMON_PKGS="rys_interfaces"
 ROBOT_PKGS="rys_motors_controller "
-ROBOT_PKGS="${ROBOT_PKGS} rys_sensor_imu rys_sensor_sonars "
+ROBOT_PKGS="${ROBOT_PKGS} rys_sensor_imu rys_sensor_sonars rys_sensor_vl53l0x "
 CONTROL_PKGS="rys_display_sensors "
 CONTROL_PKGS="${CONTROL_PKGS} rys_remote "
 
