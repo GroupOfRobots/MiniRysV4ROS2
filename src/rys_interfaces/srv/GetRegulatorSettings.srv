@@ -7,7 +7,6 @@ float32 angle_filter_factor
 bool lqr_enabled
 
 bool pid_speed_regulator_enabled
-float32 pid_angular_velocity_factor
 float32 pid_speed_kp
 float32 pid_speed_ki
 float32 pid_speed_kd
