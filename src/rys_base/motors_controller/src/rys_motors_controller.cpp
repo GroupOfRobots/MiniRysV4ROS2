@@ -202,7 +202,7 @@ int main(int argc, char * argv[]) {
 	controller.setSpeedFilterFactor(1);
 	controller.setAngleFilterFactor(1);
 	controller.setPIDParameters(0.03, 0.0001, 0.008, 50, 0.05, 20);
-	controller.setLQRParameters(-3.1623,-0.7968,-32.3996);
+	controller.setLQRParameters(-0.0316,-42.3121,-392.3354);
 
 	std::cout << "Running!\n";
 	auto previous = std::chrono::high_resolution_clock::now();
