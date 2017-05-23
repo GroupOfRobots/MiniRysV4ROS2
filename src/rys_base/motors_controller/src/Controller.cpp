@@ -193,7 +193,7 @@ void Controller::calculateSpeedsLQR(float angle, float rotationX, float speed, f
 	// Calculate output: Motor speed change
 	float linearVelocityComponent = this->lqrLinearVelocityK * (throttle - linearVelocity);
 	float angularVelocityComponent = this->lqrAngularVelocityK * rotationX * DEG_TO_RAD;
-	float angleComponent = this->lqrAngleK * this->angleFiltered * DEG_TO_RAD;
+	float angleComponent = this->lqrAngleK * angle * DEG_TO_RAD;
 	float outputChange = (linearVelocityComponent - angularVelocityComponent - angleComponent) * loopTime * RAD_TO_DEG / SPEED_TO_DEG;
 	// The rotation part from the user is injected directly into the output
 	speedLeftNew = speed + outputChange + rotation;
