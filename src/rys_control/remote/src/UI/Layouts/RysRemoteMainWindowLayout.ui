@@ -552,7 +552,7 @@ velocity K</string>
              <widget class="QDoubleSpinBox" name="lqrLinearVelocityKSpinBox">
               <property name="minimumSize">
                <size>
-                <width>80</width>
+                <width>90</width>
                 <height>0</height>
                </size>
               </property>
@@ -569,7 +569,7 @@ velocity K</string>
                <double>0.001000000000000</double>
               </property>
               <property name="value">
-               <double>-3.162300000000000</double>
+               <double>-0.031600000000000</double>
               </property>
              </widget>
             </item>
@@ -605,7 +605,7 @@ velocity K</string>
              <widget class="QDoubleSpinBox" name="lqrAngularVelocityKSpinBox">
               <property name="minimumSize">
                <size>
-                <width>80</width>
+                <width>90</width>
                 <height>0</height>
                </size>
               </property>
@@ -622,7 +622,7 @@ velocity K</string>
                <double>0.001000000000000</double>
               </property>
               <property name="value">
-               <double>-0.796800000000000</double>
+               <double>-42.312100000000001</double>
               </property>
              </widget>
             </item>
@@ -657,7 +657,7 @@ velocity K</string>
              <widget class="QDoubleSpinBox" name="lqrAngleKSpinBox">
               <property name="minimumSize">
                <size>
-                <width>80</width>
+                <width>90</width>
                 <height>0</height>
                </size>
               </property>
@@ -674,7 +674,7 @@ velocity K</string>
                <double>0.001000000000000</double>
               </property>
               <property name="value">
-               <double>-32.399600000000000</double>
+               <double>-392.335399999999993</double>
               </property>
              </widget>
             </item>
