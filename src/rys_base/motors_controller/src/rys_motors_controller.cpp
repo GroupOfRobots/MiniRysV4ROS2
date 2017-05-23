@@ -156,13 +156,13 @@ void standUp() {
 	}
 
 	// Drive backwards half-speed for 0.5s
-	motorsRunTimed(multiplier * 0.5f, multiplier * 0.5f, 1, 500);
+	motorsRunTimed(multiplier * 0.8f, multiplier * 0.8f, 1, 500);
 	if (!rclcpp::ok() || !enabled) {
 		return;
 	}
 
 	// Drive forward full-speed, wait until we've passed '0' point
-	motors.setSpeed(-multiplier * 0.8f, -multiplier * 0.8f, 1);
+	motors.setSpeed(-multiplier * 1.0f, -multiplier * 1.0f, 1);
 	rclcpp::rate::WallRate standUpLoopRate(100);
 	while (rclcpp::ok() && enabled) {
 		// std::cout << "Standing up, angle: " << roll << std::endl;
