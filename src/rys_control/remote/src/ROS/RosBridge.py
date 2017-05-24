@@ -117,19 +117,10 @@ class RosBridge(QThread):
 		request.lqr_angle_k = parameters['lqrAngleK']
 
 		self.clientSetRegulatorSettings.call(request)
-		# Locks the UI - disabled until further investigation
-		#
-		# while rclpy.ok():
-		# 	response = self.clientSetRegulatorSettings.response
-		# 	if response is not None:
-		# 		self.regulatorSettingsSetDone(response.success, response.error_text)
-		# 		break
-		# 	rclpy.spin_once(self.node, 1.0)
-		# 	sleep(0.1)
 
 	def regulatorSettingsGetRequested(self):
-		# TODO
-		pass
+		request = RysSrvs.GetRegulatorSettings.Request()
+		self.clientGetRegulatorSettings.call(request)
 
 	""" Thread 'run' method """
 
@@ -149,6 +140,12 @@ class RosBridge(QThread):
 			response = self.clientSetRegulatorSettings.response
 			if response is not None:
 				self.regulatorSettingsSetDone.emit(response.success, response.error_text)
+				self.clientSetRegulatorSettings.response = None
+
+			response = self.clientGetRegulatorSettings.response
+			if response is not None:
+				self.regulatorSettingsGetDone.emit(response)
+				self.clientGetRegulatorSettings.response = None
 
 			sleep(0.02)
 

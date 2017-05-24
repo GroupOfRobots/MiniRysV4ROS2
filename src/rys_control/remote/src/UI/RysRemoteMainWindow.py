@@ -188,11 +188,27 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.sonarTopBar.setValue(top)
 
 	def regulatorSettingsSetDoneHandler(self, success, errorText):
-		if not success:
-			QtWidgets.QMessageBox.Error(self.qtParent, "Error setting regulator parameters: %s" % errorText)
+		if success:
+			self.ui.statusBar.showMessage("Regulator parameters set!", 3000)
+		else:
+			self.ui.statusBar.showMessage("Error setting regulator parameters: %s" % errorText, 5000)
 
 	def regulatorSettingsGetDoneHandler(self, parameters):
-		pass
+		self.ui.statusBar.showMessage("Regulator parameters retrieved!", 3000)
+
+		self.ui.speedFilteringSpinBox.setValue(parameters.speed_filter_factor)
+		self.ui.rollFilteringSpinBox.setValue(parameters.angle_filter_factor)
+		self.ui.lqrEnabledCheckBox.setChecked(parameters.lqr_enabled)
+		self.ui.pidSpeedStageEnabledCheckBox.setChecked(parameters.pid_speed_regulator_enabled)
+		self.ui.pidSpeedKpSpinBox.setValue(parameters.pid_speed_kp)
+		self.ui.pidSpeedKiSpinBox.setValue(parameters.pid_speed_ki)
+		self.ui.pidSpeedKdSpinBox.setValue(parameters.pid_speed_kd)
+		self.ui.pidAngleKpSpinBox.setValue(parameters.pid_angle_kp)
+		self.ui.pidAngleKiSpinBox.setValue(parameters.pid_angle_ki)
+		self.ui.pidAngleKdSpinBox.setValue(parameters.pid_angle_kd)
+		self.ui.lqrLinearVelocityKSpinBox.setValue(parameters.lqr_linear_velocity_k)
+		self.ui.lqrAngularVelocityKSpinBox.setValue(parameters.lqr_angular_velocity_k)
+		self.ui.lqrAngleKSpinBox.setValue(parameters.lqr_angle_k)
 
 	""" Miscelanneous event handlers """
 

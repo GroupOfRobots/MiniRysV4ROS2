@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>702</width>
+    <width>712</width>
     <height>841</height>
    </rect>
   </property>
@@ -560,10 +560,10 @@ velocity K</string>
                <number>4</number>
               </property>
               <property name="minimum">
-               <double>-1000.000000000000000</double>
+               <double>-9999.000000000000000</double>
               </property>
               <property name="maximum">
-               <double>1000.000000000000000</double>
+               <double>9999.000000000000000</double>
               </property>
               <property name="singleStep">
                <double>0.001000000000000</double>
@@ -613,10 +613,10 @@ velocity K</string>
                <number>4</number>
               </property>
               <property name="minimum">
-               <double>-1000.000000000000000</double>
+               <double>-9999.000000000000000</double>
               </property>
               <property name="maximum">
-               <double>1000.000000000000000</double>
+               <double>9999.000000000000000</double>
               </property>
               <property name="singleStep">
                <double>0.001000000000000</double>
@@ -665,10 +665,10 @@ velocity K</string>
                <number>4</number>
               </property>
               <property name="minimum">
-               <double>-1000.000000000000000</double>
+               <double>-9999.000000000000000</double>
               </property>
               <property name="maximum">
-               <double>1000.000000000000000</double>
+               <double>9999.000000000000000</double>
               </property>
               <property name="singleStep">
                <double>0.001000000000000</double>
@@ -1082,6 +1082,7 @@ velocity K</string>
     </item>
    </layout>
   </widget>
+  <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <resources/>
  <connections/>
