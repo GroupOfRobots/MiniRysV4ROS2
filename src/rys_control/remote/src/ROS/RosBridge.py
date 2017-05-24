@@ -40,7 +40,7 @@ class RosBridge(QThread):
 
 		# Create ROS subscribers
 		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRollRotation, 'rys_sensor_imu_roll', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
-		subscriptionSonars = self.node.create_subscription(RysMsgs.Sonars, 'rys_sensor_sonars', self.sonarsSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
+		subscriptionSonars = self.node.create_subscription(RysMsgs.Ranges, 'rys_sensor_sonars', self.sonarsSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
 		# Prevent unused variable warning
 		assert subscriptionImu, subscriptionSonars
 
