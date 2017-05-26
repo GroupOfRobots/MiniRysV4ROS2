@@ -79,8 +79,11 @@ void IMU::readData() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	}
 
-	// Read a packet from FIFO to buffer
-	this->mpu->getFIFOBytes(this->fifoBuffer, this->packetSize);
+	// Read _last_ packet from FIFO to buffer
+	while (fifoCount > this->packetSize) {
+		this->mpu->getFIFOBytes(this->fifoBuffer, this->packetSize);
+		fifoCount = this->mpu->getFIFOCount();
+	}
 }
 
 void IMU::getYawPitchRoll(float * yaw, float * pitch, float * roll) {
