@@ -162,7 +162,7 @@ void standUp() {
 	}
 
 	// Drive forward full-speed, wait until we've passed '0' point
-	motors.setSpeed(-multiplier * 1.0f, -multiplier * 1.0f, 1);
+	motorsRunTimed(-multiplier * 1.0f, -multiplier * 1.0f, 1, 100);
 	rclcpp::rate::WallRate standUpLoopRate(100);
 	while (rclcpp::ok() && enabled) {
 		// std::cout << "Standing up, angle: " << roll << std::endl;
