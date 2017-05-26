@@ -183,8 +183,8 @@ void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, f
 	clipValue(output, 1.0f);
 
 	// The rotation part from the user is injected directly into the output
-	speedLeftNew = output + rotation;
-	speedRightNew = output - rotation;
+	speedLeftNew = speed + output + rotation;
+	speedRightNew = speed + output - rotation;
 }
 
 void Controller::calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
