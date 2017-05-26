@@ -55,10 +55,6 @@ void Motors::updateOdometry(float dt) {
 }
 
 void Motors::setSpeed(float speedLeft, float speedRight, int microstep) {
-	// Deduplicate calls
-	if (speedLeft == this->speedLeft && speedRight == this->speedRight && microstep == this->microstep) {
-		return;
-	}
 	if (speedLeft > 1.0f) {
 		speedLeft = 1.0f;
 	} else if (speedLeft < -1.0f) {
