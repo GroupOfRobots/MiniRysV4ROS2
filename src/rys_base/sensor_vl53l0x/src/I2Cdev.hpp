@@ -61,6 +61,8 @@ THE SOFTWARE.
 #define FALSE (0==1)
 #endif
 
+#define I2C_DEV_PATH "/dev/i2c-0"
+
 class I2Cdev {
     public:
         I2Cdev();
