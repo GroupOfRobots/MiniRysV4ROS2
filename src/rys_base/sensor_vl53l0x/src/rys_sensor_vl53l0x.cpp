@@ -15,6 +15,7 @@ const uint8_t addresses[5] = {
 	VL53L0X_ADDRESS_DEFAULT + 12
 };
 bool sensorInitialized[5];
+VL53L0X* sensors[5];
 
 int readSensor(int sensorIndex) {
 	if (!sensorInitialized[sensorIndex]) {
@@ -48,7 +49,6 @@ int main(int argc, char * argv[]) {
 
 	std::cout << "Initializing VL53L0X sensors...\n";
 
-	VL53L0X* sensors[5];
 	for (int i = 0; i < 5; ++i) {
 		sensors[i] = new VL53L0X(pins[i]);
 		sensors[i]->powerOff();
