@@ -143,7 +143,7 @@ void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, f
 		// Estimate robot's linear velocity based on angle change and speed
 		// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
 		// What's left is motor's angular velocity responsible for robot's linear velocity
-		float linearVelocity = speed - rotationX / SPEED_TO_DEG;
+		float linearVelocity = -speed - rotationX / SPEED_TO_DEG;
 
 		// First control layer: speed control PID
 		// setpoint: user throttle
