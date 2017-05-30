@@ -20,6 +20,7 @@ class VL53L0X {
 
 		/*** Public methods ***/
 
+		void initGPIO();
 		/**
 		 * \brief Initialize sensor using sequence Based on VL53L0X_DataInit(), VL53L0X_StaticInit(), and VL53L0X_PerformRefCalibration().
 		 *
@@ -27,10 +28,8 @@ class VL53L0X {
 		 * since the API user manual says that it is performed by ST on the bare modules;
 		 * It seems like that should work well enough unless a cover glass is added.
 		 * If ioMode2v8 (optional) is true or not given, the sensor is configured for 2V8 mode.
-		 *
-		 * \return true if initialization succeeded.
 		 */
-		bool init(bool ioMode2v8 = true);
+		void init(bool ioMode2v8 = true);
 
 		void powerOn();
 		void powerOff();
@@ -160,6 +159,7 @@ class VL53L0X {
 
 		int16_t xshutGPIOPin;
 		uint8_t address;
+		bool gpioInitialized;
 
 		uint32_t measurementTimingBudgetMicroseconds;
 		uint64_t timeoutStartMilliseconds;

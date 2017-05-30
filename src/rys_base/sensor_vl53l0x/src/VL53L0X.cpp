@@ -40,6 +40,7 @@ uint64_t milliseconds() {
 VL53L0X::VL53L0X(const int16_t xshutGPIOPin, const uint8_t address) {
 	this->xshutGPIOPin = xshutGPIOPin;
 	this->address = address;
+	this->gpioInitialized = false;
 
 	this->ioTimeout = 0;
 	this->didTimeout = false;
@@ -51,7 +52,7 @@ VL53L0X::VL53L0X(const int16_t xshutGPIOPin, const uint8_t address) {
 
 /*** Public Methods ***/
 
-bool VL53L0X::init(bool ioMode2v8) {
+void VL53L0X::initGPIO() {
 	// Set XSHUT pin mode (if pin set)
 	if (this->xshutGPIOPin >= 0) {
 		std::string gpioDirectionFilename = std::string("/sys/class/gpio/gpio") + std::to_string(this->xshutGPIOPin) + std::string("/value");
@@ -77,6 +78,13 @@ bool VL53L0X::init(bool ioMode2v8) {
 		file.close();
 	}
 
+	this->gpioInitialized = true;
+}
+
+void VL53L0X::init(bool ioMode2v8) {
+	if (!this->gpioInitialized) {
+		this->initGPIO();
+	}
 	// Enable the sensor
 	this->powerOn();
 
@@ -114,7 +122,7 @@ bool VL53L0X::init(bool ioMode2v8) {
 	uint8_t spadCount;
 	bool spadTypeIsAperture;
 	if (!this->getSPADInfo(&spadCount, &spadTypeIsAperture)) {
-		return false;
+		throw(std::string("Failed retrieving SPAD info!"));
 	}
 
 	// The SPAD map (RefGoodSpadMap) is read by VL53L0X_get_info_from_device() in the API,
@@ -278,7 +286,7 @@ bool VL53L0X::init(bool ioMode2v8) {
 
 	this->writeRegister(SYSTEM_SEQUENCE_CONFIG, 0x01);
 	if (!this->performSingleRefCalibration(0x40)) {
-		return false;
+		throw(std::string("Failed performing ref/vhv calibration!"));
 	}
 
 	// -- VL53L0X_perform_vhv_calibration() end
@@ -287,7 +295,7 @@ bool VL53L0X::init(bool ioMode2v8) {
 
 	this->writeRegister(SYSTEM_SEQUENCE_CONFIG, 0x02);
 	if (!this->performSingleRefCalibration(0x00)) {
-		return false;
+		throw(std::string("Failed performing ref/phase calibration!"));
 	}
 
 	// -- VL53L0X_perform_phase_calibration() end
@@ -296,11 +304,13 @@ bool VL53L0X::init(bool ioMode2v8) {
 	this->writeRegister(SYSTEM_SEQUENCE_CONFIG, 0xE8);
 
 	// VL53L0X_PerformRefCalibration() end
-
-	return true;
 }
 
 void VL53L0X::powerOn() {
+	if (!this->gpioInitialized) {
+		this->initGPIO();
+	}
+
 	if (this->xshutGPIOPin >= 0) {
 		std::lock_guard<std::mutex> guard(this->fileAccessMutex);
 		std::ofstream file;
@@ -319,6 +329,10 @@ void VL53L0X::powerOn() {
 }
 
 void VL53L0X::powerOff() {
+	if (!this->gpioInitialized) {
+		this->initGPIO();
+	}
+
 	if (this->xshutGPIOPin >= 0) {
 		std::lock_guard<std::mutex> guard(this->fileAccessMutex);
 		std::ofstream file;
