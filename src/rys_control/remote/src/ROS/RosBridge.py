@@ -10,7 +10,7 @@ class RosBridge(QThread):
 	"""docstring for RosBridge"""
 
 	imuChanged = pyqtSignal(float, float)
-	sonarChanged = pyqtSignal(int, int, int)
+	rangesChanged = pyqtSignal(int, int, int, int, int)
 	regulatorSettingsSetDone = pyqtSignal(bool, str)
 	regulatorSettingsGetDone = pyqtSignal(object)
 
@@ -40,9 +40,12 @@ class RosBridge(QThread):
 
 		# Create ROS subscribers
 		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRollRotation, 'rys_sensor_imu_roll', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
-		subscriptionSonars = self.node.create_subscription(RysMsgs.Ranges, 'rys_sensor_sonars', self.sonarsSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
+		subscriptionSonars = self.node.create_subscription(RysMsgs.Ranges, 'rys_sensor_sonars', self.rangeSensorSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
+		subscriptionVL53L0X = self.node.create_subscription(RysMsgs.Ranges, 'rys_sensor_vl53l0x', self.rangeSensorSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
 		# Prevent unused variable warning
-		assert subscriptionImu, subscriptionSonars
+		assert subscriptionImu
+		assert subscriptionSonars
+		assert subscriptionVL53L0X
 
 	""" Public methods """
 
@@ -78,8 +81,8 @@ class RosBridge(QThread):
 
 		self.imuChanged.emit(roll, rotationX)
 
-	def sonarsSubscriptionCallback(self, message):
-		self.sonarChanged.emit(message.front, message.back, message.top)
+	def rangeSensorSubscriptionCallback(self, message):
+		self.rangesChanged.emit(message.front, message.back, message.top, message.left, message.right)
 
 	""" Publisher timer callbacks """
 

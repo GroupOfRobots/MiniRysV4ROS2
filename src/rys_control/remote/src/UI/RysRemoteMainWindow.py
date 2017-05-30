@@ -48,7 +48,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 		self.rosBridge = RosBridge(node, self)
 		self.rosBridge.imuChanged.connect(self.imuChangedHandler)
-		self.rosBridge.sonarChanged.connect(self.sonarChangedHandler)
+		self.rosBridge.rangesChanged.connect(self.rangesChangedHandler)
 		self.rosBridge.regulatorSettingsSetDone.connect(self.regulatorSettingsSetDoneHandler)
 		self.rosBridge.regulatorSettingsGetDone.connect(self.regulatorSettingsGetDoneHandler)
 		self.regulatorSettingsSetRequested.connect(self.rosBridge.regulatorSettingsSetRequested)
@@ -182,10 +182,12 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.rollValueLabel.setText("    Roll: %f" % roll)
 		self.ui.rotationXValueLabel.setText("Rotation: %f" % rotationX)
 
-	def sonarChangedHandler(self, front, back, top):
-		self.ui.sonarFrontBar.setValue(front)
-		self.ui.sonarBackBar.setValue(back)
-		self.ui.sonarTopBar.setValue(top)
+	def rangesChangedHandler(self, front, back, top, left, right):
+		self.ui.rangeFrontBar.setValue(front)
+		self.ui.rangeBackBar.setValue(back)
+		self.ui.rangeTopBar.setValue(top)
+		self.ui.rangeLeftBar.setValue(left)
+		self.ui.rangeRightBar.setValue(right)
 
 	def regulatorSettingsSetDoneHandler(self, success, errorText):
 		if success:
