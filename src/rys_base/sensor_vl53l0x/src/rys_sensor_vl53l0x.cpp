@@ -51,7 +51,11 @@ int main(int argc, char * argv[]) {
 
 	for (int i = 0; i < 5; ++i) {
 		sensors[i] = new VL53L0X(pins[i]);
-		sensors[i]->powerOff();
+		try {
+			sensors[i]->powerOff();
+		} catch (std::string & errorString) {
+			std::cerr << "Error disabling sensor " << i << ": " << errorString << std::endl;
+		}
 	}
 
 	if (!rclcpp::ok()) {
