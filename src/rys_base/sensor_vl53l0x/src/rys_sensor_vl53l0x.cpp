@@ -33,6 +33,7 @@ int readSensor(int sensorIndex) {
 
 	// Checking timeout can not
 	if (sensors[sensorIndex]->timeoutOccurred()) {
+		std::cout << "Sensor " << sensorIndex << " timeout!\n";
 		return -1;
 	}
 
@@ -73,6 +74,9 @@ int main(int argc, char * argv[]) {
 			std::cerr << "Error initializing sensor " << i << ": " << errorString << std::endl;
 		}
 	}
+
+	std::cout << "Starting VL53L0X sensors...\n";
+
 	// Start continuous back-to-back measurement
 	for (int i = 0; rclcpp::ok() && i < 5; ++i) {
 		if (sensorInitialized[i]) {
