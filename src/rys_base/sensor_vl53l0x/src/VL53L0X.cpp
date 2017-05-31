@@ -11,6 +11,8 @@
 
 /*** Defines ***/
 
+#define REVERSE_ENDIANNESS 1
+
 // Record the current time to check an upcoming timeout against
 #define startTimeout() (this->timeoutStartMilliseconds = milliseconds())
 
@@ -356,7 +358,10 @@ void VL53L0X::writeRegister(uint8_t reg, uint8_t value) {
 
 void VL53L0X::writeRegister16Bit(uint8_t reg, uint16_t value) {
 	// Reverse endianness
-	uint16_t valueFixed = ((value & 0xFF) << 8) + ((value & 0xFF00) >> 8);
+	uint16_t valueFixed = value;
+	if (REVERSE_ENDIANNESS) {
+		valueFixed = ((value & 0xFF) << 8) + ((value & 0xFF00) >> 8);
+	}
 
 	bool p = I2Cdev::writeWord(this->address, reg, valueFixed);
 	if (!p) {
@@ -367,10 +372,17 @@ void VL53L0X::writeRegister16Bit(uint8_t reg, uint16_t value) {
 void VL53L0X::writeRegister32Bit(uint8_t reg, uint32_t value) {
 	// Split 32-bit word into MS ... LS bytes
 	uint8_t data[4];
-	data[0] = (value >> 24) & 0xFF;
-	data[1] = (value >> 16) & 0xFF;
-	data[2] = (value >> 8) & 0xFF;
-	data[3] = value & 0xFF;
+	if (REVERSE_ENDIANNESS) {
+		data[0] = (value >> 24) & 0xFF;
+		data[1] = (value >> 16) & 0xFF;
+		data[2] = (value >> 8) & 0xFF;
+		data[3] = value & 0xFF;
+	} else {
+		data[0] = value & 0xFF;
+		data[1] = (value >> 8) & 0xFF;
+		data[2] = (value >> 16) & 0xFF;
+		data[3] = (value >> 24) & 0xFF;
+	}
 
 	bool p = I2Cdev::writeBytes(this->address, reg, 4, data);
 	if (!p) {
@@ -379,8 +391,8 @@ void VL53L0X::writeRegister32Bit(uint8_t reg, uint32_t value) {
 }
 
 void VL53L0X::writeRegisterMultiple(uint8_t reg, const uint8_t* source, uint8_t count) {
-	uint8_t data[4];
-	for (uint8_t i = 0; i < 4; ++i) {
+	uint8_t data[count];
+	for (uint8_t i = 0; i < count; ++i) {
 		data[i] = source[i];
 	}
 	bool p = I2Cdev::writeBytes(this->address, reg, count, data);
@@ -406,7 +418,11 @@ uint16_t VL53L0X::readRegister16Bit(uint8_t reg) {
 		throw(std::string("Error reading word from register"));
 	}
 
-	return ((int16_t)(data[0]) << 8) + (int16_t)(data[1]);
+	if (REVERSE_ENDIANNESS) {
+		return ((int16_t)(data[0]) << 8) + (int16_t)(data[1]);
+	} else {
+		return ((int16_t)(data[1]) << 8) + (int16_t)(data[0]);
+	}
 }
 
 uint32_t VL53L0X::readRegister32Bit(uint8_t reg) {
@@ -417,10 +433,18 @@ uint32_t VL53L0X::readRegister32Bit(uint8_t reg) {
 		throw(std::string("Error reading dword from register"));
 	}
 
-	uint32_t value = (uint32_t)data[0] << 24;
-	value += (uint32_t)data[1]<<16;
-	value += (uint32_t)data[2]<<8;
-	value += (uint32_t)data[3];
+	uint32_t value = 0;
+	if (REVERSE_ENDIANNESS) {
+		value += (uint32_t)data[0] << 24;
+		value += (uint32_t)data[1] << 16;
+		value += (uint32_t)data[2] << 8;
+		value += (uint32_t)data[3];
+	} else {
+		value += (uint32_t)data[0];
+		value += (uint32_t)data[1] << 8;
+		value += (uint32_t)data[2] << 16;
+		value += (uint32_t)data[3] << 24;
+	}
 
 	return value;
 }
