@@ -43,6 +43,17 @@ THE SOFTWARE.
 
 #include "I2Cdev.hpp"
 
+#include <cstdio>
+#include <cstdlib>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cstring>
+#include <cerrno>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <linux/i2c-dev.h>
+
 /** Default constructor.
  */
 I2Cdev::I2Cdev() {

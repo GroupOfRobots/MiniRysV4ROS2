@@ -75,11 +75,11 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	std::cout << "Starting VL53L0X sensors...\n";
 
 	// Start continuous back-to-back measurement
 	for (int i = 0; rclcpp::ok() && i < 5; ++i) {
 		if (sensorInitialized[i]) {
+			std::cout << "Starting VL53L0X sensor: " << i << "\n";
 			sensors[i]->startContinuous();
 		}
 	}

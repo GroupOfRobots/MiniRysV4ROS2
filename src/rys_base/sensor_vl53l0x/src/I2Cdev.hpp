@@ -44,24 +44,16 @@ THE SOFTWARE.
 #ifndef _I2CDEV_H_
 #define _I2CDEV_H_
 
-#include <cstdio>
-#include <cstdint>
-#include <cstdlib>
-#include <fcntl.h>
-#include <unistd.h>
-#include <cstring>
-#include <cerrno>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <linux/i2c-dev.h>
-
 #ifndef TRUE
 #define TRUE (1==1)
 #define FALSE (0==1)
 #endif
 
+#ifndef I2C_DEV_PATH
 #define I2C_DEV_PATH "/dev/i2c-1"
+#endif
+
+#include <cstdint>
 
 class I2Cdev {
     public:
