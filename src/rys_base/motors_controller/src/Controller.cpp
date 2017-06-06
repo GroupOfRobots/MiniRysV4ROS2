@@ -22,6 +22,7 @@ Controller::Controller() {
 	pidAngleIntegral = 0;
 	pidAngleError = 0;
 
+	lqrLinearVelocityK = 0;
 	lqrAngularVelocityK = 0;
 	lqrAngleK = 0;
 }
@@ -137,13 +138,18 @@ void Controller::calculateSpeeds(float angle, float rotationX, float speed, floa
 }
 
 void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
+	// To regulate angle we need to reverse it's sign, because the more positive it is the more speed (acceleration) we should output
+	angle = -angle;
+	rotationX = -rotationX;
+
+	// Calculate target angle - first initialize it to 0
 	float targetAngle = 0.0f;
 	// If speed regulator (first PID layer) is enabled
 	if (this->pidSpeedRegulatorEnabled) {
 		// Estimate robot's linear velocity based on angle change and speed
 		// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
 		// What's left is motor's angular velocity responsible for robot's linear velocity
-		float linearVelocity = -speed - rotationX / SPEED_TO_DEG;
+		float linearVelocity = speed - rotationX / SPEED_TO_DEG;
 
 		// First control layer: speed control PID
 		// setpoint: user throttle
