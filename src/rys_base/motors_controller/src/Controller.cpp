@@ -195,7 +195,7 @@ void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, f
 
 void Controller::calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
 	// Calculate linear velocity for regulator, 0.05 is wheel radius
-	float linearVelocity = (speed * SPEED_TO_DEG - rotationX) * DEG_TO_RAD * 0.05f;
+	float linearVelocity = (- speed * SPEED_TO_DEG - rotationX) * DEG_TO_RAD * 0.05f;
 	// Calculate output: Motor speed change
 	float linearVelocityComponent = this->lqrLinearVelocityK * (throttle - linearVelocity);
 	float angularVelocityComponent = this->lqrAngularVelocityK * rotationX * DEG_TO_RAD;
