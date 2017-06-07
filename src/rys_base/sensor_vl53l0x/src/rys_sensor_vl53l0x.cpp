@@ -6,7 +6,7 @@
 
 // in order: front, back, top, left, right
 // P8 connector, pins 7 through 11
-const uint8_t pins[5] = { 66, 67, 69, 68, 45 };
+const uint8_t pins[5] = { 66, 67, 69, 68, 88 };
 const uint8_t addresses[5] = {
 	VL53L0X_ADDRESS_DEFAULT + 2,
 	VL53L0X_ADDRESS_DEFAULT + 4,
