@@ -4,6 +4,7 @@
 #include <cmath>
 
 Motors::Motors() {
+	this->enabled = false;
 	this->distance = 0;
 	this->speedLeft = 0;
 	this->speedRight = 0;
@@ -67,12 +68,14 @@ void Motors::setSpeed(float speedLeft, float speedRight, int microstep) {
 	}
 
 	// Validate microstep value
-	if (microstep != 1 && (microstep == 0 || microstep % 2 || microstep > 8)) {
+	if (microstep != 1 && (microstep == 0 || microstep % 2 || microstep > 32)) {
 		throw(std::string("Bad microstep value!"));
 	}
 
 	// Create data frame for PRU
 	DataFrame dataFrame;
+
+	dataFrame.enabled = this->enabled;
 
 	// Save microstep value
 	this->microstep = microstep;
@@ -118,60 +121,24 @@ void Motors::setSpeed(float speedLeft, float speedRight, int microstep) {
 	}
 
 	// Write data frame to file (PRU communication)
-	// We have to open/close this file each time or it won't "apply" to PRU
-	this->pruFile.open(DEVICE_NAME, std::ofstream::out | std::ofstream::binary);
-	if (!this->pruFile.is_open() || !this->pruFile.good()) {
-		// throw(std::string("Failed writing to file: ") + std::string(DEVICE_NAME));
-		std::cout << "Failed writing to file: " << DEVICE_NAME << std::endl;
-	} else {
-		this->pruFile.write((char*)(&dataFrame), (int)(sizeof(DataFrame)));
-		// std::cout << "Writing: " << (dataFrame.directionLeft == 0 ? '0' : ' ') << (dataFrame.directionLeft == 1 ? '1' : ' ') << " " << dataFrame.speedLeft << std::endl;
-	}
-	this->pruFile.close();
+	this->writeDataFrame(dataFrame);
 }
 
 void Motors::enable() {
-	std::lock_guard<std::mutex> guard(this->fileAccessMutex);
-
-	std::ofstream file;
-
-	file.open("/sys/class/gpio/gpio78/value", std::ofstream::out);
-	if (!file.is_open() || !file.good()) {
-		file.close();
-		throw(std::string("Failed opening file: /sys/class/gpio/gpio78/value"));
-	}
-	file << "0";
-	file.close();
-
-	file.open("/sys/class/gpio/gpio79/value", std::ofstream::out);
-	if (!file.is_open() || !file.good()) {
-		file.close();
-		throw(std::string("Failed opening file: /sys/class/gpio/gpio79/value"));
-	}
-	file << "0";
-	file.close();
+	this->enabled = true;
 }
 
 void Motors::disable() {
-	std::lock_guard<std::mutex> guard(this->fileAccessMutex);
+	this->enabled = false;
+	DataFrame dataFrame;
+	dataFrame.enabled = 0;
+	dataFrame.microstep = 1;
+	dataFrame.directionLeft = 0;
+	dataFrame.directionRight = 0;
+	dataFrame.speedLeft = 0;
+	dataFrame.speedRight = 0;
 
-	std::ofstream file;
-
-	file.open("/sys/class/gpio/gpio78/value", std::ofstream::out);
-	if (!file.is_open() || !file.good()) {
-		file.close();
-		throw(std::string("Failed opening file: /sys/class/gpio/gpio78/value"));
-	}
-	file << "1";
-	file.close();
-
-	file.open("/sys/class/gpio/gpio79/value", std::ofstream::out);
-	if (!file.is_open() || !file.good()) {
-		file.close();
-		throw(std::string("Failed opening file: /sys/class/gpio/gpio79/value"));
-	}
-	file << "1";
-	file.close();
+	this->writeDataFrame(dataFrame);
 }
 
 float Motors::getDistance() {
@@ -188,4 +155,17 @@ float Motors::getSpeedLeft() {
 
 float Motors::getSpeedRight() {
 	return this->speedRight;
+}
+
+void Motors::writeDataFrame(const DataFrame & frame) {
+	std::lock_guard<std::mutex> guard(this->fileAccessMutex);
+
+	// We have to open/close this file each time or it won't "apply" to PRU
+	this->pruFile.open(DEVICE_NAME, std::ofstream::out | std::ofstream::binary);
+	if (!this->pruFile.is_open() || !this->pruFile.good()) {
+		std::cout << "Failed writing to file: " << DEVICE_NAME << std::endl;
+	} else {
+		this->pruFile.write((char*)(&frame), (int)(sizeof(DataFrame)));
+	}
+	this->pruFile.close();
 }

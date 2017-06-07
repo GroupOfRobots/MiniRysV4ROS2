@@ -10,15 +10,17 @@
 #define DEVICE_NAME "/dev/rpmsg_pru31"
 
 struct DataFrame {
-	uint32_t speedLeft;
-	uint32_t speedRight;
+	uint8_t enabled;
+	uint8_t microstep;
 	uint8_t directionLeft;
 	uint8_t directionRight;
-	uint8_t microstep;
+	uint32_t speedLeft;
+	uint32_t speedRight;
 };
 
 class Motors {
 	private:
+		bool enabled;
 		float speedLeft;
 		float speedRight;
 		uint8_t microstep;
@@ -26,6 +28,8 @@ class Motors {
 		long distance;
 		std::ofstream pruFile;
 		std::mutex fileAccessMutex;
+
+		void writeDataFrame(const DataFrame & frame);
 	public:
 		Motors();
 		~Motors();

@@ -139,7 +139,7 @@ void Controller::calculateSpeeds(float angle, float rotationX, float speed, floa
 
 void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
 	// To regulate angle we need to reverse it's sign, because the more positive it is the more speed (acceleration) we should output
-	angle = -angle;
+	// angle = -angle;
 	rotationX = -rotationX;
 
 	// Calculate target angle - first initialize it to 0

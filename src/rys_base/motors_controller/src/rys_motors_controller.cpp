@@ -255,7 +255,7 @@ int main(int argc, char * argv[]) {
 
 			// Set target speeds
 			try {
-				motors.setSpeed(finalLeftSpeed, finalRightSpeed, 8);
+				motors.setSpeed(finalLeftSpeed, finalRightSpeed, 32);
 			} catch (std::string & error) {
 				std::cout << "Error setting motors speed: " << error << std::endl;
 				break;
