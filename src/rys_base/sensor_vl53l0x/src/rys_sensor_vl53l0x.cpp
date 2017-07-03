@@ -2,6 +2,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rys_interfaces/msg/ranges.hpp"
+
+#define I2C_DEV_PATH "/dev/i2c-2"
 #include "VL53L0X.hpp"
 
 // in order: front, back, top, left, right

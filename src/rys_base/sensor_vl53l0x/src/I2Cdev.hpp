@@ -50,7 +50,7 @@ THE SOFTWARE.
 #endif
 
 #ifndef I2C_DEV_PATH
-#define I2C_DEV_PATH "/dev/i2c-1"
+#define I2C_DEV_PATH "/dev/i2c-2"
 #endif
 
 #include <cstdint>
