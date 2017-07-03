@@ -25,6 +25,7 @@ class RosBridge(QThread):
 
 		self.throttle = 0.0
 		self.rotation = 0.0
+		self.precision = 1
 		self.previousRoll = 0.0
 		self.previousRotationX = 0.0
 
@@ -58,9 +59,10 @@ class RosBridge(QThread):
 		message.data = balancingEnabled
 		self.publisherBalancingEnabled.publish(message)
 
-	def setSteering(self, throttle, rotation):
+	def setSteering(self, throttle, rotation, precision):
 		self.throttle = float(throttle)
 		self.rotation = float(rotation)
+		self.precision = int(precision)
 
 	def calibrateImu(self):
 		message = RosMsgs.Empty()
@@ -93,6 +95,7 @@ class RosBridge(QThread):
 		message = RysMsgs.Steering()
 		message.throttle = self.throttle
 		message.rotation = self.rotation
+		message.precision = self.precision
 		self.publisherSteering.publish(message)
 
 	def enableTimerCallback(self):

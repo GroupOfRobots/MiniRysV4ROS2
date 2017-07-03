@@ -18,7 +18,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.node = node
 		self.qtParent = parent
 
-		self.enabled = True
+		self.enabled = False
 		self.throttle = 0
 		self.rotation = 0
 		self.gamepadID = -1
@@ -142,7 +142,8 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 				update = True
 
 		if update:
-			self.rosBridge.setSteering(self.throttle, self.rotation)
+			precision = self.ui.precisionSpinBox.value()
+			self.rosBridge.setSteering(self.throttle, self.rotation, precision)
 			self.repaintSteering()
 
 	def gamepadButtonChangedHandler(self, gamepadButtonEvent):
