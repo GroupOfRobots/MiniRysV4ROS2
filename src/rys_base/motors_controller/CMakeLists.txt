@@ -12,7 +12,6 @@ ament_auto_find_build_dependencies()
 ament_auto_generate_code()
 ament_auto_add_executable(rys_motors_controller
 	src/rys_motors_controller.cpp
-	src/Controller.cpp
-	src/Motors.cpp
+	src/MotorsController.cpp
 )
 ament_auto_package()

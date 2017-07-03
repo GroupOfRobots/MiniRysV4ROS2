@@ -11,8 +11,7 @@
 #include "rys_interfaces/srv/set_regulator_settings.hpp"
 #include "rys_interfaces/srv/get_regulator_settings.hpp"
 
-#include "Motors.h"
-#include "Controller.h"
+#include "MotorsController.hpp"
 
 volatile bool enabled;
 volatile int enableTimeout = 5000;
@@ -26,9 +25,9 @@ volatile float rotationX;
 
 volatile float rotation;
 volatile float throttle;
+volatile unsigned char steeringPrecision;
 
-Motors motors;
-Controller controller;
+MotorsController motorsController;
 
 void msleep(const int milliseconds) {
 	auto end = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(milliseconds);
@@ -40,7 +39,7 @@ void msleep(const int milliseconds) {
 void motorsRunTimed(const float leftSpeed, const float rightSpeed, const int microstep, const int milliseconds) {
 	auto end = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(milliseconds);
 	while (rclcpp::ok() && std::chrono::high_resolution_clock::now() < end) {
-		motors.setSpeed(leftSpeed, rightSpeed, microstep);
+		motorsController.setMotorSpeeds(leftSpeed, rightSpeed, microstep);
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 }
@@ -50,13 +49,13 @@ void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
 		enableTimerEnd = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(enableTimeout);
 		if (!enabled) {
 			std::cout << "Enabling motors...\n";
-			motors.enable();
+			motorsController.enableMotors();
 		}
 	} else {
 		if (enabled) {
 			std::cout << "Disabling motors...\n";
 		}
-		motors.disable();
+		motorsController.disableMotors();
 	}
 	enabled = message->data;
 }
@@ -84,12 +83,12 @@ void setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> reques
 	std::cout << "\t LQR: Angle K: " << request->lqr_angle_k << std::endl;
 
 	// Set values
-	controller.setSpeedFilterFactor(request->speed_filter_factor);
-	controller.setAngleFilterFactor(request->angle_filter_factor);
-	controller.setLQREnabled(request->lqr_enabled);
-	controller.setPIDSpeedRegulatorEnabled(request->pid_speed_regulator_enabled);
-	controller.setPIDParameters(request->pid_speed_kp, request->pid_speed_ki, request->pid_speed_kd, request->pid_angle_kp, request->pid_angle_ki, request->pid_angle_kd);
-	controller.setLQRParameters(request->lqr_linear_velocity_k, request->lqr_angular_velocity_k, request->lqr_angle_k);
+	motorsController.setSpeedFilterFactor(request->speed_filter_factor);
+	motorsController.setAngleFilterFactor(request->angle_filter_factor);
+	motorsController.setLQREnabled(request->lqr_enabled);
+	motorsController.setPIDSpeedRegulatorEnabled(request->pid_speed_regulator_enabled);
+	motorsController.setPIDParameters(request->pid_speed_kp, request->pid_speed_ki, request->pid_speed_kd, request->pid_angle_kp, request->pid_angle_ki, request->pid_angle_kd);
+	motorsController.setLQRParameters(request->lqr_linear_velocity_k, request->lqr_angular_velocity_k, request->lqr_angle_k);
 
 	// Set response
 	response->success = true;
@@ -101,30 +100,31 @@ void getRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> reques
 	(void) requestHeader;
 	(void) request;
 
-	response->speed_filter_factor = controller.getSpeedFilterFactor();
-	response->angle_filter_factor = controller.getAngleFilterFactor();
+	response->speed_filter_factor = motorsController.getSpeedFilterFactor();
+	response->angle_filter_factor = motorsController.getAngleFilterFactor();
 
-	response->lqr_enabled = controller.getLQREnabled();
+	response->lqr_enabled = motorsController.getLQREnabled();
 
-	response->pid_speed_regulator_enabled = controller.getPIDSpeedRegulatorEnabled();
-	controller.getPIDParameters(response->pid_speed_kp, response->pid_speed_ki, response->pid_speed_kd, response->pid_angle_kp, response->pid_angle_ki, response->pid_angle_kd);
-	controller.getLQRParameters(response->lqr_linear_velocity_k, response->lqr_angular_velocity_k, response->lqr_angle_k);
+	response->pid_speed_regulator_enabled = motorsController.getPIDSpeedRegulatorEnabled();
+	motorsController.getPIDParameters(response->pid_speed_kp, response->pid_speed_ki, response->pid_speed_kd, response->pid_angle_kp, response->pid_angle_ki, response->pid_angle_kd);
+	motorsController.getLQRParameters(response->lqr_linear_velocity_k, response->lqr_angular_velocity_k, response->lqr_angle_k);
 }
 
 void setBalancingMode(const std_msgs::msg::Bool::SharedPtr message) {
 	if (message->data != balancing) {
 		balancing = message->data;
 		std::cout << "Changing balancing mode to: " << balancing << std::endl;
-		controller.setBalancing(balancing);
+		motorsController.setBalancing(balancing);
 	}
 }
 
 void setSteering(const rys_interfaces::msg::Steering::SharedPtr message) {
 	throttle = message->throttle;
 	rotation = message->rotation;
+	steeringPrecision = message->precision;
 }
 
-void dataReceiveThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
+void communicationThreadFn(std::shared_ptr<rclcpp::node::Node> node) {
 	auto enableSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_enable", enableMessageCallback);
 	auto imuSubscriber = node->create_subscription<rys_interfaces::msg::ImuRollRotation>("rys_sensor_imu_roll", imuMessageCallback, rmw_qos_profile_sensor_data);
 	auto balancingModeSubscriber = node->create_subscription<std_msgs::msg::Bool>("rys_control_balancing_enabled", setBalancingMode);
@@ -142,14 +142,14 @@ void standUp() {
 
 	// Disable motors, wait 1s
 	motorsRunTimed(0.0f, 0.0f, 1, 100);
-	motors.disable();
+	motorsController.disableMotors();
 	msleep(1000);
 	if (!rclcpp::ok() || !enabled) {
 		return;
 	}
 
 	// Enable motors
-	motors.enable();
+	motorsController.enableMotors();
 	msleep(100);
 	if (!rclcpp::ok() || !enabled) {
 		return;
@@ -180,29 +180,26 @@ int main(int argc, char * argv[]) {
 	rclcpp::init(argc, argv);
 	auto node = rclcpp::node::Node::make_shared("rys_node_motors_controller");
 
-	std::cout << "Initializing and disabling motors...\n";
+	std::cout << "Setting up motors controller...\n";
 	try {
-		motors.initialize();
-		msleep(100);
-		motors.disable();
+		motorsController.init();
 	} catch (std::string & error) {
-		std::cout << "Error initializing motors: " << error << std::endl;
+		std::cout << "Error initializing controller: " << error << std::endl;
 		return 1;
 	}
 
+	motorsController.setBalancing(balancing);
+	motorsController.setLQREnabled(false);
+
+	motorsController.setSpeedFilterFactor(1);
+	motorsController.setAngleFilterFactor(1);
+	motorsController.setPIDParameters(0.03, 0.0001, 0.008, 50, 0.05, 20);
+	motorsController.setLQRParameters(-0.0316,-42.3121,-392.3354);
+
+	// This is only needed due to bug in rclcpp in ROS2 beta1.
+	// Re-add cslcpp::spin_some(node) to main thread and remove separate data thread when it's fixed (beta2?).
 	std::cout << "Initializing data receiving thread...\n";
-	std::thread dataReceiveThread(dataReceiveThreadFn, node);
-
-	std::cout << "Setting up controller...\n";
-	controller.init();
-
-	controller.setBalancing(balancing);
-	controller.setLQREnabled(false);
-
-	controller.setSpeedFilterFactor(1);
-	controller.setAngleFilterFactor(1);
-	controller.setPIDParameters(0.03, 0.0001, 0.008, 50, 0.05, 20);
-	controller.setLQRParameters(-0.0316,-42.3121,-392.3354);
+	std::thread communicationThread(communicationThreadFn, node);
 
 	std::cout << "Running!\n";
 	auto previous = std::chrono::high_resolution_clock::now();
@@ -216,7 +213,7 @@ int main(int argc, char * argv[]) {
 		float loopTime = loopTimeSpan.count();
 
 		if (!enabled) {
-			// motors.disable();
+			// motorsController.disableMotors();
 			loopRate.sleep();
 			continue;
 		}
@@ -224,7 +221,7 @@ int main(int argc, char * argv[]) {
 		// Check enable timer
 		if (enableTimerEnd < now) {
 			enabled = false;
-			motors.disable();
+			motorsController.disableMotors();
 			loopRate.sleep();
 			continue;
 		}
@@ -239,7 +236,7 @@ int main(int argc, char * argv[]) {
 				standUp();
 
 				// Zero-out regulators: PID's errors and integrals, loop timer etc
-				controller.zeroRegulators();
+				motorsController.zeroRegulators();
 				previous = std::chrono::high_resolution_clock::now();
 			} catch (std::string & error) {
 				std::cout << "Error standing up from laying: " << error << std::endl;
@@ -248,14 +245,15 @@ int main(int argc, char * argv[]) {
 		} else {
 			// Standing up or not balancing - use controller
 			// Calculate target speeds for motors
-			float speed = (motors.getSpeedLeft() + motors.getSpeedRight()) / 2;
+			float speed = (motorsController.getMotorSpeedLeft() + motorsController.getMotorSpeedRight()) / 2;
 			float finalLeftSpeed = 0;
 			float finalRightSpeed = 0;
-			controller.calculateSpeeds(roll, rotationX, speed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTime);
+			motorsController.calculateSpeeds(roll, rotationX, speed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTime);
 
 			// Set target speeds
 			try {
-				motors.setSpeed(finalLeftSpeed, finalRightSpeed, 32);
+				unsigned char microstep = balancing ? 32 : steeringPrecision;
+				motorsController.setMotorSpeeds(finalLeftSpeed, finalRightSpeed, microstep);
 			} catch (std::string & error) {
 				std::cout << "Error setting motors speed: " << error << std::endl;
 				break;
@@ -265,19 +263,8 @@ int main(int argc, char * argv[]) {
 		loopRate.sleep();
 	}
 
-	dataReceiveThread.join();
+	communicationThread.join();
 
-	std::cout << "Quitting, disabling motors\n";
-	// Disable motors
-	try {
-		motors.setSpeed(0.0, 0.0, 1);
-		motors.disable();
-	} catch (std::string & error) {
-		std::cout << "Error disabling motors: " << error << std::endl;
-		return 3;
-	}
-	// 0.5s
-	msleep(500);
-
+	std::cout << "Quitting\n";
 	return 0;
 }

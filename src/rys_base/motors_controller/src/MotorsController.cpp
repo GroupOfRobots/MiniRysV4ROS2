@@ -1,7 +1,7 @@
-#include "Controller.h"
-#include <iostream>
+#include "MotorsController.hpp"
+#include <cmath>
 
-Controller::Controller() {
+MotorsController::MotorsController() {
 	balancing = true;
 	lqrEnabled = true;
 
@@ -25,9 +25,16 @@ Controller::Controller() {
 	lqrLinearVelocityK = 0;
 	lqrAngularVelocityK = 0;
 	lqrAngleK = 0;
+
+	motorsEnabled = false;
+	motorSpeedLeft = 0;
+	motorSpeedRight = 0;
 }
 
-Controller::~Controller() {}
+MotorsController::~MotorsController() {
+	this->disableMotors();
+	this->motorPruFile.close();
+}
 
 void clipValue(float & value, float max) {
 	if (value > max) {
@@ -37,32 +44,34 @@ void clipValue(float & value, float max) {
 	}
 }
 
-void Controller::init() {
+void MotorsController::init() {
 	this->timePoint = std::chrono::high_resolution_clock::now();
 	this->timePointPrevious = std::chrono::high_resolution_clock::now();
+
+	this->disableMotors();
 }
 
-void Controller::setBalancing(bool value) {
+void MotorsController::setBalancing(bool value) {
 	this->balancing = value;
 }
 
-void Controller::setLQREnabled(bool value) {
+void MotorsController::setLQREnabled(bool value) {
 	this->lqrEnabled = value;
 }
 
-void Controller::setSpeedFilterFactor(float factor) {
+void MotorsController::setSpeedFilterFactor(float factor) {
 	this->speedFilterFactor = factor;
 }
 
-void Controller::setAngleFilterFactor(float factor) {
+void MotorsController::setAngleFilterFactor(float factor) {
 	this->angleFilterFactor = factor;
 }
 
-void Controller::setPIDSpeedRegulatorEnabled(bool enabled) {
+void MotorsController::setPIDSpeedRegulatorEnabled(bool enabled) {
 	this->pidSpeedRegulatorEnabled = enabled;
 }
 
-void Controller::setPIDParameters(float speedKp, float speedKi, float speedKd, float angleKp, float angleKi, float angleKd) {
+void MotorsController::setPIDParameters(float speedKp, float speedKi, float speedKd, float angleKp, float angleKi, float angleKd) {
 	this->pidSpeedKp = speedKp;
 	this->pidSpeedKi = speedKi;
 	this->pidSpeedKd = speedKd;
@@ -71,36 +80,36 @@ void Controller::setPIDParameters(float speedKp, float speedKi, float speedKd, f
 	this->pidAngleKd = angleKd;
 }
 
-void Controller::setLQRParameters(float linearVelocityK, float angularVelocityK, float angleK) {
+void MotorsController::setLQRParameters(float linearVelocityK, float angularVelocityK, float angleK) {
 	this->lqrLinearVelocityK = linearVelocityK;
 	this->lqrAngularVelocityK = angularVelocityK;
 	this->lqrAngleK = angleK;
 }
 
-void Controller::zeroRegulators() {
+void MotorsController::zeroRegulators() {
 	this->pidAngleIntegral = 0;
 	this->pidAngleError = 0;
 	this->pidSpeedIntegral = 0;
 	this->pidSpeedError = 0;
 }
 
-float Controller::getSpeedFilterFactor() {
+float MotorsController::getSpeedFilterFactor() {
 	return this->speedFilterFactor;
 }
 
-float Controller::getAngleFilterFactor() {
+float MotorsController::getAngleFilterFactor() {
 	return this->angleFilterFactor;
 }
 
-bool Controller::getLQREnabled() {
+bool MotorsController::getLQREnabled() {
 	return this->lqrEnabled;
 }
 
-bool Controller::getPIDSpeedRegulatorEnabled() {
+bool MotorsController::getPIDSpeedRegulatorEnabled() {
 	return this->pidSpeedRegulatorEnabled;
 }
 
-void Controller::getPIDParameters(float & speedKp, float & speedKi, float & speedKd, float & angleKp, float & angleKi, float & angleKd) {
+void MotorsController::getPIDParameters(float & speedKp, float & speedKi, float & speedKd, float & angleKp, float & angleKi, float & angleKd) {
 	speedKp = this->pidSpeedKp;
 	speedKi = this->pidSpeedKi;
 	speedKd = this->pidSpeedKd;
@@ -109,13 +118,13 @@ void Controller::getPIDParameters(float & speedKp, float & speedKi, float & spee
 	angleKd = this->pidAngleKd;
 }
 
-void Controller::getLQRParameters(float & linearVelocityK, float & angularVelocityK, float & angleK) {
+void MotorsController::getLQRParameters(float & linearVelocityK, float & angularVelocityK, float & angleK) {
 	linearVelocityK = this->lqrLinearVelocityK;
 	angularVelocityK = this->lqrAngularVelocityK;
 	angleK = this->lqrAngleK;
 }
 
-void Controller::calculateSpeeds(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
+void MotorsController::calculateSpeeds(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
 	clipValue(throttle, 1.0f);
 	clipValue(rotation, 1.0f);
 
@@ -137,7 +146,7 @@ void Controller::calculateSpeeds(float angle, float rotationX, float speed, floa
 	}
 }
 
-void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
+void MotorsController::calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
 	// To regulate angle we need to reverse it's sign, because the more positive it is the more speed (acceleration) we should output
 	// angle = -angle;
 	rotationX = -rotationX;
@@ -193,7 +202,7 @@ void Controller::calculateSpeedsPID(float angle, float rotationX, float speed, f
 	speedRightNew = speed + output - rotation;
 }
 
-void Controller::calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
+void MotorsController::calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
 	// Calculate linear velocity for regulator, 0.05 is wheel radius
 	float linearVelocity = (- speed * SPEED_TO_DEG - rotationX) * DEG_TO_RAD * 0.05f;
 	// Calculate output: Motor speed change
@@ -204,6 +213,117 @@ void Controller::calculateSpeedsLQR(float angle, float rotationX, float speed, f
 	// The rotation part from the user is injected directly into the output
 	speedLeftNew = speed + outputChange + rotation;
 	speedRightNew = speed + outputChange - rotation;
+}
 
-	std::cout << "LQR o: " << (speed + outputChange) << std::endl;
+void MotorsController::enableMotors() {
+	this->motorsEnabled = true;
+}
+
+void MotorsController::disableMotors() {
+	this->motorsEnabled = false;
+	this->motorSpeedLeft = 0;
+	this->motorSpeedRight = 0;
+
+	MotorsController::DataFrame dataFrame;
+	dataFrame.enabled = 0;
+	dataFrame.microstep = 1;
+	dataFrame.directionLeft = 0;
+	dataFrame.directionRight = 0;
+	dataFrame.speedLeft = 0;
+	dataFrame.speedRight = 0;
+
+	this->writePRUDataFrame(dataFrame);
+}
+
+void MotorsController::setMotorSpeeds(float speedLeft, float speedRight, int microstep, bool ignoreAcceleration) {
+	// Clip speed values
+	if (speedLeft > 1.0f) {
+		speedLeft = 1.0f;
+	} else if (speedLeft < -1.0f) {
+		speedLeft = -1.0f;
+	}
+	if (speedRight > 1.0f) {
+		speedRight = 1.0f;
+	} else if (speedRight < -1.0f) {
+		speedRight = -1.0f;
+	}
+
+	// Validate microstep value
+	if (microstep != 1 && (microstep == 0 || microstep % 2 || microstep > 32)) {
+		throw(std::string("Bad microstep value!"));
+	}
+
+	// Create data frame for PRU
+	MotorsController::DataFrame dataFrame;
+
+	dataFrame.enabled = this->motorsEnabled;
+
+	// Save microstep value
+	dataFrame.microstep = microstep;
+
+	// Calculate max speeds for given microstep value
+	int32_t maxMotorSpeed = MAX_MOTOR_SPEED / microstep;
+
+	// Clip speeds according to acceleration limits
+	if (ignoreAcceleration) {
+		this->motorSpeedLeft = speedLeft;
+		this->motorSpeedRight = speedRight;
+	} else {
+		if (speedLeft > (this->motorSpeedLeft + MAX_ACCELERATION)) {
+			this->motorSpeedLeft = this->motorSpeedLeft + MAX_ACCELERATION;
+		} else if (speedLeft < (this->motorSpeedLeft - MAX_ACCELERATION)) {
+			this->motorSpeedLeft = this->motorSpeedLeft - MAX_ACCELERATION;
+		} else {
+			this->motorSpeedLeft = speedLeft;
+		}
+		if (speedRight > (this->motorSpeedRight + MAX_ACCELERATION)) {
+			this->motorSpeedRight = this->motorSpeedRight + MAX_ACCELERATION;
+		} else if (speedRight < (this->motorSpeedRight - MAX_ACCELERATION)) {
+			this->motorSpeedRight = this->motorSpeedRight - MAX_ACCELERATION;
+		} else {
+			this->motorSpeedRight = speedRight;
+		}
+	}
+
+	// Write directions
+	dataFrame.directionLeft = (this->motorSpeedLeft >= 0 ? 0 : 1);
+	dataFrame.directionRight = (this->motorSpeedRight >= 0 ? 0 : 1);
+	// Calculate and write speeds to data frame
+	if (this->motorSpeedLeft == 0) {
+		dataFrame.speedLeft = 0;
+	} else {
+		dataFrame.speedLeft = maxMotorSpeed / std::abs(this->motorSpeedLeft);
+	}
+	if (this->motorSpeedRight == 0) {
+		dataFrame.speedRight = 0;
+	} else {
+		dataFrame.speedRight = maxMotorSpeed / std::abs(this->motorSpeedRight);
+	}
+
+	// Write data frame to file (PRU communication)
+	this->writePRUDataFrame(dataFrame);
+}
+
+float MotorsController::getMotorSpeedLeft() const {
+	return this->motorSpeedLeft;
+}
+
+float MotorsController::getMotorSpeedRight() const {
+	return this->motorSpeedRight;
+}
+
+void MotorsController::writePRUDataFrame(const MotorsController::DataFrame & frame) {
+	std::lock_guard<std::mutex> guard(this->fileAccessMutex);
+
+	// We have to open/close this file each time or it won't "apply" to PRU
+	this->motorPruFile.open(DEVICE_NAME, std::ofstream::out | std::ofstream::binary);
+	if (!this->motorPruFile.is_open() || !this->motorPruFile.good()) {
+		this->motorPruFile.close();
+		std::string errorString("Failed writing to file: ");
+		errorString += std::string(DEVICE_NAME);
+		throw(errorString);
+	} else {
+		this->motorPruFile.write((char*)(&frame), (int)(sizeof(MotorsController::DataFrame)));
+	}
+	this->motorPruFile.close();
 }

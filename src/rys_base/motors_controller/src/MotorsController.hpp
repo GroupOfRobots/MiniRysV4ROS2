@@ -1,18 +1,34 @@
 #ifndef _CONTROLLER_INCLUDED_
 #define _CONTROLLER_INCLUDED_
 
-#include <ctime>
-#include <ratio>
 #include <chrono>
+#include <cstdint>
 #include <cstdio>
+#include <ctime>
+#include <fstream>
+#include <mutex>
+#include <ratio>
 
 #define ANGLE_MAX 15
 #define DEG_TO_RAD 0.017453f
 #define RAD_TO_DEG 57.295779f
 #define SPEED_TO_DEG 1200.0f
 
-class Controller {
+#define MAX_ACCELERATION 1.0f
+#define MAX_MOTOR_SPEED 300000
+#define DEVICE_NAME "/dev/rpmsg_pru31"
+
+class MotorsController {
 	private:
+		struct DataFrame {
+			uint8_t enabled;
+			uint8_t microstep;
+			uint8_t directionLeft;
+			uint8_t directionRight;
+			uint32_t speedLeft;
+			uint32_t speedRight;
+		};
+
 		std::chrono::high_resolution_clock::time_point timePointPrevious;
 		std::chrono::high_resolution_clock::time_point timePoint;
 
@@ -39,9 +55,17 @@ class Controller {
 		float lqrLinearVelocityK;
 		float lqrAngularVelocityK;
 		float lqrAngleK;
+
+		bool motorsEnabled;
+		float motorSpeedLeft;
+		float motorSpeedRight;
+		std::ofstream motorPruFile;
+		std::mutex fileAccessMutex;
+
+		void writePRUDataFrame(const MotorsController::DataFrame & frame);
 	public:
-		Controller();
-		~Controller();
+		MotorsController();
+		~MotorsController();
 		void init();
 		void setBalancing(bool value);
 		void setLQREnabled(bool value);
@@ -62,6 +86,12 @@ class Controller {
 		void calculateSpeeds(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 		void calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 		void calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
+
+		void enableMotors();
+		void disableMotors();
+		void setMotorSpeeds(float speedLeft, float speedRight, int microstep, bool ignoreAcceleration = false);
+		float getMotorSpeedLeft() const;
+		float getMotorSpeedRight() const;
 };
 
 #endif
