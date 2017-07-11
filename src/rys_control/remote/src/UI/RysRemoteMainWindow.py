@@ -131,14 +131,15 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		axis = gamepadAxisEvent.axis
 		value = gamepadAxisEvent.value
 		print("axis event: joy %d, axis %d, value %f" % (gamepadID, axis, value))
+		multiplier = self.ui.multiplierDoubleSpinBox.value()
 
 		update = False
 		if gamepadID is self.gamepadID:
 			if axis is self.throttleAxis:
-				self.throttle = value
+				self.throttle = value * multiplier
 				update = True
 			elif axis is self.rotationAxis:
-				self.rotation = value
+				self.rotation = value * multiplier
 				update = True
 
 		if update:

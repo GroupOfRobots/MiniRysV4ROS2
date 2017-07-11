@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'RysRemoteMainWindowLayout.ui'
 #
-# Created by: PyQt5 UI code generator 5.8.2
+# Created by: PyQt5 UI code generator 5.9
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_RysRemoteMainWindow(object):
     def setupUi(self, RysRemoteMainWindow):
         RysRemoteMainWindow.setObjectName("RysRemoteMainWindow")
-        RysRemoteMainWindow.resize(712, 820)
+        RysRemoteMainWindow.resize(712, 858)
         self.centralwidget = QtWidgets.QWidget(RysRemoteMainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -473,6 +473,20 @@ class Ui_RysRemoteMainWindow(object):
         self.precisionSpinBox.setObjectName("precisionSpinBox")
         self.precisionHorizontalLayout.addWidget(self.precisionSpinBox)
         self.axisVerticalLayout.addLayout(self.precisionHorizontalLayout)
+        self.multiplierHorizontalLayout = QtWidgets.QHBoxLayout()
+        self.multiplierHorizontalLayout.setObjectName("multiplierHorizontalLayout")
+        self.multiplierComboBoxLabel = QtWidgets.QLabel(self.steeringGroupBox)
+        self.multiplierComboBoxLabel.setMinimumSize(QtCore.QSize(60, 30))
+        self.multiplierComboBoxLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.multiplierComboBoxLabel.setObjectName("multiplierComboBoxLabel")
+        self.multiplierHorizontalLayout.addWidget(self.multiplierComboBoxLabel)
+        self.multiplierDoubleSpinBox = QtWidgets.QDoubleSpinBox(self.steeringGroupBox)
+        self.multiplierDoubleSpinBox.setMaximum(1.0)
+        self.multiplierDoubleSpinBox.setSingleStep(0.01)
+        self.multiplierDoubleSpinBox.setProperty("value", 1.0)
+        self.multiplierDoubleSpinBox.setObjectName("multiplierDoubleSpinBox")
+        self.multiplierHorizontalLayout.addWidget(self.multiplierDoubleSpinBox)
+        self.axisVerticalLayout.addLayout(self.multiplierHorizontalLayout)
         self.line_8 = QtWidgets.QFrame(self.steeringGroupBox)
         self.line_8.setFrameShape(QtWidgets.QFrame.HLine)
         self.line_8.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -584,6 +598,7 @@ class Ui_RysRemoteMainWindow(object):
         self.enableButton.setText(_translate("RysRemoteMainWindow", "Enable"))
         self.balancingEnabledCheckBox.setText(_translate("RysRemoteMainWindow", "Balancing"))
         self.precisionComboBoxLabel.setText(_translate("RysRemoteMainWindow", "Precision"))
+        self.multiplierComboBoxLabel.setText(_translate("RysRemoteMainWindow", "Multiplier"))
         self.gamepadComboBoxLabel.setText(_translate("RysRemoteMainWindow", "Gamepad"))
         self.gamepadComboBox.setItemText(0, _translate("RysRemoteMainWindow", "[none]"))
         self.throttleComboBoxLabel.setText(_translate("RysRemoteMainWindow", "Throttle"))
