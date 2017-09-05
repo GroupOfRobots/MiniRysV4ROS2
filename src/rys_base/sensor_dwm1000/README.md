@@ -1,5 +1,10 @@
 # rys\_sensor\_dwm1000
 
+## TODO
+* parameters describing anchors' positions
+* poll 3 anchors for distance and return trilaterated position
+* improve continuous operation (if needed)
+
 ### Building
 Download DW1000 API from [DecaWave website](https://www.decawave.com/support/software).
 
