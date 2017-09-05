@@ -7,7 +7,7 @@
 	<maintainer email="mjbogusz.email.address@domain.name.com">MJBogusz</maintainer>
 	<license></license>
 
-	<build_depend>rclpy</build_depend>
+	<build_depend>ament_python</build_depend>
 
 	<exec_depend>rclpy</exec_depend>
 	<exec_depend>rys_interfaces</exec_depend>

@@ -1,24 +1,28 @@
-from setuptools import setup
+from ament_python.script_dir import install_scripts_to_libexec
+from setuptools import setup #, find_packages
+
+package_name = 'rys_remote'
+install_scripts_to_libexec(package_name)
 
 setup(
-	name='rys_remote',
+	name=package_name,
 	version='0.0.0',
 	packages = [
-		'',
-		'Gamepad',
-		'ROS',
-		'UI',
-		'UI.Layouts',
+		# '',
+		# 'Gamepad',
+		# 'ROS',
+		# 'UI',
+		# 'UI.Layouts',
 	],
-	package_dir = {
-		'': 'src',
-		'Gamepad': 'src/Gamepad',
-		'ROS': 'src/ROS',
-		'UI': 'src/UI',
-		'UI.Layouts': 'src/UI/Layouts',
-	},
+	# package_dir = {
+	# 	'': 'src',
+	# 	'Gamepad': 'src/Gamepad',
+	# 	'ROS': 'src/ROS',
+	# 	'UI': 'src/UI',
+	# 	'UI.Layouts': 'src/UI/Layouts',
+	# },
 	install_requires=[
-		'launch',
+		# 'launch',
 		'setuptools',
 		'PyQt5',
 		'pygame',
@@ -37,7 +41,7 @@ setup(
 	license='',
 	entry_points={
 		'console_scripts': [
-			'rys_remote = rys_remote:main',
+			'rys_remote = src.rys_remote:main',
 		],
 	},
 )

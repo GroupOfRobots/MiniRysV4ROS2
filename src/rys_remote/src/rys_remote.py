@@ -8,7 +8,7 @@ def main(args = None):
 	if args is None:
 		args = sys.argv
 
-	rclpy.init(args)
+	rclpy.init(args=args)
 	node = rclpy.create_node('rys_remote')
 
 	ui = RysRemoteUI(node)
