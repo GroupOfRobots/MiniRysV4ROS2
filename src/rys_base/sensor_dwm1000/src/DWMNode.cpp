@@ -1,4 +1,5 @@
 #include <iostream>
+#include <functional>
 #include "rclcpp/rclcpp.hpp"
 
 #include "DWMNode.hpp"
