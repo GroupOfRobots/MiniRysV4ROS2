@@ -1,4 +1,5 @@
 #include <chrono>
+#include "rclcpp/rclcpp.hpp"
 #include "DWMNode.hpp"
 
 using namespace std::chrono_literals;
