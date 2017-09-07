@@ -1,7 +1,7 @@
-#ifndef _IMU_H_
-#define _IMU_H_
+#ifndef _IMU_HPP_
+#define _IMU_HPP_
 
-#include "MPU6050.h"
+#include "MPU6050.hpp"
 #define IMU_CALIBRATION_READINGS 5
 
 class IMU {

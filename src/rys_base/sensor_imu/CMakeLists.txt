@@ -1,19 +1,36 @@
 cmake_minimum_required(VERSION 3.5)
 
+### Package name
 project(rys_sensor_imu)
 
-if(NOT WIN32)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -Wpedantic")
-endif()
+### Compile options
+include(../cmake_modules/compile_options.cmake)
 
-### ament_auto
-find_package(ament_cmake_auto REQUIRED)
-ament_auto_find_build_dependencies()
-ament_auto_generate_code()
-ament_auto_add_executable(rys_sensor_imu
-	src/rys_sensor_imu.cpp
-	src/I2Cdev.cpp
-	src/IMU.cpp
-	src/MPU6050.cpp
+### Package settings
+# Dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rys_interfaces REQUIRED)
+
+set(HEADER_FILES
+	src/IMU.hpp
+	src/IMUNode.hpp
+	src/MPU6050.hpp
+	src/I2Cdev.hpp
+	src/helper_3dmath.hpp
 )
-ament_auto_package()
+set(SOURCE_FILES
+	src/IMU.cpp
+	src/IMUNode.cpp
+	src/MPU6050.cpp
+	src/I2Cdev.cpp
+)
+set(AMENT_DEPENDENCIES
+	rclcpp
+	std_msgs
+	rys_interfaces
+)
+
+### Package definitions, install targets etc
+include(../cmake_modules/package_targets.cmake)
