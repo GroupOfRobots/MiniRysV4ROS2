@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "rclcpp/rclcpp.hpp"
-#include "Sonars.h"
+#include "Sonars.hpp"
 #include "rys_interfaces/msg/ranges.hpp"
 
 int main(int argc, char * argv[]) {
