@@ -3,9 +3,8 @@
 #ARGS="--symlink-install"
 ARGS=""
 COMMON_PKGS="rys_interfaces"
-ROBOT_PKGS="rys_motors_controller "
-ROBOT_PKGS="${ROBOT_PKGS} rys_sensor_imu rys_sensor_sonars rys_sensor_vl53l0x rys_sensor_dwm1000 "
-CONTROL_PKGS="rys_remote "
+ROBOT_PKGS="rys_motors_controller rys_sensor_imu rys_sensor_vl53l0x rys_sensor_dwm1000 rys_launch"
+CONTROL_PKGS="rys_remote"
 
 # Check whether ament is available
 command -v ament > /dev/null 2>&1;
