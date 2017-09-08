@@ -9,6 +9,9 @@
  * (source: https://github.com/SPAN-UofU/dw1000_bbb)
  */
 
+#ifndef _DWM_PLATFORM_H
+#define _DWM_PLATFORM_H
+
 #include "deca_api/deca_device_api.h"
 #include <stdint.h>
 
@@ -29,3 +32,5 @@ void decamutexoff(decaIrqStatus_t s);
 
 void dwt_readtx_sys_count(uint8 * timestamp);
 void dwt_readrx_sys_count(uint8 * timestamp);
+
+#endif
