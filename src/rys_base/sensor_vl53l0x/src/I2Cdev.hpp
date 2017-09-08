@@ -41,8 +41,8 @@ THE SOFTWARE.
 ===============================================
 */
 
-#ifndef _I2CDEV_H_
-#define _I2CDEV_H_
+#ifndef _I2CDEV_HPP
+#define _I2CDEV_HPP
 
 #ifndef TRUE
 #define TRUE (1==1)

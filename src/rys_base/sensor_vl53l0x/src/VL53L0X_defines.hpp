@@ -1,5 +1,5 @@
-#ifndef _VL53LOX_defines_h
-#define _VL53LOX_defines_h
+#ifndef _VL53LOX_DEFINES_HPP
+#define _VL53LOX_DEFINES_HPP
 
 #include <cstdint>
 

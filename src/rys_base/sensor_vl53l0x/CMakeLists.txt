@@ -1,18 +1,34 @@
 cmake_minimum_required(VERSION 3.5)
 
+### Package name
 project(rys_sensor_vl53l0x)
 
-if(NOT WIN32)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -Wpedantic")
-endif()
+### Compile options
+include(../cmake_modules/compile_options.cmake)
 
-### ament_auto
-find_package(ament_cmake_auto REQUIRED)
-ament_auto_find_build_dependencies()
-ament_auto_generate_code()
-ament_auto_add_executable(rys_sensor_vl53l0x
-	src/rys_sensor_vl53l0x.cpp
+### Package settings
+# Dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rys_interfaces REQUIRED)
+
+set(HEADER_FILES
+	src/VL53L0XNode.hpp
+	src/VL53L0X.hpp
+	src/VL53L0X_defines.hpp
+	src/I2Cdev.hpp
+)
+set(SOURCE_FILES
+	src/VL53L0XNode.cpp
 	src/VL53L0X.cpp
 	src/I2Cdev.cpp
 )
-ament_auto_package()
+set(AMENT_DEPENDENCIES
+	rclcpp
+	std_msgs
+	rys_interfaces
+)
+
+### Package definitions, install targets etc
+include(../cmake_modules/package_targets.cmake)
