@@ -1,5 +1,5 @@
-#ifndef _CONTROLLER_INCLUDED_
-#define _CONTROLLER_INCLUDED_
+#ifndef _MOTORS_CONTROLLER_HPP
+#define _MOTORS_CONTROLLER_HPP
 
 #include <chrono>
 #include <cstdint>

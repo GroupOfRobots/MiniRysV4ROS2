@@ -1,3 +1,6 @@
+#ifndef _MOTORS_CONTROLLER_NODE
+#define _MOTORS_CONTROLLER_NODE
+
 #include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
@@ -43,3 +46,5 @@ class MotorsControllerNode : public rclcpp::Node {
 		MotorsControllerNode(const char * nodeName, std::chrono::milliseconds rate);
 		~MotorsControllerNode();
 };
+
+#endif
