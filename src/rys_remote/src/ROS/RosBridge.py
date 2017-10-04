@@ -40,9 +40,9 @@ class RosBridge(QThread):
 		self.clientGetRegulatorSettings = self.node.create_client(RysSrvs.GetRegulatorSettings, 'rys_get_regulator_settings')
 
 		# Create ROS subscribers
-		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRollRotation, 'rys_sensor_imu_roll', self.imuSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
-		subscriptionSonars = self.node.create_subscription(RysMsgs.Ranges, 'rys_sensor_sonars', self.rangeSensorSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
-		subscriptionVL53L0X = self.node.create_subscription(RysMsgs.Ranges, 'rys_sensor_vl53l0x', self.rangeSensorSubscriptionCallback, rclpy.qos.qos_profile_sensor_data)
+		subscriptionImu = self.node.create_subscription(RysMsgs.ImuRollRotation, 'rys_sensor_imu_roll', self.imuSubscriptionCallback) # , rclpy.qos.qos_profile_sensor_data)
+		subscriptionSonars = self.node.create_subscription(RysMsgs.Ranges, 'rys_sensor_sonars', self.rangeSensorSubscriptionCallback) # , rclpy.qos.qos_profile_sensor_data)
+		subscriptionVL53L0X = self.node.create_subscription(RysMsgs.Ranges, 'rys_sensor_vl53l0x', self.rangeSensorSubscriptionCallback) # , rclpy.qos.qos_profile_sensor_data)
 		# Prevent unused variable warning
 		assert subscriptionImu
 		assert subscriptionSonars
@@ -141,7 +141,8 @@ class RosBridge(QThread):
 		# Start main thread loop
 		while rclpy.ok() and not self.exitFlag:
 			# Timeout of 1 due to RCLPY memory leak bug (https://github.com/ros2/rclpy/issues/74, there is already a PR that fixes it, PR#79)
-			rclpy.spin_once(self.node, 1.0)
+			# rclpy.spin_once(self.node, 1.0)
+			rclpy.spin_once(self.node)
 
 			response = self.clientSetRegulatorSettings.response
 			if response is not None:
