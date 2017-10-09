@@ -1,9 +1,6 @@
-from ament_python.script_dir import install_scripts_to_libexec
 from setuptools import setup
-# , find_packages
 
 package_name = 'rys_remote'
-install_scripts_to_libexec(package_name)
 
 setup(
 	name=package_name,
