@@ -10,7 +10,15 @@ int main(int argc, char * argv[]) {
 	std::cout << "Initializing ROS...\n";
 	rclcpp::init(argc, argv);
 
-	const uint8_t pins[5] = { 66, 67, 69, 68, 88 };
+	// TIMER4, TIMER7, TIMER5, GPIO_50, GPIO_51
+	// GPIO2_2, GPIO2_3, GPIO2_5, GPIO_1_18, GPIO1_19
+	const uint8_t pins[5] = {
+		66,
+		67,
+		69,
+		50,
+		51
+	};
 	const uint8_t addresses[5] = {
 		VL53L0X_ADDRESS_DEFAULT + 2,
 		VL53L0X_ADDRESS_DEFAULT + 4,
@@ -19,8 +27,10 @@ int main(int argc, char * argv[]) {
 		VL53L0X_ADDRESS_DEFAULT + 12
 	};
 
-	rclcpp::spin(std::make_shared<VL53L0XNode>("rys_node_sensor_vl53l0x", "rys_sensor_vl53l0x", 20ms, pins, addresses));
-	rclcpp::shutdown();
+	auto node = std::make_shared<VL53L0XNode>("rys_node_sensor_vl53l0x", "rys_sensor_vl53l0x", 20ms, pins, addresses);
+
+	rclcpp::spin(node);
+	// rclcpp::shutdown();
 
 	return 0;
 }

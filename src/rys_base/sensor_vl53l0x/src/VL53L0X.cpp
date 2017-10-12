@@ -55,7 +55,7 @@ VL53L0X::VL53L0X(const int16_t xshutGPIOPin, const uint8_t address) {
 void VL53L0X::initGPIO() {
 	// Set XSHUT pin mode (if pin set)
 	if (this->xshutGPIOPin >= 0) {
-		std::string gpioDirectionFilename = std::string("/sys/class/gpio/gpio") + std::to_string(this->xshutGPIOPin) + std::string("/value");
+		std::string gpioDirectionFilename = std::string("/sys/class/gpio/gpio") + std::to_string(this->xshutGPIOPin) + std::string("/direction");
 		this->gpioFilename = std::string("/sys/class/gpio/gpio") + std::to_string(this->xshutGPIOPin) + std::string("/value");
 
 		std::lock_guard<std::mutex> guard(this->fileAccessMutex);

@@ -25,7 +25,7 @@ VL53L0XNode::VL53L0XNode(
 	}
 
 	// Initialize the sensors
-	for (int i = 0; i < 5; ++i) {
+	for (int i = 0; rclcpp::ok() && i < 5; ++i) {
 		try {
 			this->sensors[i]->init();
 			this->sensors[i]->setTimeout(200);
