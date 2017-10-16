@@ -7,7 +7,8 @@ using namespace std::chrono_literals;
 int main(int argc, char * argv[]) {
 	std::cout << "Initializing ROS...\n";
 	rclcpp::init(argc, argv);
-	rclcpp::spin(std::make_shared<MotorsControllerNode>("rys_node_motors_controller", 10ms));
+	auto node = std::make_shared<MotorsControllerNode>("rys_node_motors_controller", 10ms);
+	rclcpp::spin(node);
 	rclcpp::shutdown();
 
 	return 0;
