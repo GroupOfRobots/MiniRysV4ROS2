@@ -19,25 +19,29 @@ setup(
 		'UI': 'src/UI',
 		'UI.Layouts': 'src/UI/Layouts',
 	},
-	install_requires=[
+	install_requires = [
 		# 'launch',
 		'setuptools',
 		'PyQt5',
 		'pygame',
 	],
+	data_files = [(
+		'share/' + package_name,
+		['package.xml']
+	)],
 	author='MJBogusz',
 	author_email='mjbogusz.email.address@domain.name.com',
 	maintainer='MJBogusz',
 	maintainer_email='mjbogusz.email.address@domain.name.com',
 	keywords=['ROS'],
-	classifiers=[
+	classifiers = [
 		'Programming Language :: Python',
 	],
-	description=(
+	description = (
 		'Node to remotely control and display data from MiniRys robot.'
 	),
-	license='',
-	entry_points={
+	license = '',
+	entry_points = {
 		'console_scripts': [
 			'main = rys_remote:main',
 		],

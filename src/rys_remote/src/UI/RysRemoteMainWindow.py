@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from Gamepad import GamepadBridge
 from UI.Layouts import Ui_RysRemoteMainWindow
-from ROS import RosBridge
+from ROS import QTRosBridge
 
 class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	"""
@@ -12,11 +12,8 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	regulatorSettingsSetRequested = QtCore.pyqtSignal(object)
 	regulatorSettingsGetRequested = QtCore.pyqtSignal()
 
-	def __init__(self, node, parent = None):
+	def __init__(self, nodeName, parent = None):
 		super(RysRemoteMainWindow, self).__init__(parent)
-
-		self.node = node
-		self.qtParent = parent
 
 		self.enabled = False
 		self.throttle = 0
@@ -46,7 +43,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.gamepadBridge.gamepadButtonChanged.connect(self.gamepadButtonChangedHandler)
 		self.gamepadBridge.gamepadListUpdated.connect(self.gamepadListUpdatedHandler)
 
-		self.rosBridge = RosBridge(node, self)
+		self.rosBridge = QTRosBridge(nodeName, self)
 		self.rosBridge.imuChanged.connect(self.imuChangedHandler)
 		self.rosBridge.rangesChanged.connect(self.rangesChangedHandler)
 		self.rosBridge.regulatorSettingsSetDone.connect(self.regulatorSettingsSetDoneHandler)
