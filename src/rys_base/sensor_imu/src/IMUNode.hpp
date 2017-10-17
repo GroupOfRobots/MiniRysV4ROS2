@@ -20,6 +20,7 @@ class IMUNode : public rclcpp::Node {
 
 		rclcpp::TimerBase::SharedPtr timer;
 		rclcpp::Publisher<rys_interfaces::msg::ImuRollRotation>::SharedPtr imuPublisher;
+		rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr calibrationSubscription;
 
 		void imuReadAndPublishData();
 		void imuCalibrateCallback(const std_msgs::msg::Empty::SharedPtr message);

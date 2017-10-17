@@ -20,7 +20,7 @@ IMUNode::IMUNode(const char * nodeName,
 	this->imu->resetFIFO();
 
 	this->imuPublisher = this->create_publisher<rys_interfaces::msg::ImuRollRotation>(publishTopicName, rmw_qos_profile_sensor_data);
-	this->create_subscription<std_msgs::msg::Empty>(calibrateTopicName, std::bind(&IMUNode::imuCalibrateCallback, this, std::placeholders::_1));
+	this->calibrationSubscription = this->create_subscription<std_msgs::msg::Empty>(calibrateTopicName, std::bind(&IMUNode::imuCalibrateCallback, this, std::placeholders::_1));
 	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::imuReadAndPublishData, this));
 }
 
