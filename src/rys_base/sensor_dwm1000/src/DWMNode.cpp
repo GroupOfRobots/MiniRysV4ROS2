@@ -5,11 +5,11 @@
 #include "DWMNode.hpp"
 
 DWMNode::DWMNode(const char * nodeName, const char * topicName, std::chrono::milliseconds rate) : rclcpp::Node(nodeName) {
-	this->publisher = this->create_publisher<std_msgs::msg::Float64>(topicName);
-	this->timer = this->create_wall_timer(rate, std::bind(&DWMNode::publishData, this));
-
 	this->dwm = new DWM(115, 20);
 	this->dwm->initialize(true);
+
+	this->publisher = this->create_publisher<std_msgs::msg::Float64>(topicName);
+	this->timer = this->create_wall_timer(rate, std::bind(&DWMNode::publishData, this));
 }
 
 DWMNode::~DWMNode() {

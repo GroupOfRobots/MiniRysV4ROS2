@@ -11,8 +11,10 @@
 class DWMNode : public rclcpp::Node {
 	private:
 		DWM * dwm;
+
 		rclcpp::TimerBase::SharedPtr timer;
 		rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr publisher;
+
 		void publishData();
 	public:
 		DWMNode(const char * nodeName, const char * topicName, std::chrono::milliseconds rate);
