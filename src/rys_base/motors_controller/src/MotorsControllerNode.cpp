@@ -74,8 +74,6 @@ void MotorsControllerNode::motorsRunTimed(const float leftSpeed, const float rig
 }
 
 void MotorsControllerNode::enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
-	std::cout << "Received motor toggle request\n";
-
 	if (message->data) {
 		this->enableTimerEnd = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(enableTimeout);
 		if (!this->enabled) {
@@ -153,7 +151,6 @@ void MotorsControllerNode::setBalancingMode(const std_msgs::msg::Bool::SharedPtr
 }
 
 void MotorsControllerNode::setSteering(const rys_interfaces::msg::Steering::SharedPtr message) {
-	std::cout << "Received set steering request\n";
 	this->throttle = message->throttle;
 	this->rotation = message->rotation;
 	this->steeringPrecision = message->precision;
@@ -198,8 +195,6 @@ void MotorsControllerNode::standUp() {
 }
 
 void MotorsControllerNode::runLoop() {
-	std::cout << "Loop!\n";
-
 	this->now = std::chrono::high_resolution_clock::now();
 	auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->now - this->previous);
 	float loopTime = loopTimeSpan.count();
