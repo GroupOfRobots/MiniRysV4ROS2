@@ -97,9 +97,9 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.enableButton.setStyleSheet("background-color: %s;" % color)
 
 	def balancingEnabledChangedHandler(self, value):
-		# balancingEnabled = self.ui.balancingEnabledCheckBox.isChecked()
-		# self.rosBridge.setBalancingEnabled(balancingEnabled)
-		self.rosBridge.setBalancingEnabled(value)
+		balancingEnabled = self.ui.balancingEnabledCheckBox.isChecked()
+		self.rosBridge.setBalancingEnabled(balancingEnabled)
+		# self.rosBridge.setBalancingEnabled(value)
 
 	def gamepadChangedHandler(self, index):
 		try:

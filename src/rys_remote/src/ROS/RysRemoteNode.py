@@ -8,7 +8,6 @@ class RysRemoteNode(rclpy.Node):
 
 	def __init__(self, nodeName, imuCallback, rangeSensorCallback, enableTimerTime, steeringTimerTime):
 		super().__init__(nodeName)
-		print('Node %s initialized' % nodeName)
 
 		self.enabled = False
 
@@ -42,7 +41,6 @@ class RysRemoteNode(rclpy.Node):
 	def enableTimerCallback(self):
 		message = RosMsgs.Bool()
 		message.data = self.enabled
-		print('Sending: enable = %d' % self.enabled)
 		self.publisherEnable.publish(message)
 
 	def steeringTimerCallback(self):
@@ -53,7 +51,6 @@ class RysRemoteNode(rclpy.Node):
 		message.throttle = self.throttle
 		message.rotation = self.rotation
 		message.precision = self.precision
-		print('Sending: steering = %d %d %d' % (self.throttle, self.rotation, self.precision))
 		self.publisherSteering.publish(message)
 
 	'''Public methods'''
@@ -70,7 +67,6 @@ class RysRemoteNode(rclpy.Node):
 	def setBalancingEnabled(self, balancingEnabled):
 		message = RosMsgs.Bool()
 		message.data = balancingEnabled
-		print('Sending: balancing = %d' % balancingEnabled)
 		self.publisherBalancingEnabled.publish(message)
 
 	def requestSetRegulatorSettings(self, parameters):
@@ -90,12 +86,10 @@ class RysRemoteNode(rclpy.Node):
 		request.lqr_angular_velocity_k = parameters['lqrAngularVelocityK']
 		request.lqr_angle_k = parameters['lqrAngleK']
 
-		print('Sending: set regulator settings')
 		self.clientSetRegulatorSettings.call(request)
 
 	def requestGetRegulatorSettings(self):
 		request = RysSrvs.GetRegulatorSettings.Request()
-		print('Sending: get regulator settings')
 		self.clientGetRegulatorSettings.call(request)
 
 	def getRequestResponses(self):
@@ -109,5 +103,4 @@ class RysRemoteNode(rclpy.Node):
 
 	def calibrateImu(self):
 		message = RosMsgs.Empty()
-		print('Sending: calibrate')
 		self.publisherCalibrateImu.publish(message)
