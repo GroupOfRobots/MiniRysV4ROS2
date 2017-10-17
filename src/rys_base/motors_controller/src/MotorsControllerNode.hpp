@@ -31,6 +31,15 @@ class MotorsControllerNode : public rclcpp::Node {
 
 		MotorsController * motorsController;
 
+		rclcpp::TimerBase::SharedPtr loopTimer;
+		rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr enableSubscriber;
+		rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr balancingModeSubscriber;
+		rclcpp::Subscription<rys_interfaces::msg::Steering>::SharedPtr steeringSubscriber;
+		rclcpp::Subscription<rys_interfaces::msg::ImuRollRotation>::SharedPtr imuSubscriber;
+
+		rclcpp::service::Service<rys_interfaces::srv::SetRegulatorSettings>::SharedPtr setRegulatorSettingsServer;
+		rclcpp::service::Service<rys_interfaces::srv::GetRegulatorSettings>::SharedPtr getRegulatorSettingsServer;
+
 		void motorsRunTimed(const float leftSpeed, const float rightSpeed, const int microstep, const int milliseconds);
 		void standUp();
 
