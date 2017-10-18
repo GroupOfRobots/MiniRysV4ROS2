@@ -177,7 +177,8 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	""" ROS event handlers """
 
 	def imuChangedHandler(self, roll, rotationX):
-		self.ui.rollDial.setValue(float(roll))
+		# self.ui.rollDial.setValue(float(roll))
+		self.ui.rollDial.setValue(int(roll))
 		self.ui.rollValueLabel.setText("    Roll: %f" % roll)
 		self.ui.rotationXValueLabel.setText("Rotation: %f" % rotationX)
 
