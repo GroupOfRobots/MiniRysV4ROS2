@@ -4,7 +4,7 @@
 #include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/float64.hpp"
+#include "rys_interfaces/msg/location_ranges.hpp"
 
 #include "DWM.hpp"
 
@@ -13,7 +13,7 @@ class DWMNode : public rclcpp::Node {
 		DWM * dwm;
 
 		rclcpp::TimerBase::SharedPtr timer;
-		rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr publisher;
+		rclcpp::Publisher<rys_interfaces::msg::LocationRanges>::SharedPtr publisher;
 
 		void publishData();
 	public:

@@ -14,6 +14,7 @@ add_definitions(-D_XOPEN_SOURCE=500)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(rys_interfaces REQUIRED)
 find_package(Threads REQUIRED)
 
 # Node class filename
@@ -39,6 +40,7 @@ set(SOURCE_FILES
 set(AMENT_DEPENDENCIES
 	rclcpp
 	std_msgs
+	rys_interfaces
 	pthread
 	m
 )

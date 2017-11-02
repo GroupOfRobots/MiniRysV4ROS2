@@ -8,7 +8,7 @@ DWMNode::DWMNode(const char * nodeName, const char * topicName, std::chrono::mil
 	// this->dwm = new DWM(115, 20);
 	// this->dwm->initialize(true);
 
-	this->publisher = this->create_publisher<std_msgs::msg::Float64>(topicName);
+	this->publisher = this->create_publisher<rys_interfaces::msg::LocationRanges>(topicName);
 	this->timer = this->create_wall_timer(rate, std::bind(&DWMNode::publishData, this));
 }
 
@@ -17,11 +17,15 @@ DWMNode::~DWMNode() {
 }
 
 void DWMNode::publishData() {
-	auto message = std_msgs::msg::Float64();
+	auto message = rys_interfaces::msg::LocationRanges();
 
-	// message.data = this->dwm->readRange();
-	message.data = 0.1;
-	// std::cout << "DWM1000: publishing message with data: " << message.data << std::endl;
+	// TODO: implement ranging once beacons (anchors) work
+	// float ranges[4] = this->dwm->readRange();
+	message.range0 = 0.0;
+	message.range1 = 0.0;
+	message.range2 = 0.0;
+	message.range3 = 0.0;
+	// std::cout << "DWM1000: publishing distances: " << message.range0 << std::endl;
 
 	this->publisher->publish(message);
 }
