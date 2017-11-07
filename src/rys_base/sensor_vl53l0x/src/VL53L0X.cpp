@@ -860,7 +860,7 @@ bool VL53L0X::getSPADInfo(uint8_t* count, bool* typeIsAperture) {
 
 	this->writeRegister(0x81, 0x00);
 	this->writeRegister(0xFF, 0x06);
-	this->writeRegister(0x83, this->readRegister(0x83 & ~0x04));
+	this->writeRegister(0x83, this->readRegister(0x83) & ~0x04);
 	this->writeRegister(0xFF, 0x01);
 	this->writeRegister(0x00, 0x01);
 
