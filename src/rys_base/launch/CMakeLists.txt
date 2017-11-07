@@ -10,6 +10,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rys_interfaces REQUIRED)
 find_package(rys_motors_controller REQUIRED)
+find_package(rys_sensor_battery REQUIRED)
 find_package(rys_sensor_dwm1000 REQUIRED)
 find_package(rys_sensor_imu REQUIRED)
 find_package(rys_sensor_vl53l0x REQUIRED)
@@ -23,6 +24,7 @@ ament_target_dependencies(main
 	std_msgs
 	rys_interfaces
 	rys_motors_controller
+	rys_sensor_battery
 	rys_sensor_dwm1000
 	rys_sensor_imu
 	rys_sensor_vl53l0x
