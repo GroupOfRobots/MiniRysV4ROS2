@@ -183,11 +183,12 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.rotationXValueLabel.setText("Rotation: %f" % rotationX)
 
 	def rangesChangedHandler(self, front, back, top, left, right):
-		self.ui.rangeFrontBar.setValue(front)
-		self.ui.rangeBackBar.setValue(back)
-		self.ui.rangeTopBar.setValue(top)
-		self.ui.rangeLeftBar.setValue(left)
-		self.ui.rangeRightBar.setValue(right)
+		maxValue = self.ui.rangeFrontBar.maximum
+		self.ui.rangeFrontBar.setValue(front if front < maxValue else maxValue)
+		self.ui.rangeBackBar.setValue(back if back < maxValue else maxValue)
+		self.ui.rangeTopBar.setValue(top if top < maxValue else maxValue)
+		self.ui.rangeLeftBar.setValue(left if left < maxValue else maxValue)
+		self.ui.rangeRightBar.setValue(right if right < maxValue else maxValue)
 
 	def regulatorSettingsSetDoneHandler(self, success, errorText):
 		if success:
