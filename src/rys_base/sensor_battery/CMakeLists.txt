@@ -10,7 +10,6 @@ include(../cmake_modules/compile_options.cmake)
 # Dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(rys_interfaces REQUIRED)
 
 set(HEADER_FILES
@@ -21,7 +20,6 @@ set(SOURCE_FILES
 )
 set(AMENT_DEPENDENCIES
 	rclcpp
-	std_msgs
 	rys_interfaces
 )
 
