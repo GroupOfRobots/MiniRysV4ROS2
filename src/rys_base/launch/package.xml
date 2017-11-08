@@ -16,6 +16,7 @@
 	<build_depend>rys_sensor_battery</build_depend>
 	<build_depend>rys_sensor_dwm1000</build_depend>
 	<build_depend>rys_sensor_imu</build_depend>
+	<build_depend>rys_sensor_temperature</build_depend>
 	<build_depend>rys_sensor_vl53l0x</build_depend>
 
 	<exec_depend>rclcpp</exec_depend>
@@ -25,6 +26,7 @@
 	<exec_depend>rys_sensor_battery</exec_depend>
 	<exec_depend>rys_sensor_dwm1000</exec_depend>
 	<exec_depend>rys_sensor_imu</exec_depend>
+	<exec_depend>rys_sensor_temperature</exec_depend>
 	<exec_depend>rys_sensor_vl53l0x</exec_depend>
 
 	<export>
