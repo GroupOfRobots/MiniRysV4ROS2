@@ -44,7 +44,9 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.gamepadBridge.gamepadListUpdated.connect(self.gamepadListUpdatedHandler)
 
 		self.rosBridge = QTRosBridge(nodeName, self)
+		self.rosBridge.batteryChanged.connect(self.batteryChangedHandler)
 		self.rosBridge.imuChanged.connect(self.imuChangedHandler)
+		self.rosBridge.temperatureChanged.connect(self.temperatureChangedHandler)
 		self.rosBridge.rangesChanged.connect(self.rangesChangedHandler)
 		self.rosBridge.regulatorSettingsSetDone.connect(self.regulatorSettingsSetDoneHandler)
 		self.rosBridge.regulatorSettingsGetDone.connect(self.regulatorSettingsGetDoneHandler)
@@ -176,6 +178,25 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 	""" ROS event handlers """
 
+	def batteryChangedHandler(self, cell1, cell2, cell3):
+		maxValue = 5000
+		if (cell1 > maxValue or cell2 > maxValue or cell3 > maxValue):
+			self.ui.cell1Bar.setMaximum(15000)
+			self.ui.cell1Bar.setValue(cell1 + cell2 + cell3)
+			self.ui.cell2Bar.setValue(0)
+			self.ui.cell3Bar.setValue(0)
+
+			self.ui.cell2Bar.setDisabled(True)
+			self.ui.cell3Bar.setDisabled(True)
+		else:
+			self.ui.cell1Bar.setMaximum(maxValue)
+			self.ui.cell1Bar.setValue(cell1)
+			self.ui.cell2Bar.setValue(cell2)
+			self.ui.cell3Bar.setValue(cell3)
+
+			self.ui.cell2Bar.setDisabled(False)
+			self.ui.cell3Bar.setDisabled(False)
+
 	def imuChangedHandler(self, roll, rotationX):
 		# self.ui.rollDial.setValue(float(roll))
 		self.ui.rollDial.setValue(int(roll))
@@ -183,12 +204,15 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.rotationXValueLabel.setText("Rotation: %f" % rotationX)
 
 	def rangesChangedHandler(self, front, back, top, left, right):
-		maxValue = self.ui.rangeFrontBar.maximum
+		maxValue = self.ui.rangeFrontBar.maximum()
 		self.ui.rangeFrontBar.setValue(front if front < maxValue else maxValue)
 		self.ui.rangeBackBar.setValue(back if back < maxValue else maxValue)
 		self.ui.rangeTopBar.setValue(top if top < maxValue else maxValue)
 		self.ui.rangeLeftBar.setValue(left if left < maxValue else maxValue)
 		self.ui.rangeRightBar.setValue(right if right < maxValue else maxValue)
+
+	def temperatureChangedHandler(self, temperature):
+		self.ui.temperatureBar.setValue(temperature)
 
 	def regulatorSettingsSetDoneHandler(self, success, errorText):
 		if success:

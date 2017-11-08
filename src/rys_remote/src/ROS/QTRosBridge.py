@@ -8,7 +8,9 @@ from ROS.RysRemoteNode import RysRemoteNode
 class QTRosBridge(QThread):
 	"""docstring for RosBridge"""
 
+	batteryChanged = pyqtSignal(int, int, int)
 	imuChanged = pyqtSignal(float, float)
+	temperatureChanged = pyqtSignal(int)
 	rangesChanged = pyqtSignal(int, int, int, int, int)
 	regulatorSettingsSetDone = pyqtSignal(bool, str)
 	regulatorSettingsGetDone = pyqtSignal(object)
@@ -28,7 +30,7 @@ class QTRosBridge(QThread):
 
 		enableTimerTime = 1.0 / self.enableMessageRate
 		steeringTimerTime = 1.0 / self.steeringMessageRate
-		self.node = RysRemoteNode(nodeName, self.imuSubscriptionCallback, self.rangeSensorSubscriptionCallback, enableTimerTime, steeringTimerTime)
+		self.node = RysRemoteNode(nodeName, self.batteryCallback, self.imuSubscriptionCallback, self.temperatureSensorCallback, self.rangeSensorSubscriptionCallback, enableTimerTime, steeringTimerTime)
 
 	""" Public methods """
 
@@ -49,6 +51,9 @@ class QTRosBridge(QThread):
 
 	""" Subscription callbacks """
 
+	def batteryCallback(self, message):
+		self.batteryChanged.emit(message.voltage_cell1 * 1000, message.voltage_cell2 * 1000, message.voltage_cell3 * 1000)
+
 	def imuSubscriptionCallback(self, message):
 		roll = message.roll * 180 / pi
 		rotationX = message.rotation_x
@@ -59,8 +64,11 @@ class QTRosBridge(QThread):
 
 		self.imuChanged.emit(roll, rotationX)
 
+	def temperatureSensorCallback(self, message):
+		print('Received: %f' % (message.data))
+		self.temperatureChanged.emit(int(message.data))
+
 	def rangeSensorSubscriptionCallback(self, message):
-		print('Received: %d %d %d %d %d' % (message.front, message.back, message.top, message.left, message.right))
 		self.rangesChanged.emit(message.front, message.back, message.top, message.left, message.right)
 
 	""" QT signal handlers """

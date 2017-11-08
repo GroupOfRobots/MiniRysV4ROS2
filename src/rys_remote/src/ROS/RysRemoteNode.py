@@ -6,7 +6,7 @@ from std_msgs import msg as RosMsgs
 class RysRemoteNode(rclpy.Node):
 	"""docstring for RysRemoteNode"""
 
-	def __init__(self, nodeName, imuCallback, rangeSensorCallback, enableTimerTime, steeringTimerTime):
+	def __init__(self, nodeName, batteryCallback, imuCallback, temperatureSensorCallback, rangeSensorCallback, enableTimerTime, steeringTimerTime):
 		super().__init__(nodeName)
 
 		self.enabled = False
@@ -26,7 +26,9 @@ class RysRemoteNode(rclpy.Node):
 		self.clientGetRegulatorSettings = self.create_client(RysSrvs.GetRegulatorSettings, 'rys_get_regulator_settings')
 
 		# Create ROS subscribers
+		self.subscriptionBattery = self.create_subscription(RysMsgs.BatteryStatus, 'rys_sensor_battery', batteryCallback, qos_profile = rclpy.qos.qos_profile_sensor_data)
 		self.subscriptionImu = self.create_subscription(RysMsgs.ImuRollRotation, 'rys_sensor_imu_roll', imuCallback, qos_profile = rclpy.qos.qos_profile_sensor_data)
+		self.subscriptionTemperature = self.create_subscription(RosMsgs.Float32, 'rys_sensor_temperature', temperatureSensorCallback, qos_profile = rclpy.qos.qos_profile_sensor_data)
 		self.subscriptionVL53L0X = self.create_subscription(RysMsgs.Ranges, 'rys_sensor_vl53l0x', rangeSensorCallback, qos_profile = rclpy.qos.qos_profile_sensor_data)
 
 		self.enableTimer = self.create_timer(enableTimerTime, self.enableTimerCallback)
