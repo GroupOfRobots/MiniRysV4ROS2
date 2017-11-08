@@ -22,8 +22,8 @@ TemperatureNode::TemperatureNode(
 
 	std::string criticalTopicName = std::string(topicName) + std::string("_critical");
 
-	this->publisherTemperature = this->create_publisher<std_msgs::msg::Float32>(topicName);
-	this->publisherCriticalTemperature = this->create_publisher<std_msgs::msg::Bool>(criticalTopicName.c_str());
+	this->publisherTemperature = this->create_publisher<std_msgs::msg::Float32>(topicName, rmw_qos_profile_default);
+	this->publisherCriticalTemperature = this->create_publisher<std_msgs::msg::Bool>(criticalTopicName.c_str(), rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&TemperatureNode::publishData, this));
 }
 

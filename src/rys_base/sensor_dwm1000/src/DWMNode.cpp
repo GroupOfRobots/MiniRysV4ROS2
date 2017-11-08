@@ -8,7 +8,7 @@ DWMNode::DWMNode(const char * nodeName, const char * topicName, std::chrono::mil
 	// this->dwm = new DWM(115, 20);
 	// this->dwm->initialize(true);
 
-	this->publisher = this->create_publisher<rys_interfaces::msg::LocationDistances>(topicName);
+	this->publisher = this->create_publisher<rys_interfaces::msg::LocationDistances>(topicName, rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&DWMNode::publishData, this));
 }
 

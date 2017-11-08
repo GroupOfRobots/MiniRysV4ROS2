@@ -19,7 +19,7 @@ BatteryNode::BatteryNode(
 	}
 	this->lowLevel = lowLevel;
 
-	this->publisher = this->create_publisher<rys_interfaces::msg::BatteryStatus>(topicName);
+	this->publisher = this->create_publisher<rys_interfaces::msg::BatteryStatus>(topicName, rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&BatteryNode::publishData, this));
 }
 
