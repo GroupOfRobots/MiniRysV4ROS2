@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 int main(int argc, char * argv[]) {
 	std::cout << "Initializing ROS...\n";
 	rclcpp::init(argc, argv);
-	rclcpp::executors::SingleThreadedExecutor executor;
+	rclcpp::executors::MultiThreadedExecutor executor;
 
 	const uint8_t batteryInputNumbers[3] = { 3, 1, 6 };
 	const float batteryCoefficients[3] = { 734.4895, 340.7509, 214.1773 };

@@ -16,7 +16,6 @@ find_package(rys_sensor_imu REQUIRED)
 find_package(rys_sensor_temperature REQUIRED)
 find_package(rys_sensor_vl53l0x REQUIRED)
 
-# Motors controller runner executable
 add_executable(main
 	src/main.cpp
 )
@@ -32,9 +31,25 @@ ament_target_dependencies(main
 	rys_sensor_vl53l0x
 )
 
+add_executable(multithread
+	src/multithread.cpp
+)
+ament_target_dependencies(multithread
+	rclcpp
+	std_msgs
+	rys_interfaces
+	rys_motors_controller
+	rys_sensor_battery
+	rys_sensor_dwm1000
+	rys_sensor_imu
+	rys_sensor_temperature
+	rys_sensor_vl53l0x
+)
+
 # Install
 install(TARGETS
 	main
+	multithread
 	DESTINATION lib/${PROJECT_NAME}
 )
 
