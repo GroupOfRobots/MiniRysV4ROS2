@@ -15,10 +15,8 @@ class QTRosBridge(QThread):
 	regulatorSettingsSetDone = pyqtSignal(bool, str)
 	regulatorSettingsGetDone = pyqtSignal(object)
 
-	def __init__(self, nodeName, parent = None, steeringMessageRate = 10, enableMessageRate = 0.5):
+	def __init__(self, parent, robotName, nodeName, enableMotorsMessageRate = 0.5, steeringMessageRate = 10):
 		super().__init__(parent)
-		self.enableMessageRate = enableMessageRate
-		self.steeringMessageRate = steeringMessageRate
 		self.enabled = False
 		self.balancingEnabled = False
 		self.exitFlag = False
@@ -28,9 +26,17 @@ class QTRosBridge(QThread):
 
 		rclpy.init(args = sys.argv)
 
-		enableTimerTime = 1.0 / self.enableMessageRate
-		steeringTimerTime = 1.0 / self.steeringMessageRate
-		self.node = RysRemoteNode(nodeName, self.batteryCallback, self.imuSubscriptionCallback, self.temperatureSensorCallback, self.rangeSensorSubscriptionCallback, enableTimerTime, steeringTimerTime)
+		callbacks = {
+			'battery': self.batteryCallback,
+			'imu': self.imuSubscriptionCallback,
+			'ranges': self.rangeSensorSubscriptionCallback,
+			'temperature': self.temperatureSensorCallback,
+		}
+		messageRates = {
+			'enableMotors': enableMotorsMessageRate,
+			'steering': steeringMessageRate,
+		}
+		self.node = RysRemoteNode(robotName, nodeName, callbacks, messageRates)
 
 	""" Public methods """
 
@@ -65,7 +71,6 @@ class QTRosBridge(QThread):
 		self.imuChanged.emit(roll, rotationX)
 
 	def temperatureSensorCallback(self, message):
-		print('Received: %f' % (message.data))
 		self.temperatureChanged.emit(int(message.data))
 
 	def rangeSensorSubscriptionCallback(self, message):

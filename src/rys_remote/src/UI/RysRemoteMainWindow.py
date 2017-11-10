@@ -12,7 +12,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	regulatorSettingsSetRequested = QtCore.pyqtSignal(object)
 	regulatorSettingsGetRequested = QtCore.pyqtSignal()
 
-	def __init__(self, nodeName, parent = None):
+	def __init__(self, parent, robotName, nodeName):
 		super(RysRemoteMainWindow, self).__init__(parent)
 
 		self.enabled = False
@@ -43,7 +43,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.gamepadBridge.gamepadButtonChanged.connect(self.gamepadButtonChangedHandler)
 		self.gamepadBridge.gamepadListUpdated.connect(self.gamepadListUpdatedHandler)
 
-		self.rosBridge = QTRosBridge(nodeName, self)
+		self.rosBridge = QTRosBridge(self, robotName, nodeName)
 		self.rosBridge.batteryChanged.connect(self.batteryChangedHandler)
 		self.rosBridge.imuChanged.connect(self.imuChangedHandler)
 		self.rosBridge.temperatureChanged.connect(self.temperatureChangedHandler)
@@ -204,12 +204,40 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.rotationXValueLabel.setText("Rotation: %f" % rotationX)
 
 	def rangesChangedHandler(self, front, back, top, left, right):
-		maxValue = self.ui.rangeFrontBar.maximum()
-		self.ui.rangeFrontBar.setValue(front if front < maxValue else maxValue)
-		self.ui.rangeBackBar.setValue(back if back < maxValue else maxValue)
-		self.ui.rangeTopBar.setValue(top if top < maxValue else maxValue)
-		self.ui.rangeLeftBar.setValue(left if left < maxValue else maxValue)
-		self.ui.rangeRightBar.setValue(right if right < maxValue else maxValue)
+		if (front >= 0):
+			self.ui.rangeFrontBar.setEnabled(True)
+			maxValue = self.ui.rangeFrontBar.maximum()
+			self.ui.rangeFrontBar.setValue(front if front < maxValue else maxValue)
+		else:
+			self.ui.rangeFrontBar.setEnabled(False)
+
+		if (back >= 0):
+			self.ui.rangeBackBar.setEnabled(True)
+			maxValue = self.ui.rangeBackBar.maximum()
+			self.ui.rangeBackBar.setValue(back if back < maxValue else maxValue)
+		else:
+			self.ui.rangeBackBar.setEnabled(False)
+
+		if (top >= 0):
+			self.ui.rangeTopBar.setEnabled(True)
+			maxValue = self.ui.rangeTopBar.maximum()
+			self.ui.rangeTopBar.setValue(top if top < maxValue else maxValue)
+		else:
+			self.ui.rangeTopBar.setEnabled(False)
+
+		if (left >= 0):
+			self.ui.rangeLeftBar.setEnabled(True)
+			maxValue = self.ui.rangeLeftBar.maximum()
+			self.ui.rangeLeftBar.setValue(left if left < maxValue else maxValue)
+		else:
+			self.ui.rangeLeftBar.setEnabled(False)
+
+		if (right >= 0):
+			self.ui.rangeRightBar.setEnabled(True)
+			maxValue = self.ui.rangeRightBar.maximum()
+			self.ui.rangeRightBar.setValue(right if right < maxValue else maxValue)
+		else:
+			self.ui.rangeRightBar.setEnabled(False)
 
 	def temperatureChangedHandler(self, temperature):
 		self.ui.temperatureBar.setValue(temperature)

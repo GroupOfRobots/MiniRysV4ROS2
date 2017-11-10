@@ -565,7 +565,7 @@
                <bool>false</bool>
               </property>
               <property name="format">
-               <string>%vC</string>
+               <string>%v°C</string>
               </property>
              </widget>
             </item>

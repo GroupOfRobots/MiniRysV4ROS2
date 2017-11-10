@@ -6,8 +6,8 @@ from std_msgs import msg as RosMsgs
 class RysRemoteNode(rclpy.Node):
 	"""docstring for RysRemoteNode"""
 
-	def __init__(self, nodeName, batteryCallback, imuCallback, temperatureSensorCallback, rangeSensorCallback, enableTimerTime, steeringTimerTime):
-		super().__init__(nodeName)
+	def __init__(self, robotName, nodeName, callbacks, messageRates):
+		super().__init__(nodeName, namespace = robotName)
 
 		self.enabled = False
 
@@ -16,23 +16,23 @@ class RysRemoteNode(rclpy.Node):
 		self.precision = 1
 
 		# Create ROS publishers
-		self.publisherEnable = self.create_publisher(RosMsgs.Bool, 'rys_control_enable')
-		self.publisherBalancingEnabled = self.create_publisher(RosMsgs.Bool, 'rys_control_balancing_enabled')
-		self.publisherSteering = self.create_publisher(RysMsgs.Steering, 'rys_control_steering')
-		self.publisherCalibrateImu = self.create_publisher(RosMsgs.Empty, 'rys_control_imu_calibrate')
+		self.publisherEnableMotors = self.create_publisher(RosMsgs.Bool, '/control/enable_motors')
+		self.publisherEnableBalancing = self.create_publisher(RosMsgs.Bool, '/control/enable_balancing')
+		self.publisherSteering = self.create_publisher(RysMsgs.Steering, '/control/steering')
+		self.publisherIMUCalibrate = self.create_publisher(RosMsgs.Empty, '/control/imu/calibrate')
 
 		# Create ROS service clients
-		self.clientSetRegulatorSettings = self.create_client(RysSrvs.SetRegulatorSettings, 'rys_set_regulator_settings')
-		self.clientGetRegulatorSettings = self.create_client(RysSrvs.GetRegulatorSettings, 'rys_get_regulator_settings')
+		self.clientSetRegulatorSettings = self.create_client(RysSrvs.SetRegulatorSettings, '/control/regulator_settings/set')
+		self.clientGetRegulatorSettings = self.create_client(RysSrvs.GetRegulatorSettings, '/control/regulator_settings/get')
 
 		# Create ROS subscribers
-		self.subscriptionBattery = self.create_subscription(RysMsgs.BatteryStatus, 'rys_sensor_battery', batteryCallback, qos_profile = rclpy.qos.qos_profile_sensor_data)
-		self.subscriptionImu = self.create_subscription(RysMsgs.ImuRollRotation, 'rys_sensor_imu_roll', imuCallback, qos_profile = rclpy.qos.qos_profile_sensor_data)
-		self.subscriptionTemperature = self.create_subscription(RosMsgs.Float32, 'rys_sensor_temperature', temperatureSensorCallback, qos_profile = rclpy.qos.qos_profile_sensor_data)
-		self.subscriptionVL53L0X = self.create_subscription(RysMsgs.Ranges, 'rys_sensor_vl53l0x', rangeSensorCallback, qos_profile = rclpy.qos.qos_profile_sensor_data)
+		self.subscriptionBattery = self.create_subscription(RysMsgs.BatteryStatus, '/sensor/battery', callbacks['battery'], qos_profile = rclpy.qos.qos_profile_default)
+		self.subscriptionImu = self.create_subscription(RysMsgs.ImuRollRotation, '/sensor/imu', callbacks['imu'], qos_profile = rclpy.qos.qos_profile_sensor_data)
+		self.subscriptionRanges = self.create_subscription(RysMsgs.Ranges, '/sensor/ranges', callbacks['ranges'], qos_profile = rclpy.qos.qos_profile_sensor_data)
+		self.subscriptionTemperature = self.create_subscription(RosMsgs.Float32, '/sensor/temperature', callbacks['temperature'], qos_profile = rclpy.qos.qos_profile_default)
 
-		self.enableTimer = self.create_timer(enableTimerTime, self.enableTimerCallback)
-		self.steeringTimer = self.create_timer(steeringTimerTime, self.steeringTimerCallback)
+		self.enableTimer = self.create_timer(1.0 / messageRates['enableMotors'], self.enableTimerCallback)
+		self.steeringTimer = self.create_timer(1.0 / messageRates['steering'], self.steeringTimerCallback)
 
 	def destroyTimers(self):
 		self.destroy_timer(self.enableTimer)
@@ -43,7 +43,7 @@ class RysRemoteNode(rclpy.Node):
 	def enableTimerCallback(self):
 		message = RosMsgs.Bool()
 		message.data = self.enabled
-		self.publisherEnable.publish(message)
+		self.publisherEnableMotors.publish(message)
 
 	def steeringTimerCallback(self):
 		if self.enabled is False:
@@ -69,7 +69,7 @@ class RysRemoteNode(rclpy.Node):
 	def setBalancingEnabled(self, balancingEnabled):
 		message = RosMsgs.Bool()
 		message.data = balancingEnabled
-		self.publisherBalancingEnabled.publish(message)
+		self.publisherEnableBalancing.publish(message)
 
 	def requestSetRegulatorSettings(self, parameters):
 		request = RysSrvs.SetRegulatorSettings.Request()
@@ -105,4 +105,4 @@ class RysRemoteNode(rclpy.Node):
 
 	def calibrateImu(self):
 		message = RosMsgs.Empty()
-		self.publisherCalibrateImu.publish(message)
+		self.publisherIMUCalibrate.publish(message)

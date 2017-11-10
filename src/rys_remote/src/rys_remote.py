@@ -7,7 +7,7 @@ def main(args = None):
 	if args is None:
 		args = sys.argv
 
-	ui = RysRemoteUI('rys_remote')
+	ui = RysRemoteUI('rys', 'remote')
 	sys.exit(ui.exec_(args))
 
 if __name__ == '__main__':

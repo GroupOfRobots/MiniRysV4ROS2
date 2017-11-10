@@ -699,7 +699,7 @@ class Ui_RysRemoteMainWindow(object):
         self.cell3Label.setText(_translate("RysRemoteMainWindow", "Cell 3"))
         self.cell3Bar.setFormat(_translate("RysRemoteMainWindow", "%vmV"))
         self.temperatureLabel.setText(_translate("RysRemoteMainWindow", "Temp"))
-        self.temperatureBar.setFormat(_translate("RysRemoteMainWindow", "%vC"))
+        self.temperatureBar.setFormat(_translate("RysRemoteMainWindow", "%v°C"))
         self.imuGroupBox.setTitle(_translate("RysRemoteMainWindow", "IMU"))
         self.rollValueLabel.setText(_translate("RysRemoteMainWindow", "    Roll: -90.0000"))
         self.rotationXValueLabel.setText(_translate("RysRemoteMainWindow", "Rotation: 0.0000"))
