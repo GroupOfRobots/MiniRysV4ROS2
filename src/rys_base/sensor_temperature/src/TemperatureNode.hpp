@@ -20,7 +20,14 @@ class TemperatureNode : public rclcpp::Node {
 
 		void publishData();
 	public:
-		TemperatureNode(const char * nodeName, const char * topicName, std::chrono::milliseconds rate, const uint8_t inputNumber, const float coefficient, const float criticalLevel = 70.0f);
+		TemperatureNode(
+			const std::string & robotName,
+			const std::string & nodeName,
+			std::chrono::milliseconds rate,
+			const uint8_t inputNumber,
+			const float coefficient,
+			const float criticalLevel = 70.0f
+		);
 		~TemperatureNode();
 };
 

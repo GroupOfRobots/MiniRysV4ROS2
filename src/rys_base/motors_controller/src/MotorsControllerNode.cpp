@@ -11,7 +11,11 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
 
-MotorsControllerNode::MotorsControllerNode(const char * nodeName, std::chrono::milliseconds rate) : rclcpp::Node(nodeName) {
+MotorsControllerNode::MotorsControllerNode(
+	const std::string & robotName,
+	const std::string & nodeName,
+	std::chrono::milliseconds rate
+) : rclcpp::Node(nodeName, robotName, true) {
 	this->enabled = false;
 	this->balancing = false;
 	this->enableTimeout = 5000ms;
@@ -45,14 +49,14 @@ MotorsControllerNode::MotorsControllerNode(const char * nodeName, std::chrono::m
 	this->motorsController->setLQRParameters(-0.0316,-42.3121,-392.3354);
 
 	std::cout << "Creating ROS subscriptions...\n";
-	this->enableSubscriber = this->create_subscription<std_msgs::msg::Bool>("rys_control_enable", std::bind(&MotorsControllerNode::enableMessageCallback, this, _1));
-	this->balancingModeSubscriber = this->create_subscription<std_msgs::msg::Bool>("rys_control_balancing_enabled", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
-	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("rys_control_steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
-	this->imuSubscriber = this->create_subscription<rys_interfaces::msg::ImuRollRotation>("rys_sensor_imu_roll", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
+	this->motorsEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/control/enable_motors", std::bind(&MotorsControllerNode::enableMessageCallback, this, _1));
+	this->balancingEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/control/enable_balancing", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
+	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
+	this->imuSubscriber = this->create_subscription<rys_interfaces::msg::ImuRollRotation>("/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
 
 	std::cout << "Creating ROS services...\n";
-	this->setRegulatorSettingsServer = this->create_service<rys_interfaces::srv::SetRegulatorSettings>("rys_set_regulator_settings", std::bind(&MotorsControllerNode::setRegulatorSettingsCallback, this, _1, _2, _3));
-	this->getRegulatorSettingsServer = this->create_service<rys_interfaces::srv::GetRegulatorSettings>("rys_get_regulator_settings", std::bind(&MotorsControllerNode::getRegulatorSettingsCallback, this, _1, _2, _3));
+	this->setRegulatorSettingsServer = this->create_service<rys_interfaces::srv::SetRegulatorSettings>("/control/regulator_settings/set", std::bind(&MotorsControllerNode::setRegulatorSettingsCallback, this, _1, _2, _3));
+	this->getRegulatorSettingsServer = this->create_service<rys_interfaces::srv::GetRegulatorSettings>("/control/regulator_settings/get", std::bind(&MotorsControllerNode::getRegulatorSettingsCallback, this, _1, _2, _3));
 
 	std::cout << "Creating ROS timers...\n";
 	this->loopTimer = this->create_wall_timer(rate, std::bind(&MotorsControllerNode::runLoop, this));

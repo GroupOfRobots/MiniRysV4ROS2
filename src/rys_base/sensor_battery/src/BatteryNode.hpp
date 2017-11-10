@@ -18,7 +18,14 @@ class BatteryNode : public rclcpp::Node {
 
 		void publishData();
 	public:
-		BatteryNode(const char * nodeName, const char * topicName, std::chrono::milliseconds rate, const uint8_t inputNumbers[3], const float coefficients[3], const float lowLevel = 3.3f);
+		BatteryNode(
+			const std::string & robotName,
+			const std::string & nodeName,
+			std::chrono::milliseconds rate,
+			const uint8_t inputNumbers[3],
+			const float coefficients[3],
+			const float lowLevel = 3.3f
+		);
 		~BatteryNode();
 };
 

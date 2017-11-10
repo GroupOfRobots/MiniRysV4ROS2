@@ -2,6 +2,7 @@
 #define _VL53L0X_NODE_HPP
 
 #include <chrono>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rys_interfaces/msg/ranges.hpp"
@@ -20,8 +21,8 @@ class VL53L0XNode : public rclcpp::Node {
 		void sensorsReadAndPublishData();
 	public:
 		VL53L0XNode(
-			const char * nodeName,
-			const char * publishTopicName,
+			const std::string & robotName,
+			const std::string & nodeName,
 			const std::chrono::milliseconds loopDuration,
 			const uint8_t pins[5],
 			const uint8_t addresses[5]

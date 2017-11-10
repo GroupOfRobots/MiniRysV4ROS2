@@ -2,6 +2,7 @@
 #define _MOTORS_CONTROLLER_NODE
 
 #include <chrono>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -32,8 +33,8 @@ class MotorsControllerNode : public rclcpp::Node {
 		MotorsController * motorsController;
 
 		rclcpp::TimerBase::SharedPtr loopTimer;
-		rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr enableSubscriber;
-		rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr balancingModeSubscriber;
+		rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr motorsEnableSubscriber;
+		rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr balancingEnableSubscriber;
 		rclcpp::Subscription<rys_interfaces::msg::Steering>::SharedPtr steeringSubscriber;
 		rclcpp::Subscription<rys_interfaces::msg::ImuRollRotation>::SharedPtr imuSubscriber;
 
@@ -52,7 +53,11 @@ class MotorsControllerNode : public rclcpp::Node {
 
 		void runLoop();
 	public:
-		MotorsControllerNode(const char * nodeName, std::chrono::milliseconds rate);
+		MotorsControllerNode(
+			const std::string & robotName,
+			const std::string & nodeName,
+			std::chrono::milliseconds rate
+		);
 		~MotorsControllerNode();
 };
 

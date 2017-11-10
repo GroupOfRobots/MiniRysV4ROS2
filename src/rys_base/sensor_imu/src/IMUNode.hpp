@@ -2,6 +2,7 @@
 #define _IMU_NODE_HPP_
 
 #include <chrono>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -25,11 +26,12 @@ class IMUNode : public rclcpp::Node {
 		void imuReadAndPublishData();
 		void imuCalibrateCallback(const std_msgs::msg::Empty::SharedPtr message);
 	public:
-		IMUNode(const char * nodeName,
-			const char * publishTopicName,
-			const char * calibrateTopicName,
+		IMUNode(
+			const std::string & robotName,
+			const std::string & nodeName,
 			const std::chrono::milliseconds loopDuration,
-			const std::chrono::milliseconds calibrationDuration);
+			const std::chrono::milliseconds calibrationDuration
+		);
 		~IMUNode();
 };
 

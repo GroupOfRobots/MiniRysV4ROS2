@@ -3,12 +3,12 @@
 #include "VL53L0XNode.hpp"
 
 VL53L0XNode::VL53L0XNode(
-	const char * nodeName,
-	const char * publishTopicName,
+	const std::string & robotName,
+	const std::string & nodeName,
 	const std::chrono::milliseconds loopDuration,
 	const uint8_t pins[5],
 	const uint8_t addresses[5]
-) : rclcpp::Node(nodeName) {
+) : rclcpp::Node(nodeName, robotName, true) {
 	// Create sensor objects
 	for (int i = 0; i < 5; ++i) {
 		this->sensors[i] = new VL53L0X(pins[i]);
@@ -16,7 +16,7 @@ VL53L0XNode::VL53L0XNode(
 		try {
 			this->sensors[i]->powerOff();
 		} catch (std::string & errorString) {
-			std::cerr << "Error disabling sensor " << i << ": " << errorString << std::endl;
+			std::cerr << "[RANGES] Error disabling sensor " << i << ": " << errorString << std::endl;
 		}
 	}
 
@@ -33,7 +33,7 @@ VL53L0XNode::VL53L0XNode(
 			this->sensors[i]->setAddress(addresses[i]);
 			this->sensorInitialized[i] = true;
 		} catch (std::string & errorString) {
-			std::cerr << "Error initializing sensor " << i << ": " << errorString << std::endl;
+			std::cerr << "[RANGES] Error initializing sensor " << i << ": " << errorString << std::endl;
 		}
 	}
 
@@ -44,12 +44,12 @@ VL53L0XNode::VL53L0XNode(
 	// Start continuous back-to-back measurement
 	for (int i = 0; rclcpp::ok() && i < 5; ++i) {
 		if (this->sensorInitialized[i]) {
-			std::cout << "Starting VL53L0X sensor: " << i << "\n";
+			std::cout << "[RANGES] Starting VL53L0X sensor: " << i << "\n";
 			this->sensors[i]->startContinuous();
 		}
 	}
 
-	this->publisher = this->create_publisher<rys_interfaces::msg::Ranges>(publishTopicName, rmw_qos_profile_sensor_data);
+	this->publisher = this->create_publisher<rys_interfaces::msg::Ranges>("/sensor/ranges", rmw_qos_profile_sensor_data);
 	this->timer = this->create_wall_timer(loopDuration, std::bind(&VL53L0XNode::sensorsReadAndPublishData, this));
 }
 
@@ -73,13 +73,13 @@ int VL53L0XNode::readSensor(int sensorIndex) {
 	try {
 		value = sensors[sensorIndex]->readRangeContinuousMillimeters();
 	} catch (std::string & error) {
-		std::cout << "Error reading distances from sensor " << sensorIndex << ": " << error << std::endl;
+		std::cout << "[RANGES] Error reading distances from sensor " << sensorIndex << ": " << error << std::endl;
 		return -1;
 	}
 
 	// Checking timeout can not
 	if (sensors[sensorIndex]->timeoutOccurred()) {
-		std::cout << "Sensor " << sensorIndex << " timeout!\n";
+		std::cout << "[RANGES] Sensor " << sensorIndex << " timeout!\n";
 		return -1;
 	}
 

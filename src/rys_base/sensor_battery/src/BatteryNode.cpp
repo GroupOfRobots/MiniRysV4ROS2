@@ -6,20 +6,20 @@
 #include "BatteryNode.hpp"
 
 BatteryNode::BatteryNode(
-	const char * nodeName,
-	const char * topicName,
+	const std::string & robotName,
+	const std::string & nodeName,
 	std::chrono::milliseconds rate,
 	const uint8_t inputNumbers[3],
 	const float coefficients[3],
 	const float lowLevel
-) : rclcpp::Node(nodeName) {
+) : rclcpp::Node(nodeName, robotName, true) {
 	for (int i = 0; i < 3; ++i) {
 		this->coefficients[i] = coefficients[i];
 		this->filenames[i] = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumbers[i]) + std::string("_raw");
 	}
 	this->lowLevel = lowLevel;
 
-	this->publisher = this->create_publisher<rys_interfaces::msg::BatteryStatus>(topicName, rmw_qos_profile_default);
+	this->publisher = this->create_publisher<rys_interfaces::msg::BatteryStatus>("/sensor/battery", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&BatteryNode::publishData, this));
 }
 

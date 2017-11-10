@@ -30,11 +30,11 @@ int main(int argc, char * argv[]) {
 		VL53L0X_ADDRESS_DEFAULT + 12
 	};
 
-	auto motorsNode = std::make_shared<MotorsControllerNode>("rys_node_motors_controller", 10ms);
-	auto batteryNode = std::make_shared<BatteryNode>("rys_node_sensor_battery", "rys_sensor_battery", 1000ms, batteryInputNumbers, batteryCoefficients);
-	auto dwmNode = std::make_shared<DWMNode>("rys_node_sensor_dwm1000", "rys_sensor_dwm1000", 1000ms);
-	auto imuNode = std::make_shared<IMUNode>("rys_node_sensor_imu", "rys_sensor_imu_roll", "rys_control_imu_calibrate", 10ms, 3000ms);
-	auto temperatureNode = std::make_shared<TemperatureNode>("rys_node_sensor_temperature", "rys_sensor_temperature", 2000ms, temperatureInputNumber, temperatureCoefficient);
+	auto motorsNode = std::make_shared<MotorsControllerNode>("rys", "motors_controller", 10ms);
+	auto batteryNode = std::make_shared<BatteryNode>("rys", "sensor_battery", 1000ms, batteryInputNumbers, batteryCoefficients);
+	auto dwmNode = std::make_shared<DWMNode>("rys", "sensor_dwm1000", 1000ms);
+	auto imuNode = std::make_shared<IMUNode>("rys", "sensor_imu", 10ms, 3000ms);
+	auto temperatureNode = std::make_shared<TemperatureNode>("rys", "sensor_temperature", 2000ms, temperatureInputNumber, temperatureCoefficient);
 	auto vl53l0xNode = std::make_shared<VL53L0XNode>("rys_node_sensor_vl53l0x", "rys_sensor_vl53l0x", 20ms, vl53l0xPins, vl53l0xAddresses);
 	executor.add_node(motorsNode);
 	executor.add_node(batteryNode);

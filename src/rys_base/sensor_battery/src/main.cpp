@@ -11,7 +11,8 @@ int main(int argc, char * argv[]) {
 	const uint8_t inputNumbers[3] = { 3, 1, 6 };
 	const float coefficients[3] = { 734.4895, 340.7509, 214.1773 };
 
-	rclcpp::spin(std::make_shared<BatteryNode>("rys_node_sensor_battery", "rys_sensor_battery", 1000ms, inputNumbers, coefficients));
+	auto node = std::make_shared<BatteryNode>("rys", "sensor_battery", 1000ms, inputNumbers, coefficients);
+	rclcpp::spin(node);
 	rclcpp::shutdown();
 
 	return 0;

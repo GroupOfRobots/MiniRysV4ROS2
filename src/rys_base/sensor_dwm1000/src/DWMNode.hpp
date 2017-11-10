@@ -2,6 +2,7 @@
 #define _DWM_NODE_HPP_
 
 #include <chrono>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rys_interfaces/msg/location_distances.hpp"
@@ -17,7 +18,11 @@ class DWMNode : public rclcpp::Node {
 
 		void publishData();
 	public:
-		DWMNode(const char * nodeName, const char * topicName, std::chrono::milliseconds rate);
+		DWMNode(
+			const std::string & robotName,
+			const std::string & nodeName,
+			std::chrono::milliseconds rate
+		);
 		~DWMNode();
 };
 

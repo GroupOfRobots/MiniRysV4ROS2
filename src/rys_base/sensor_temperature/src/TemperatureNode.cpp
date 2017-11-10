@@ -9,21 +9,19 @@
 using namespace std::chrono_literals;
 
 TemperatureNode::TemperatureNode(
-	const char * nodeName,
-	const char * topicName,
+	const std::string & robotName,
+	const std::string & nodeName,
 	std::chrono::milliseconds rate,
 	const uint8_t inputNumber,
 	const float coefficient,
 	const float criticalLevel
-) : rclcpp::Node(nodeName) {
+) : rclcpp::Node(nodeName, robotName, true) {
 	this->coefficient = coefficient;
-	this->filename = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumber) + std::string("_raw");
 	this->criticalLevel = criticalLevel;
+	this->filename = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumber) + std::string("_raw");
 
-	std::string criticalTopicName = std::string(topicName) + std::string("_critical");
-
-	this->publisherTemperature = this->create_publisher<std_msgs::msg::Float32>(topicName, rmw_qos_profile_default);
-	this->publisherCriticalTemperature = this->create_publisher<std_msgs::msg::Bool>(criticalTopicName.c_str(), rmw_qos_profile_default);
+	this->publisherTemperature = this->create_publisher<std_msgs::msg::Float32>("/sensor/temperature", rmw_qos_profile_default);
+	this->publisherCriticalTemperature = this->create_publisher<std_msgs::msg::Bool>("/sensor/temperature_critical", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&TemperatureNode::publishData, this));
 }
 

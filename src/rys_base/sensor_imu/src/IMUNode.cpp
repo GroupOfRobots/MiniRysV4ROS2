@@ -3,12 +3,11 @@
 #include <iostream>
 #include <memory>
 
-IMUNode::IMUNode(const char * nodeName,
-	const char * publishTopicName,
-	const char * calibrateTopicName,
+IMUNode::IMUNode(const std::string & robotName,
+	const std::string & nodeName,
 	const std::chrono::milliseconds loopDuration,
 	const std::chrono::milliseconds calibrationDuration
-) : rclcpp::Node(nodeName) {
+) : rclcpp::Node(nodeName, robotName, true) {
 	this->calibration = false;
 	this->calibrationValuesSum = 0;
 	this->calibrationIterations = 0;
@@ -19,8 +18,8 @@ IMUNode::IMUNode(const char * nodeName,
 	this->imu->initialize(1000/loopDuration.count());
 	this->imu->resetFIFO();
 
-	this->imuPublisher = this->create_publisher<rys_interfaces::msg::ImuRollRotation>(publishTopicName, rmw_qos_profile_sensor_data);
-	this->calibrationSubscription = this->create_subscription<std_msgs::msg::Empty>(calibrateTopicName, std::bind(&IMUNode::imuCalibrateCallback, this, std::placeholders::_1));
+	this->imuPublisher = this->create_publisher<rys_interfaces::msg::ImuRollRotation>("/sensor/imu", rmw_qos_profile_sensor_data);
+	this->calibrationSubscription = this->create_subscription<std_msgs::msg::Empty>("/control/imu/calibrate", std::bind(&IMUNode::imuCalibrateCallback, this, std::placeholders::_1));
 	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::imuReadAndPublishData, this));
 }
 
