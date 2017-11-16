@@ -14,10 +14,10 @@ find_package(std_msgs REQUIRED)
 set(msg_files
 	"msg/BatteryStatus.msg"
 	"msg/ImuRollRotation.msg"
-	"msg/ImuYawPitchRoll.msg"
 	"msg/LocationDistances.msg"
 	"msg/Ranges.msg"
 	"msg/Steering.msg"
+	"msg/TemperatureStatus.msg"
 )
 set(srv_files
 	"srv/GetRegulatorSettings.srv"
