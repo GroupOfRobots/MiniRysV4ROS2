@@ -15,6 +15,7 @@ DWMNode::DWMNode(
 
 	this->publisher = this->create_publisher<rys_interfaces::msg::LocationDistances>("/sensor/dwm1000", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&DWMNode::publishData, this));
+	std::cout << "[DWM1000] Node ready\n";
 }
 
 DWMNode::~DWMNode() {
