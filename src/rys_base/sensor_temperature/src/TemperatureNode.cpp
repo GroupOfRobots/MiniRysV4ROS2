@@ -23,13 +23,14 @@ TemperatureNode::TemperatureNode(
 	this->publisherTemperature = this->create_publisher<std_msgs::msg::Float32>("/sensor/temperature", rmw_qos_profile_default);
 	this->publisherCriticalTemperature = this->create_publisher<std_msgs::msg::Bool>("/sensor/temperature_critical", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&TemperatureNode::publishData, this));
+	std::cout << "[TEMP] Node ready\n";
 }
 
 TemperatureNode::~TemperatureNode() {}
 
 void TemperatureNode::publishData() {
-	auto message = std_msgs::msg::Float32();
-	auto messageCriticalLevel = std_msgs::msg::Bool();
+	auto message = std::make_shared<std_msgs::msg::Float32>();
+	auto messageCriticalLevel = std::make_shared<std_msgs::msg::Bool>();
 
 	const int readings = 5;
 
@@ -47,16 +48,16 @@ void TemperatureNode::publishData() {
 
 	// Divide sum by number of readings and multiply by 100
 	// The sensor is 10mV/C, so to convert volts to degrees
-	message.data = (voltageSum / readings) * 100;
+	message->data = (voltageSum / readings) * 100;
 
-	if (message.data > this->criticalLevel) {
-		messageCriticalLevel.data = true;
+	if (message->data > this->criticalLevel) {
+		messageCriticalLevel->data = true;
 	} else {
-		messageCriticalLevel.data = false;
+		messageCriticalLevel->data = false;
 	}
 
 	this->publisherCriticalTemperature->publish(messageCriticalLevel);
 	this->publisherTemperature->publish(message);
 
-	std::cout << "Publishing temperature: " << message.data << " | critical: " << messageCriticalLevel.data << std::endl;
+	//std::cout << "Publishing temperature: " << message->data << " | critical: " << messageCriticalLevel.data << std::endl;
 }
