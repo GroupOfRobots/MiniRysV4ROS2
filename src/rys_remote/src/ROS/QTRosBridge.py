@@ -1,6 +1,6 @@
 import rclpy
 import sys
-from math import pi
+import math
 from time import sleep
 from PyQt5.QtCore import QThread, pyqtSignal
 from ROS.RysRemoteNode import RysRemoteNode
@@ -61,7 +61,11 @@ class QTRosBridge(QThread):
 		self.batteryChanged.emit(message.voltage_cell1 * 1000, message.voltage_cell2 * 1000, message.voltage_cell3 * 1000)
 
 	def imuSubscriptionCallback(self, message):
-		roll = message.roll * 180 / pi
+		if math.isnan(message.roll):
+			print('Got IMU message with invalid value')
+			return
+
+		roll = message.roll * 180 / math.pi
 		rotationX = message.rotation_x
 		if roll is self.previousRoll and rotationX is self.previousRotationX:
 			return
