@@ -21,12 +21,16 @@ BatteryNode::BatteryNode(
 
 	this->publisher = this->create_publisher<rys_interfaces::msg::BatteryStatus>("/sensor/battery", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&BatteryNode::publishData, this));
+	std::cout << "[BATT] Node ready\n";
 }
 
 BatteryNode::~BatteryNode() {}
 
 void BatteryNode::publishData() {
-	auto message = rys_interfaces::msg::BatteryStatus();
+	auto message = std::make_shared<rys_interfaces::msg::BatteryStatus>();
+
+	message->header.stamp = rclcpp::Time::now();
+	message->header.frame_id = "LM35";
 
 	std::ifstream file;
 	float voltages[3];
@@ -39,17 +43,17 @@ void BatteryNode::publishData() {
 		voltages[i] = static_cast<float>(rawValue) / coefficients[i];
 	}
 
-	message.voltage_cell1 = voltages[0];
-	message.voltage_cell2 = voltages[1] - voltages[0];
-	message.voltage_cell3 = voltages[2] - voltages[1];
+	message->voltage_cell1 = voltages[0];
+	message->voltage_cell2 = voltages[1] - voltages[0];
+	message->voltage_cell3 = voltages[2] - voltages[1];
 
-	if (message.voltage_cell1 < this->lowLevel || message.voltage_cell2 < this->lowLevel || message.voltage_cell3 < this->lowLevel) {
-		message.voltage_low = true;
+	if (message->voltage_cell1 < this->lowLevel || message->voltage_cell2 < this->lowLevel || message->voltage_cell3 < this->lowLevel) {
+		message->voltage_low = true;
 	} else {
-		message.voltage_low = false;
+		message->voltage_low = false;
 	}
 
 	this->publisher->publish(message);
 
-	std::cout << "Publishing voltages: " << message.voltage_cell1 << " | " << message.voltage_cell2 << " | " << message.voltage_cell3 << std::endl;
+	//std::cout << "Publishing voltages: " << message->voltage_cell1 << " | " << message->voltage_cell2 << " | " << message->voltage_cell3 << std::endl;
 }
