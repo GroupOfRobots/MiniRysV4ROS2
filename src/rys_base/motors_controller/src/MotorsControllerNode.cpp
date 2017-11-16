@@ -31,16 +31,15 @@ MotorsControllerNode::MotorsControllerNode(
 	this->throttle = 0;
 	this->steeringPrecision = 1;
 
-	std::cout << "Initializing motors controller...\n";
+	std::cout << "[MOTORS] Initializing motors controller...\n";
 	this->motorsController = new MotorsController();
 	try {
 		this->motorsController->init();
 	} catch (std::string & error) {
-		std::cout << "Error initializing controller: " << error << std::endl;
+		std::cout << "[MOTORS] Error initializing controller: " << error << std::endl;
 		throw(std::string("Controller init error"));
 	}
 
-	std::cout << "Setting up motors controller...\n";
 	this->motorsController->setBalancing(false);
 	this->motorsController->setLQREnabled(false);
 	this->motorsController->setSpeedFilterFactor(1);
@@ -48,24 +47,23 @@ MotorsControllerNode::MotorsControllerNode(
 	this->motorsController->setPIDParameters(0.03, 0.0001, 0.008, 50, 0.05, 20);
 	this->motorsController->setLQRParameters(-0.0316,-42.3121,-392.3354);
 
-	std::cout << "Creating ROS subscriptions...\n";
+	std::cout << "[MOTORS] Motors controller initialized\n";
+
 	this->motorsEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/control/enable_motors", std::bind(&MotorsControllerNode::enableMessageCallback, this, _1));
 	this->balancingEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/control/enable_balancing", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
 	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
 	this->imuSubscriber = this->create_subscription<rys_interfaces::msg::ImuRollRotation>("/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
 
-	std::cout << "Creating ROS services...\n";
 	this->setRegulatorSettingsServer = this->create_service<rys_interfaces::srv::SetRegulatorSettings>("/control/regulator_settings/set", std::bind(&MotorsControllerNode::setRegulatorSettingsCallback, this, _1, _2, _3));
 	this->getRegulatorSettingsServer = this->create_service<rys_interfaces::srv::GetRegulatorSettings>("/control/regulator_settings/get", std::bind(&MotorsControllerNode::getRegulatorSettingsCallback, this, _1, _2, _3));
 
-	std::cout << "Creating ROS timers...\n";
 	this->loopTimer = this->create_wall_timer(rate, std::bind(&MotorsControllerNode::runLoop, this));
 
-	std::cout << "Motors controller working.\n";
+	std::cout << "[MOTORS] Node ready\n";
 }
 
 MotorsControllerNode::~MotorsControllerNode() {
-	std::cout << "Deinitializing motors controller...\n";
+	std::cout << "[MOTORS] Deinitializing motors controller...\n";
 	delete this->motorsController;
 }
 
@@ -81,12 +79,12 @@ void MotorsControllerNode::enableMessageCallback(const std_msgs::msg::Bool::Shar
 	if (message->data) {
 		this->enableTimerEnd = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(enableTimeout);
 		if (!this->enabled) {
-			std::cout << "Enabling motors...\n";
+			std::cout << "[MOTORS] Enabling motors...\n";
 			this->motorsController->enableMotors();
 		}
 	} else {
 		if (this->enabled) {
-			std::cout << "Disabling motors...\n";
+			std::cout << "[MOTORS] Disabling motors...\n";
 		}
 		this->motorsController->disableMotors();
 	}
@@ -104,7 +102,7 @@ void MotorsControllerNode::setRegulatorSettingsCallback(const std::shared_ptr<rm
 	(void) requestHeader;
 
 	// Inform user (for logging purposes)
-	std::cout << "Received regulator parameters:\n";
+	std::cout << "[MOTORS] Received regulator parameters:\n";
 	std::cout << "\t Speed filter factor: " << request->speed_filter_factor << std::endl;
 	std::cout << "\t Angle filter factor: " << request->angle_filter_factor << std::endl;
 	std::cout << "\t LQR enabled: " << (request->lqr_enabled ? "True" : "False") << std::endl;
@@ -129,7 +127,7 @@ void MotorsControllerNode::setRegulatorSettingsCallback(const std::shared_ptr<rm
 }
 
 void MotorsControllerNode::getRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> requestHeader, const std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Request> request, std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Response> response) {
-	std::cout << "Received get regulator settings request\n";
+	std::cout << "[MOTORS] Received get regulator settings request\n";
 
 	// Suppress unused parameter warning
 	(void) requestHeader;
@@ -146,10 +144,10 @@ void MotorsControllerNode::getRegulatorSettingsCallback(const std::shared_ptr<rm
 }
 
 void MotorsControllerNode::setBalancingMode(const std_msgs::msg::Bool::SharedPtr message) {
-	std::cout << "Received balancing mode set request\n";
+	std::cout << "[MOTORS] Received balancing mode set request\n";
 	if (message->data != this->balancing) {
 		this->balancing = message->data;
-		std::cout << "Changing balancing mode to: " << this->balancing << std::endl;
+		std::cout << "[MOTORS] Changing balancing mode to: " << this->balancing << std::endl;
 		this->motorsController->setBalancing(this->balancing);
 	}
 }
@@ -191,7 +189,7 @@ void MotorsControllerNode::standUp() {
 	while (rclcpp::ok() && this->enabled) {
 		// Passing '0' point depends on from which side we're standing up
 		if ((multiplier * this->roll) <= 0) {
-			std::cout << "Stood up(?), angle: " << this->roll << std::endl;
+			std::cout << "[MOTORS] Stood up(?), angle: " << this->roll << std::endl;
 			break;
 		}
 		standUpLoopRate.sleep();
@@ -219,7 +217,7 @@ void MotorsControllerNode::runLoop() {
 	bool layingDown = (this->roll > 40.0 && this->rollPrevious > 40.0) || (this->roll < -40.0 && this->rollPrevious < -40.0);
 	if (this->balancing && layingDown) {
 		// Laying down and wanting to balance, stand up!
-		std::cout << "Laying down, trying to stand up\n";
+		std::cout << "[MOTORS] Laying down, trying to stand up\n";
 
 		try {
 			standUp();
@@ -228,7 +226,7 @@ void MotorsControllerNode::runLoop() {
 			this->motorsController->zeroRegulators();
 			this->previous = std::chrono::high_resolution_clock::now();
 		} catch (std::string & error) {
-			std::cout << "Error standing up from laying: " << error << std::endl;
+			std::cout << "[MOTORS] Error standing up from laying: " << error << std::endl;
 			throw(std::string("Error standing up from laying"));
 		}
 	} else {
@@ -244,7 +242,7 @@ void MotorsControllerNode::runLoop() {
 			unsigned char microstep = this->balancing ? 32 : this->steeringPrecision;
 			this->motorsController->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, microstep);
 		} catch (std::string & error) {
-			std::cout << "Error setting motors speed: " << error << std::endl;
+			std::cout << "[MOTORS] Error setting motors speed: " << error << std::endl;
 			throw(std::string("Error setting motors speed"));
 		}
 	}
