@@ -21,7 +21,8 @@ int main(int argc, char * argv[]) {
 	const uint8_t temperatureInputNumber = 5;
 	const float temperatureCoefficient = 564.7637;
 
-	const uint8_t vl53l0xPins[5] = { 66, 67, 69, 68, 88 };
+	// front, back, top, left, right
+	const uint8_t vl53l0xPins[5] = { 67, 51, 66, 69, 50 };
 	const uint8_t vl53l0xAddresses[5] = {
 		VL53L0X_ADDRESS_DEFAULT + 2,
 		VL53L0X_ADDRESS_DEFAULT + 4,

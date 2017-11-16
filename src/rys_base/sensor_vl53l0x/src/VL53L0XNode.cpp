@@ -51,6 +51,7 @@ VL53L0XNode::VL53L0XNode(
 
 	this->publisher = this->create_publisher<rys_interfaces::msg::Ranges>("/sensor/ranges", rmw_qos_profile_sensor_data);
 	this->timer = this->create_wall_timer(loopDuration, std::bind(&VL53L0XNode::sensorsReadAndPublishData, this));
+	std::cout << "[RANGES] Node ready\n";
 }
 
 VL53L0XNode::~VL53L0XNode() {
@@ -88,6 +89,9 @@ int VL53L0XNode::readSensor(int sensorIndex) {
 
 void VL53L0XNode::sensorsReadAndPublishData() {
 	auto message = std::make_shared<rys_interfaces::msg::Ranges>();
+
+	message->header.stamp = rclcpp::Time::now();
+	message->header.frame_id = "vl53l0x";
 
 	// Read sensors - offloaded to separate function as there are identical checks for every sensor
 	message->front = this->readSensor(0);

@@ -21,7 +21,8 @@ int main(int argc, char * argv[]) {
 	const uint8_t temperatureInputNumber = 5;
 	const float temperatureCoefficient = 564.7637;
 
-	const uint8_t vl53l0xPins[5] = { 66, 67, 69, 68, 88 };
+	// front, back, top, left, right
+	const uint8_t vl53l0xPins[5] = { 67, 51, 66, 69, 50 };
 	const uint8_t vl53l0xAddresses[5] = {
 		VL53L0X_ADDRESS_DEFAULT + 2,
 		VL53L0X_ADDRESS_DEFAULT + 4,
@@ -35,7 +36,8 @@ int main(int argc, char * argv[]) {
 	auto dwmNode = std::make_shared<DWMNode>("rys", "sensor_dwm1000", 1000ms);
 	auto imuNode = std::make_shared<IMUNode>("rys", "sensor_imu", 10ms, 3000ms);
 	auto temperatureNode = std::make_shared<TemperatureNode>("rys", "sensor_temperature", 2000ms, temperatureInputNumber, temperatureCoefficient);
-	auto vl53l0xNode = std::make_shared<VL53L0XNode>("rys_node_sensor_vl53l0x", "rys_sensor_vl53l0x", 20ms, vl53l0xPins, vl53l0xAddresses);
+	auto vl53l0xNode = std::make_shared<VL53L0XNode>("rys", "sensor_ranges", 20ms, vl53l0xPins, vl53l0xAddresses);
+
 	executor.add_node(motorsNode);
 	executor.add_node(batteryNode);
 	executor.add_node(dwmNode);

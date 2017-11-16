@@ -10,14 +10,15 @@ int main(int argc, char * argv[]) {
 	std::cout << "Initializing ROS...\n";
 	rclcpp::init(argc, argv);
 
+	// front, back, top, left, right
 	// TIMER4, TIMER7, TIMER5, GPIO_50, GPIO_51
 	// GPIO2_2, GPIO2_3, GPIO2_5, GPIO_1_18, GPIO1_19
 	const uint8_t pins[5] = {
-		66,
 		67,
+		51,
+		66,
 		69,
-		50,
-		51
+		50
 	};
 	const uint8_t addresses[5] = {
 		VL53L0X_ADDRESS_DEFAULT + 2,
