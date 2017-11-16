@@ -13,7 +13,7 @@ DWMNode::DWMNode(
 	// this->dwm = new DWM(115, 20);
 	// this->dwm->initialize(true);
 
-	this->publisher = this->create_publisher<rys_interfaces::msg::LocationDistances>("/sensor/dwm1000", rmw_qos_profile_default);
+	this->publisher = this->create_publisher<rys_interfaces::msg::LocationDistances>("/" + robotName + "/sensor/dwm1000", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&DWMNode::publishData, this));
 	std::cout << "[DWM1000] Node ready\n";
 }

@@ -3,7 +3,8 @@
 #include <iostream>
 #include <memory>
 
-IMUNode::IMUNode(const std::string & robotName,
+IMUNode::IMUNode(
+	const std::string & robotName,
 	const std::string & nodeName,
 	const std::chrono::milliseconds loopDuration,
 	const std::chrono::milliseconds calibrationDuration
@@ -20,8 +21,8 @@ IMUNode::IMUNode(const std::string & robotName,
 	this->imu->resetFIFO();
 	std::cout << "[IMU] IMU initialized\n";
 
-	this->imuPublisher = this->create_publisher<rys_interfaces::msg::ImuRollRotation>("/sensor/imu", rmw_qos_profile_sensor_data);
-	this->calibrationSubscription = this->create_subscription<std_msgs::msg::Empty>("/control/imu/calibrate", std::bind(&IMUNode::imuCalibrateCallback, this, std::placeholders::_1));
+	this->imuPublisher = this->create_publisher<rys_interfaces::msg::ImuRollRotation>("/" + robotName + "/sensor/imu", rmw_qos_profile_sensor_data);
+	this->calibrationSubscription = this->create_subscription<std_msgs::msg::Empty>("/" + robotName + "/control/imu/calibrate", std::bind(&IMUNode::imuCalibrateCallback, this, std::placeholders::_1));
 	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::imuReadAndPublishData, this));
 	std::cout << "[IMU] Node ready\n";
 }

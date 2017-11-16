@@ -49,7 +49,7 @@ VL53L0XNode::VL53L0XNode(
 		}
 	}
 
-	this->publisher = this->create_publisher<rys_interfaces::msg::Ranges>("/sensor/ranges", rmw_qos_profile_sensor_data);
+	this->publisher = this->create_publisher<rys_interfaces::msg::Ranges>("/" + robotName + "/sensor/ranges", rmw_qos_profile_sensor_data);
 	this->timer = this->create_wall_timer(loopDuration, std::bind(&VL53L0XNode::sensorsReadAndPublishData, this));
 	std::cout << "[RANGES] Node ready\n";
 }

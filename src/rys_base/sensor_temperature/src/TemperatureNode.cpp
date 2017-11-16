@@ -20,8 +20,7 @@ TemperatureNode::TemperatureNode(
 	this->criticalLevel = criticalLevel;
 	this->filename = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumber) + std::string("_raw");
 
-	this->publisherTemperature = this->create_publisher<std_msgs::msg::Float32>("/sensor/temperature", rmw_qos_profile_default);
-	this->publisherCriticalTemperature = this->create_publisher<std_msgs::msg::Bool>("/sensor/temperature_critical", rmw_qos_profile_default);
+	this->publisher = this->create_publisher<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&TemperatureNode::publishData, this));
 	std::cout << "[TEMP] Node ready\n";
 }
@@ -29,8 +28,10 @@ TemperatureNode::TemperatureNode(
 TemperatureNode::~TemperatureNode() {}
 
 void TemperatureNode::publishData() {
-	auto message = std::make_shared<std_msgs::msg::Float32>();
-	auto messageCriticalLevel = std::make_shared<std_msgs::msg::Bool>();
+	auto message = std::make_shared<rys_interfaces::msg::TemperatureStatus>();
+
+	message->header.stamp = rclcpp::Time::now();
+	message->header.frame_id = "LM35";
 
 	const int readings = 5;
 
@@ -48,16 +49,13 @@ void TemperatureNode::publishData() {
 
 	// Divide sum by number of readings and multiply by 100
 	// The sensor is 10mV/C, so to convert volts to degrees
-	message->data = (voltageSum / readings) * 100;
+	message->temperature = (voltageSum / readings) * 100;
 
-	if (message->data > this->criticalLevel) {
-		messageCriticalLevel->data = true;
+	if (message->temperature > this->criticalLevel) {
+		message->temperature_critical = true;
 	} else {
-		messageCriticalLevel->data = false;
+		message->temperature_critical = false;
 	}
 
-	this->publisherCriticalTemperature->publish(messageCriticalLevel);
-	this->publisherTemperature->publish(message);
-
-	//std::cout << "Publishing temperature: " << message->data << " | critical: " << messageCriticalLevel.data << std::endl;
+	this->publisher->publish(message);
 }

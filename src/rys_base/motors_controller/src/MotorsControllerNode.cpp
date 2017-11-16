@@ -49,13 +49,13 @@ MotorsControllerNode::MotorsControllerNode(
 
 	std::cout << "[MOTORS] Motors controller initialized\n";
 
-	this->motorsEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/control/enable_motors", std::bind(&MotorsControllerNode::enableMessageCallback, this, _1));
-	this->balancingEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/control/enable_balancing", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
-	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
-	this->imuSubscriber = this->create_subscription<rys_interfaces::msg::ImuRollRotation>("/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
+	this->motorsEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_motors", std::bind(&MotorsControllerNode::enableMessageCallback, this, _1));
+	this->balancingEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_balancing", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
+	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
+	this->imuSubscriber = this->create_subscription<rys_interfaces::msg::ImuRollRotation>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
 
-	this->setRegulatorSettingsServer = this->create_service<rys_interfaces::srv::SetRegulatorSettings>("/control/regulator_settings/set", std::bind(&MotorsControllerNode::setRegulatorSettingsCallback, this, _1, _2, _3));
-	this->getRegulatorSettingsServer = this->create_service<rys_interfaces::srv::GetRegulatorSettings>("/control/regulator_settings/get", std::bind(&MotorsControllerNode::getRegulatorSettingsCallback, this, _1, _2, _3));
+	this->setRegulatorSettingsServer = this->create_service<rys_interfaces::srv::SetRegulatorSettings>("/" + robotName + "/control/regulator_settings/set", std::bind(&MotorsControllerNode::setRegulatorSettingsCallback, this, _1, _2, _3));
+	this->getRegulatorSettingsServer = this->create_service<rys_interfaces::srv::GetRegulatorSettings>("/" + robotName + "/control/regulator_settings/get", std::bind(&MotorsControllerNode::getRegulatorSettingsCallback, this, _1, _2, _3));
 
 	this->loopTimer = this->create_wall_timer(rate, std::bind(&MotorsControllerNode::runLoop, this));
 

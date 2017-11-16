@@ -5,8 +5,7 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/float32.hpp"
-#include "std_msgs/msg/bool.hpp"
+#include "rys_interfaces/msg/temperature_status.hpp"
 
 class TemperatureNode : public rclcpp::Node {
 	private:
@@ -15,8 +14,7 @@ class TemperatureNode : public rclcpp::Node {
 		float criticalLevel;
 
 		rclcpp::TimerBase::SharedPtr timer;
-		rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisherTemperature;
-		rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr publisherCriticalTemperature;
+		rclcpp::Publisher<rys_interfaces::msg::TemperatureStatus>::SharedPtr publisher;
 
 		void publishData();
 	public:

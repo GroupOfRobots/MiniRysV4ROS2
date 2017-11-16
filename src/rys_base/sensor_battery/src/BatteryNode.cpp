@@ -19,7 +19,7 @@ BatteryNode::BatteryNode(
 	}
 	this->lowLevel = lowLevel;
 
-	this->publisher = this->create_publisher<rys_interfaces::msg::BatteryStatus>("/sensor/battery", rmw_qos_profile_default);
+	this->publisher = this->create_publisher<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&BatteryNode::publishData, this));
 	std::cout << "[BATT] Node ready\n";
 }
@@ -30,7 +30,7 @@ void BatteryNode::publishData() {
 	auto message = std::make_shared<rys_interfaces::msg::BatteryStatus>();
 
 	message->header.stamp = rclcpp::Time::now();
-	message->header.frame_id = "LM35";
+	message->header.frame_id = "ADC";
 
 	std::ifstream file;
 	float voltages[3];
@@ -54,6 +54,4 @@ void BatteryNode::publishData() {
 	}
 
 	this->publisher->publish(message);
-
-	//std::cout << "Publishing voltages: " << message->voltage_cell1 << " | " << message->voltage_cell2 << " | " << message->voltage_cell3 << std::endl;
 }
