@@ -14,13 +14,16 @@ IMUNode::IMUNode(const std::string & robotName,
 	this->calibrationDuration = calibrationDuration;
 	this->calibrationEndTime = std::chrono::high_resolution_clock::now();
 
+	std::cout << "[IMU] Initializing IMU...\n";
 	this->imu = new IMU();
 	this->imu->initialize(1000/loopDuration.count());
 	this->imu->resetFIFO();
+	std::cout << "[IMU] IMU initialized\n";
 
 	this->imuPublisher = this->create_publisher<rys_interfaces::msg::ImuRollRotation>("/sensor/imu", rmw_qos_profile_sensor_data);
 	this->calibrationSubscription = this->create_subscription<std_msgs::msg::Empty>("/control/imu/calibrate", std::bind(&IMUNode::imuCalibrateCallback, this, std::placeholders::_1));
 	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::imuReadAndPublishData, this));
+	std::cout << "[IMU] Node ready\n";
 }
 
 IMUNode::~IMUNode() {
@@ -31,7 +34,7 @@ void IMUNode::imuCalibrateCallback(const std_msgs::msg::Empty::SharedPtr message
 	// Prevent unused parameter warning
 	(void)message;
 
-	std::cout << "Calibration: collecting data (" << this->calibrationDuration.count() << "ms)...\n";
+	std::cout << "[IMU] Calibration: collecting data (" << this->calibrationDuration.count() << "ms)...\n";
 	this->calibrationEndTime = std::chrono::high_resolution_clock::now() + this->calibrationDuration;
 	this->calibrationValuesSum = 0;
 	this->calibrationIterations = 0;
@@ -40,6 +43,9 @@ void IMUNode::imuCalibrateCallback(const std_msgs::msg::Empty::SharedPtr message
 
 void IMUNode::imuReadAndPublishData() {
 	auto message = std::make_shared<rys_interfaces::msg::ImuRollRotation>();
+
+	message->header.stamp = rclcpp::Time::now();
+	message->header.frame_id = "MPU6050";
 
 	float roll = 0;
 	try {
@@ -52,7 +58,7 @@ void IMUNode::imuReadAndPublishData() {
 		message->rotation_y = rotationY;
 		message->rotation_z = rotationZ;
 	} catch (std::string & error) {
-		std::cout << "Error getting IMU reading: " << error << std::endl;
+		std::cout << "[IMU] Error getting IMU reading: " << error << std::endl;
 		return;
 	}
 
@@ -65,7 +71,7 @@ void IMUNode::imuReadAndPublishData() {
 			this->calibration = false;
 			float averageRoll = this->calibrationValuesSum / this->calibrationIterations;
 			this->imu->setOffsets(0, 0, averageRoll);
-			std::cout << "Calibration: data collected, average offset: " << averageRoll << std::endl;
+			std::cout << "[IMU] Calibration: data collected, average offset: " << averageRoll << std::endl;
 		}
 	}
 }
