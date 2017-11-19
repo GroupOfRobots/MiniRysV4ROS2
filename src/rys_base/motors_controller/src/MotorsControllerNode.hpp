@@ -5,6 +5,7 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "rys_interfaces/msg/imu_roll_rotation.hpp"
 #include "rys_interfaces/msg/steering.hpp"
@@ -36,7 +37,7 @@ class MotorsControllerNode : public rclcpp::Node {
 		rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr motorsEnableSubscriber;
 		rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr balancingEnableSubscriber;
 		rclcpp::Subscription<rys_interfaces::msg::Steering>::SharedPtr steeringSubscriber;
-		rclcpp::Subscription<rys_interfaces::msg::ImuRollRotation>::SharedPtr imuSubscriber;
+		rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imuSubscriber;
 
 		rclcpp::service::Service<rys_interfaces::srv::SetRegulatorSettings>::SharedPtr setRegulatorSettingsServer;
 		rclcpp::service::Service<rys_interfaces::srv::GetRegulatorSettings>::SharedPtr getRegulatorSettingsServer;
@@ -45,8 +46,8 @@ class MotorsControllerNode : public rclcpp::Node {
 		void standUp();
 
 		void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message);
-		void imuMessageCallback(const rys_interfaces::msg::ImuRollRotation::SharedPtr message);
 		void setBalancingMode(const std_msgs::msg::Bool::SharedPtr message);
+		void imuMessageCallback(const sensor_msgs::msg::Imu::SharedPtr message);
 		void setSteering(const rys_interfaces::msg::Steering::SharedPtr message);
 		void setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> requestHeader, const std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Request> request, std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Response> response);
 		void getRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> requestHeader, const std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Request> request, std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Response> response);

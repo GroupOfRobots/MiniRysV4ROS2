@@ -52,7 +52,7 @@ MotorsControllerNode::MotorsControllerNode(
 	this->motorsEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_motors", std::bind(&MotorsControllerNode::enableMessageCallback, this, _1));
 	this->balancingEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_balancing", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
 	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
-	this->imuSubscriber = this->create_subscription<rys_interfaces::msg::ImuRollRotation>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
+	this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
 
 	this->setRegulatorSettingsServer = this->create_service<rys_interfaces::srv::SetRegulatorSettings>("/" + robotName + "/control/regulator_settings/set", std::bind(&MotorsControllerNode::setRegulatorSettingsCallback, this, _1, _2, _3));
 	this->getRegulatorSettingsServer = this->create_service<rys_interfaces::srv::GetRegulatorSettings>("/" + robotName + "/control/regulator_settings/get", std::bind(&MotorsControllerNode::getRegulatorSettingsCallback, this, _1, _2, _3));
@@ -91,10 +91,16 @@ void MotorsControllerNode::enableMessageCallback(const std_msgs::msg::Bool::Shar
 	this->enabled = message->data;
 }
 
-void MotorsControllerNode::imuMessageCallback(const rys_interfaces::msg::ImuRollRotation::SharedPtr message) {
+void MotorsControllerNode::imuMessageCallback(const sensor_msgs::msg::Imu::SharedPtr message) {
+	double q0 = message->orientation.x;
+	double q1 = message->orientation.y;
+	double q2 = message->orientation.z;
+	double q3 = message->orientation.w;
+
 	this->rollPrevious = roll;
-	this->roll = message->roll * 180 / M_PI;
-	this->rotationX = message->rotation_x;
+	// minus because + means leaning forward
+	this->roll = -asin(2.0 * q0 * q2 - 2.0 * q3 * q1);
+	// this->rotationX = message->rotation_x;
 }
 
 void MotorsControllerNode::setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> requestHeader, const std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Request> request, std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Response> response) {
