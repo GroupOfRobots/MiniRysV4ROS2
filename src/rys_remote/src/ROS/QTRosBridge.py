@@ -61,18 +61,23 @@ class QTRosBridge(QThread):
 		self.batteryChanged.emit(message.voltage_cell1 * 1000, message.voltage_cell2 * 1000, message.voltage_cell3 * 1000)
 
 	def imuSubscriptionCallback(self, message):
-		if math.isnan(message.roll):
+		if math.isnan(message.orientation.x):
 			print('Got IMU message with invalid value')
 			return
 
-		roll = message.roll * 180 / math.pi
-		rotationX = message.rotation_x
-		if roll is self.previousRoll and rotationX is self.previousRotationX:
+		q0 = message.orientation.x
+		q1 = message.orientation.y
+		q2 = message.orientation.z
+		q3 = message.orientation.w
+		roll = -math.asin(2.0 * q0 * q2 - 2.0 * q3 * q1)
+		# To degrees - it's easier to display
+		roll = roll * 180 / math.pi
+
+		if roll is self.previousRoll:
 			return
 		self.previousRoll = roll
-		self.previousRotationX = rotationX
 
-		self.imuChanged.emit(roll, rotationX)
+		self.imuChanged.emit(roll, 0)
 
 	def temperatureSensorCallback(self, message):
 		self.temperatureChanged.emit(int(message.data))
