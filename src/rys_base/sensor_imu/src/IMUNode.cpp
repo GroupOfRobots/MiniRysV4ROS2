@@ -17,13 +17,12 @@ IMUNode::IMUNode(
 
 	std::cout << "[IMU] Initializing IMU...\n";
 	this->imu = new IMU();
-	this->imu->initialize(1000/loopDuration.count());
-	this->imu->resetFIFO();
+	this->imu->initialize();
 	std::cout << "[IMU] IMU initialized\n";
 
-	this->imuPublisher = this->create_publisher<rys_interfaces::msg::ImuRollRotation>("/" + robotName + "/sensor/imu", rmw_qos_profile_sensor_data);
+	this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", rmw_qos_profile_sensor_data);
 	this->calibrationSubscription = this->create_subscription<std_msgs::msg::Empty>("/" + robotName + "/control/imu/calibrate", std::bind(&IMUNode::imuCalibrateCallback, this, std::placeholders::_1));
-	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::imuReadAndPublishData, this));
+	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::timerCallback, this));
 	std::cout << "[IMU] Node ready\n";
 }
 
@@ -42,29 +41,45 @@ void IMUNode::imuCalibrateCallback(const std_msgs::msg::Empty::SharedPtr message
 	this->calibration = true;
 }
 
-void IMUNode::imuReadAndPublishData() {
-	auto message = std::make_shared<rys_interfaces::msg::ImuRollRotation>();
+void IMUNode::timerCallback() {
+	auto message = std::make_shared<sensor_msgs::msg::Imu>();
 
 	message->header.stamp = rclcpp::Time::now();
 	message->header.frame_id = "MPU6050";
 
-	float roll = 0;
+	IMU::ImuData data;
+	int result;
 	try {
-		roll = this->imu->getRoll();
-		message->roll = roll;
-
-		float rotationX, rotationY, rotationZ;
-		this->imu->getGyro(&rotationX, &rotationY, &rotationZ);
-		message->rotation_x = rotationX;
-		message->rotation_y = rotationY;
-		message->rotation_z = rotationZ;
+		result = this->imu->getData(&data);
 	} catch (std::string & error) {
 		std::cout << "[IMU] Error getting IMU reading: " << error << std::endl;
 		return;
 	}
 
+	if (result < 0) {
+		return;
+	}
+
+	message->orientation.x = data.orientationQuaternion[1];
+	message->orientation.y = data.orientationQuaternion[2];
+	message->orientation.z = data.orientationQuaternion[3];
+	message->orientation.w = data.orientationQuaternion[0];
+	message->angular_velocity.x = data.angularVelocity[0];
+	message->angular_velocity.y = data.angularVelocity[1];
+	message->angular_velocity.z = data.angularVelocity[2];
+	message->linear_acceleration.x = data.linearAcceleration[0];
+	message->linear_acceleration.y = data.linearAcceleration[1];
+	message->linear_acceleration.z = data.linearAcceleration[2];
+	for (int i = 0; i < 9; ++i) {
+		message->orientation_covariance[i] = 0;
+		message->angular_velocity_covariance[i] = 0;
+		message->linear_acceleration_covariance[i] = 0;
+	}
+
 	this->imuPublisher->publish(message);
 
+	/// TODO: adjust to new measurement/message type
+	/*
 	if (this->calibration) {
 		this->calibrationValuesSum += roll;
 		this->calibrationIterations++;
@@ -75,4 +90,5 @@ void IMUNode::imuReadAndPublishData() {
 			std::cout << "[IMU] Calibration: data collected, average offset: " << averageRoll << std::endl;
 		}
 	}
+	*/
 }

@@ -6,14 +6,11 @@
 
 IMU::IMU() {
 	this->mpu = new MPU6050();
-	this->dmpReady = false;
-	this->devStatus = 0;
 	this->packetSize = 0;
 	for (int i = 0; i < 64; ++i) {
 		this->fifoBuffer[i] = 0;
 	}
 
-	this->preHeatingExitFlag = true;
 	this->yawOffset = 0;
 	this->pitchOffset = 0;
 	this->rollOffset = 0;
@@ -23,7 +20,7 @@ IMU::~IMU() {
 	delete this->mpu;
 }
 
-void IMU::initialize(int rate) {
+void IMU::initialize() {
 	// initialize device
 	this->mpu->initialize();
 
@@ -33,21 +30,22 @@ void IMU::initialize(int rate) {
 	}
 
 	// load and configure the DMP
-	devStatus = this->mpu->dmpInitialize();
-	// setRate accepts factor that works like this: 1kHz / (1 + x)
-	int rateFactor = (1000/rate) - 1;
-	this->mpu->setRate(rateFactor);
+	uint8_t devStatus = this->mpu->dmpInitialize();
+	// setRate accepts factor that works like this: 1kHz / (1 + x); 4 = 200Hz
+	this->mpu->setRate(4);
+
+	this->mpu->setDLPFMode(MPU6050_DLPF_BW_188);
+	this->mpu->setDHPFMode(MPU6050_DHPF_2P5);
 
 	// make sure it worked (returns 0 if so)
 	if (devStatus == 0) {
 		// turn on the DMP, now that it's ready
 		this->mpu->setDMPEnabled(true);
 
-		// set our DMP Ready flag so the main loop() function knows it's okay to use it
-		dmpReady = true;
-
 		// get expected DMP packet size for later comparison
 		packetSize = this->mpu->dmpGetFIFOPacketSize();
+
+		this->mpu->resetFIFO();
 	} else {
 		// ERROR!
 		// 1 = initial memory load failed
@@ -57,191 +55,65 @@ void IMU::initialize(int rate) {
 	}
 }
 
-void IMU::readData() {
-	// if programming failed, don't try to do anything
-	if (!dmpReady) {
-		return;
-	}
-
+int IMU::fetchData(uint8_t * buffer) {
 	// Get current FIFO length
 	uint16_t fifoCount = this->mpu->getFIFOCount();
 
-	// Check for FIFO overflow
-	if (fifoCount == 1024) {
-		// reset so we can continue cleanly
-		this->mpu->resetFIFO();
-		fifoCount = 0;
+	// If there's not enough
+	if (fifoCount < this->packetSize) {
+		return -1;
 	}
 
-	// Check for DMP data ready interrupt (this should happen frequently)
-	while (fifoCount < this->packetSize) {
-		fifoCount = this->mpu->getFIFOCount();
-		std::this_thread::sleep_for(std::chrono::milliseconds(2));
-	}
-
-	// Read _last_ packet from FIFO to buffer
-	while (fifoCount > this->packetSize) {
-		this->mpu->getFIFOBytes(this->fifoBuffer, this->packetSize);
-		fifoCount = this->mpu->getFIFOCount();
-	}
-}
-
-void IMU::getYawPitchRoll(float * yaw, float * pitch, float * roll) {
-	this->readData();
-
-	Quaternion quaternion;
-	VectorFloat gravity;
-
-	// Parse data from FIFO to quaternion
-	this->mpu->dmpGetQuaternion(&quaternion, this->fifoBuffer);
-	// Get gravity vector based on quaternion (simple float multiplication and addition/subtraction)
-	this->mpu->dmpGetGravity(&gravity, &quaternion);
-	// Calculate Yaw/Pitch/Roll based on gravity vector
-	float data[3];
-	this->mpu->dmpGetYawPitchRoll(data, &quaternion, &gravity);
-
-	*yaw = data[0] - this->yawOffset;
-	*pitch = data[1] - this->pitchOffset;
-	*roll = data[2] - this->rollOffset;
-}
-
-float IMU::getYaw() {
-	this->readData();
-
-	Quaternion quaternion;
-
-	this->mpu->dmpGetQuaternion(&quaternion, this->fifoBuffer);
-	// Return Yaw (based on MPU's dmpGetYawPitchRoll())
-	float qx = quaternion.x;
-	float qy = quaternion.y;
-	float qz = quaternion.z;
-	float qw = quaternion.w;
-	return atan2(2*qx*qy - 2*qw*qz, 2*qw*qw + 2*qx*qx - 1) - this->yawOffset;
-}
-
-float IMU::getPitch() {
-	this->readData();
-
-	Quaternion quaternion;
-	VectorFloat gravity;
-
-	this->mpu->dmpGetQuaternion(&quaternion, this->fifoBuffer);
-	this->mpu->dmpGetGravity(&gravity, &quaternion);
-	float gx = gravity.x;
-	float gy = gravity.y;
-	float gz = gravity.z;
-	return atan(gx / sqrt(gy*gy + gz*gz)) - this->pitchOffset;
-}
-
-float IMU::getRoll() {
-	this->readData();
-
-	Quaternion quaternion;
-	VectorFloat gravity;
-
-	this->mpu->dmpGetQuaternion(&quaternion, this->fifoBuffer);
-	this->mpu->dmpGetGravity(&gravity, &quaternion);
-	float gx = gravity.x;
-	float gy = gravity.y;
-	float gz = gravity.z;
-	return atan(gy / sqrt(gx*gx + gz*gz)) - this->rollOffset;
-}
-
-void IMU::getGyro(float * rotationX, float * rotationY, float * rotationZ, bool getNewData) {
-	if (getNewData) {
-		this->readData();
-	}
-
-	VectorInt16 gyro;
-	this->mpu->dmpGetGyro(&gyro, this->fifoBuffer);
-	float divider = 16.4f;
-	*rotationX = float(gyro.x) / divider;
-	*rotationY = float(gyro.y) / divider;
-	*rotationZ = float(gyro.z) / divider;
-}
-
-void IMU::resetFIFO() {
+	this->mpu->getFIFOBytes(buffer, this->packetSize);
 	this->mpu->resetFIFO();
+	return 1;
 }
 
-void preHeatingThreadFn(IMU * imu) {
-	while (!imu->getPreHeatingExitFlag()) {
-		imu->readData();
-	}
-}
+int IMU::getData(ImuData * data) {
+	uint8_t rawDataBuffer[this->packetSize];
 
-bool IMU::getPreHeatingExitFlag() {
-	return this->preHeatingExitFlag;
-}
-
-void IMU::calibrate() {
-	// Zero-out current offsets
-	this->yawOffset = 0;
-	this->pitchOffset = 0;
-	this->rollOffset = 0;
-
-	std::cout << "Pre-heating the IMU (60s)...\n";
-
-	// Create the IMU pre-heating thread
-	this->preHeatingExitFlag = false;
-	std::thread preHeatingThread(preHeatingThreadFn, this);
-
-	// Wait 30s
-	auto now = std::chrono::steady_clock::now();
-	std::this_thread::sleep_until(now + std::chrono::seconds(60));
-
-	// Notify user
-	std::cout << "Fix the position and press enter\n";
-	std::cin.get();
-
-	// Stop pre-heating thread
-	this->preHeatingExitFlag = true;
-	preHeatingThread.join();
-
-	// Create accumulators for values
-	double yawSum = 0;
-	double pitchSum = 0;
-	double rollSum = 0;
-	// Also read counter
-	unsigned int iterations = 0;
-
-	// Create timer for 500ms
-	now = std::chrono::steady_clock::now();
-	auto end = now + std::chrono::milliseconds(500);
-
-	float yaw, pitch, roll;
-	// Until that timer...
-	while (end > std::chrono::steady_clock::now()) {
-		// Get a reading
-		this->getYawPitchRoll(&yaw, &pitch, &roll);
-		yawSum += yaw;
-		pitchSum += pitch;
-		rollSum += roll;
-
-		// Increase iteration counter
-		++iterations;
+	// If data is not ready - skip
+	if (this->fetchData(rawDataBuffer) < 0) {
+		return -1;
 	}
 
-	// Calculate average reading and save it
-	this->yawOffset = yawSum / iterations;
-	this->pitchOffset = pitchSum / iterations;
-	this->rollOffset = rollSum / iterations;
+	// Get orientation quaternion from the buffer and scale it
+	int16_t orientationQuaternion[4];
+	this->mpu->dmpGetQuaternion(orientationQuaternion, rawDataBuffer);
+	for (int i = 0; i < 4; ++i) {
+		// Raw data is in +-32k range with +-2.0 values
+		data->orientationQuaternion[i] = static_cast<double>(orientationQuaternion[i]) / 16384.0;
+	}
 
-	// Re-start pre-heating thread
-	this->preHeatingExitFlag = false;
-	preHeatingThread = std::thread(preHeatingThreadFn, this);
+	// Calculate gravity vector based on orientation for use in linear acceleration calculations.
+	// This vector is in g-s, thus having a length of 1.
+	double gravity[3];
+	double qw = data->orientationQuaternion[0];
+	double qx = data->orientationQuaternion[1];
+	double qy = data->orientationQuaternion[2];
+	double qz = data->orientationQuaternion[3];
+	gravity[0] = 2 * (qx * qz - qw * qy);
+	gravity[1] = 2 * (qw * qx + qy * qz);
+	gravity[2] = qw * qw - qx * qx - qy * qy + qz * qz;
 
-	// Notify user
-	std::cout << "calibration done, offsets:\n";
-	std::cout << "\tYaw Offset: " << this->yawOffset << std::endl;
-	std::cout << "\tPitch Offset: " << this->pitchOffset << std::endl;
-	std::cout << "\tRoll Offset: " << this->rollOffset << std::endl;
-	std::cout << "press enter to continue:\n";
-	std::cin.get();
+	// Get acceleration, subtract gravity (so we get linear acceleration) and scale it to m/s
+	int16_t rawAcceleration[3];
+	this->mpu->dmpGetAccel(rawAcceleration, rawDataBuffer);
+	for (int i = 0; i < 3; ++i) {
+		// Raw data is in +-2g range with +-32k values - change that into m/s ((a / 16384 - g) * 9.81)
+		/// TODO: if needed, rotate acceleration vector by quaternion BEFORE subtracting gravity
+		data->linearAcceleration[i] = (static_cast<double>(rawAcceleration[i]) / 16384.0 - gravity[i]) * 9.81;
+	}
 
-	// End pre-heating thread
-	this->preHeatingExitFlag = true;
-	preHeatingThread.join();
+	// Get angular velocity from raw data and scale it
+	int16_t angularVelocity[3];
+	this->mpu->dmpGetGyro(angularVelocity, rawDataBuffer);
+	for (int i = 0; i < 3; ++i) {
+		// Raw data is in +-2000deg/s range with +-32k values - change into rad/s ((r / 16.384) * M_PI/180)
+		data->angularVelocity[i] = static_cast<double>(angularVelocity[i]) * 0.0010652644360316954;
+	}
+
+	return 1;
 }
 
 void IMU::setOffsets(float yawOffset, float pitchOffset, float rollOffset, bool relative) {

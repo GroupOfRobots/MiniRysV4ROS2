@@ -34,7 +34,7 @@ int main(int argc, char * argv[]) {
 	auto motorsNode = std::make_shared<MotorsControllerNode>("rys", "motors_controller", 10ms);
 	auto batteryNode = std::make_shared<BatteryNode>("rys", "sensor_battery", 1000ms, batteryInputNumbers, batteryCoefficients);
 	auto dwmNode = std::make_shared<DWMNode>("rys", "sensor_dwm1000", 1000ms);
-	auto imuNode = std::make_shared<IMUNode>("rys", "sensor_imu", 10ms, 3000ms);
+	auto imuNode = std::make_shared<IMUNode>("rys", "sensor_imu", 1ms, 3000ms);
 	auto temperatureNode = std::make_shared<TemperatureNode>("rys", "sensor_temperature", 2000ms, temperatureInputNumber, temperatureCoefficient);
 	auto vl53l0xNode = std::make_shared<VL53L0XNode>("rys", "sensor_ranges", 20ms, vl53l0xPins, vl53l0xAddresses);
 
