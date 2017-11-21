@@ -65,11 +65,12 @@ class QTRosBridge(QThread):
 			print('Got IMU message with invalid value')
 			return
 
-		q0 = message.orientation.x
-		q1 = message.orientation.y
-		q2 = message.orientation.z
-		q3 = message.orientation.w
-		roll = -math.asin(2.0 * q0 * q2 - 2.0 * q3 * q1)
+		qx = message.orientation.x
+		qy = message.orientation.y
+		qz = message.orientation.z
+		qw = message.orientation.w
+
+		roll = math.atan2(2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx * qx + qy * qy))
 		# To degrees - it's easier to display
 		roll = roll * 180 / math.pi
 

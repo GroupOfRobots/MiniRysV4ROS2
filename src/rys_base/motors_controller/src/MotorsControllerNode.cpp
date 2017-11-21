@@ -92,15 +92,13 @@ void MotorsControllerNode::enableMessageCallback(const std_msgs::msg::Bool::Shar
 }
 
 void MotorsControllerNode::imuMessageCallback(const sensor_msgs::msg::Imu::SharedPtr message) {
-	double q0 = message->orientation.x;
-	double q1 = message->orientation.y;
-	double q2 = message->orientation.z;
-	double q3 = message->orientation.w;
+	double qx = message->orientation.x;
+	double qy = message->orientation.y;
+	double qz = message->orientation.z;
+	double qw = message->orientation.w;
 
 	this->rollPrevious = roll;
-	// minus because + means leaning forward
-	this->roll = -asin(2.0 * q0 * q2 - 2.0 * q3 * q1);
-	// this->rotationX = message->rotation_x;
+	this->roll = atan2(2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx * qx + qy * qy));
 }
 
 void MotorsControllerNode::setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> requestHeader, const std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Request> request, std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Response> response) {
