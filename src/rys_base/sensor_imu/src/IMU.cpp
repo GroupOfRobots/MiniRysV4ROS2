@@ -32,13 +32,6 @@ void IMU::initialize() {
 	// load and configure the DMP
 	uint8_t devStatus = this->mpu->dmpInitialize();
 
-	// setRate accepts factor that works like this: 1kHz / (1 + x); 4 = 200Hz
-	/*
-	this->mpu->setRate(4);
-	this->mpu->setDLPFMode(MPU6050_DLPF_BW_188);
-	this->mpu->setDHPFMode(MPU6050_DHPF_2P5);
-	*/
-
 	// make sure it worked (returns 0 if so)
 	if (devStatus == 0) {
 		// turn on the DMP, now that it's ready
@@ -47,7 +40,7 @@ void IMU::initialize() {
 		// get expected DMP packet size for later comparison
 		packetSize = this->mpu->dmpGetFIFOPacketSize();
 
-		// this->mpu->resetFIFO();
+		this->mpu->resetFIFO();
 	} else {
 		// ERROR!
 		// 1 = initial memory load failed
@@ -66,9 +59,18 @@ int IMU::fetchData(uint8_t * buffer) {
 		return -1;
 	}
 
-	this->mpu->getFIFOBytes(buffer, this->packetSize);
-	this->mpu->resetFIFO();
-	return 1;
+	// If there's too much data in FIFO
+	if (fifoCount > 512) {
+		this->mpu->resetFIFO();
+		return -2;
+	}
+
+	while (fifoCount >= this->packetSize) {
+		this->mpu->getFIFOBytes(buffer, this->packetSize);
+		fifoCount = this->packetSize;
+	}
+
+	return this->packetSize;
 }
 
 int IMU::getData(ImuData * data) {
