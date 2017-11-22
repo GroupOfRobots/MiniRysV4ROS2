@@ -67,7 +67,7 @@ int IMU::fetchData(uint8_t * buffer) {
 
 	while (fifoCount >= this->packetSize) {
 		this->mpu->getFIFOBytes(buffer, this->packetSize);
-		fifoCount = this->packetSize;
+		fifoCount -= this->packetSize;
 	}
 
 	return this->packetSize;
