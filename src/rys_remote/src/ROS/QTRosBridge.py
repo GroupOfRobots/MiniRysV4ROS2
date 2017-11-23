@@ -81,7 +81,7 @@ class QTRosBridge(QThread):
 		self.imuChanged.emit(roll, 0)
 
 	def temperatureSensorCallback(self, message):
-		self.temperatureChanged.emit(int(message.data))
+		self.temperatureChanged.emit(int(message.temperature))
 
 	def rangeSensorSubscriptionCallback(self, message):
 		self.rangesChanged.emit(message.front, message.back, message.top, message.left, message.right)

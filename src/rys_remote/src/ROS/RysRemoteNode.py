@@ -1,4 +1,5 @@
 import rclpy
+import time
 from rys_interfaces import msg as RysMsgs
 from rys_interfaces import srv as RysSrvs
 from std_msgs import msg as StdMsgs
@@ -27,10 +28,14 @@ class RysRemoteNode(rclpy.Node):
 		self.clientGetRegulatorSettings = self.create_client(RysSrvs.GetRegulatorSettings, '/' + robotName + '/control/regulator_settings/get')
 
 		# Create ROS subscribers
-		self.subscriptionBattery = self.create_subscription(RysMsgs.BatteryStatus, '/' + robotName + '/sensor/battery', callbacks['battery'], qos_profile = rclpy.qos.qos_profile_default)
-		self.subscriptionImu = self.create_subscription(SensorMsgs.Imu, '/' + robotName + '/sensor/imu', callbacks['imu'], qos_profile = rclpy.qos.qos_profile_sensor_data)
-		self.subscriptionRanges = self.create_subscription(RysMsgs.Ranges, '/' + robotName + '/sensor/ranges', callbacks['ranges'], qos_profile = rclpy.qos.qos_profile_sensor_data)
-		self.subscriptionTemperature = self.create_subscription(StdMsgs.Float32, '/' + robotName + '/sensor/temperature', callbacks['temperature'], qos_profile = rclpy.qos.qos_profile_default)
+		batteryTopicName = '/' + robotName + '/sensor/battery'
+		imuTopicName = '/' + robotName + '/sensor/imu'
+		rangesTopicName = '/' + robotName + '/sensor/ranges'
+		temperatureTopicName = '/' + robotName + '/sensor/temperature'
+		self.subscriptionBattery = self.create_subscription(RysMsgs.BatteryStatus, batteryTopicName, callbacks['battery'], qos_profile = rclpy.qos.qos_profile_default)
+		self.subscriptionImu = self.create_subscription(SensorMsgs.Imu, imuTopicName, callbacks['imu'], qos_profile = rclpy.qos.qos_profile_sensor_data)
+		self.subscriptionRanges = self.create_subscription(RysMsgs.Ranges, rangesTopicName, callbacks['ranges'], qos_profile = rclpy.qos.qos_profile_sensor_data)
+		self.subscriptionTemperature = self.create_subscription(RysMsgs.TemperatureStatus, temperatureTopicName, callbacks['temperature'], qos_profile = rclpy.qos.qos_profile_default)
 
 		self.enableTimer = self.create_timer(1.0 / messageRates['enableMotors'], self.enableTimerCallback)
 		self.steeringTimer = self.create_timer(1.0 / messageRates['steering'], self.steeringTimerCallback)
@@ -51,7 +56,9 @@ class RysRemoteNode(rclpy.Node):
 			return
 
 		message = RysMsgs.Steering()
-		message.header.stamp = rclpy.Time.now()
+		timeNow = time.time()
+		message.header.stamp.sec = int(timeNow)
+		message.header.stamp.nanosec = int((timeNow - message.header.stamp.sec) * 1000 * 1000 * 1000)
 		message.header.frame_id = 'joystick'
 		message.throttle = self.throttle
 		message.rotation = self.rotation
