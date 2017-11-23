@@ -82,11 +82,12 @@ int IMU::getData(ImuData * data) {
 	}
 
 	// Get orientation quaternion from the buffer and scale it
-	int16_t orientationQuaternion[4];
+	int32_t orientationQuaternion[4];
 	this->mpu->dmpGetQuaternion(orientationQuaternion, rawDataBuffer);
 	for (int i = 0; i < 4; ++i) {
-		// Raw data is in +-32k range with +-2.0 values
-		data->orientationQuaternion[i] = static_cast<double>(orientationQuaternion[i]) / 16384.0;
+		// Data is 32-bit, shifted left by 16 bits (thus divide by 2^16)
+		// LSB = 16384
+		data->orientationQuaternion[i] = static_cast<double>(orientationQuaternion[i]) / 65536.0 / 16384.0;
 	}
 
 	// Calculate gravity vector based on orientation for use in linear acceleration calculations.
@@ -101,20 +102,25 @@ int IMU::getData(ImuData * data) {
 	gravity[2] = qw * qw - qx * qx - qy * qy + qz * qz;
 
 	// Get acceleration, subtract gravity (so we get linear acceleration) and scale it to m/s
-	int16_t rawAcceleration[3];
+	int32_t rawAcceleration[3];
 	this->mpu->dmpGetAccel(rawAcceleration, rawDataBuffer);
 	for (int i = 0; i < 3; ++i) {
-		// Raw data is in +-2g range with +-32k values - change that into m/s ((a / 16384 - g) * 9.81)
+		// 32bit data, see quaternion
+		// LSB = 8192.0/g
+		// 1g = 9.81m/s^2
 		/// TODO: if needed, rotate acceleration vector by quaternion BEFORE subtracting gravity
-		data->linearAcceleration[i] = (static_cast<double>(rawAcceleration[i]) / 16384.0 - gravity[i]) * 9.81;
+		data->linearAcceleration[i] = (static_cast<double>(rawAcceleration[i]) / 65536.0 / 8192.0 - gravity[i]) * 9.81;
 	}
 
 	// Get angular velocity from raw data and scale it
-	int16_t angularVelocity[3];
+	int32_t angularVelocity[3];
 	this->mpu->dmpGetGyro(angularVelocity, rawDataBuffer);
 	for (int i = 0; i < 3; ++i) {
-		// Raw data is in +-2000deg/s range with +-32k values - change into rad/s ((r / 16.384) * M_PI/180)
-		data->angularVelocity[i] = static_cast<double>(angularVelocity[i]) * 0.0010652644360316954;
+		// 32bit data, see quaternion
+		// LSB = 16.384/(deg/s)
+		// DMP data is seemingly divided by 25 for whatever reason
+		// deg/s -> rad/s
+		data->angularVelocity[i] = static_cast<double>(angularVelocity[i]) / 65536.0 / 16.384 * 25 * M_PI / 180;
 	}
 
 	return 1;
