@@ -40,6 +40,7 @@ MotorsControllerNode::MotorsControllerNode(
 		throw(std::string("Controller init error"));
 	}
 
+	this->motorsController->setInverting(true, false);
 	this->motorsController->setBalancing(false);
 	this->motorsController->setLQREnabled(false);
 	this->motorsController->setSpeedFilterFactor(1);

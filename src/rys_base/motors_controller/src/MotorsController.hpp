@@ -15,7 +15,7 @@
 #define SPEED_TO_DEG 1200.0f
 
 #define MAX_ACCELERATION 1.0f
-#define MAX_MOTOR_SPEED 300000
+#define MAX_MOTOR_SPEED 250000
 #define DEVICE_NAME "/dev/rpmsg_pru31"
 
 class MotorsController {
@@ -59,6 +59,8 @@ class MotorsController {
 		bool motorsEnabled;
 		float motorSpeedLeft;
 		float motorSpeedRight;
+		bool invertLeft;
+		bool invertRight;
 		std::ofstream motorPruFile;
 		std::mutex fileAccessMutex;
 
@@ -67,6 +69,7 @@ class MotorsController {
 		MotorsController();
 		~MotorsController();
 		void init();
+		void setInverting(bool invertLeft, bool invertRight);
 		void setBalancing(bool value);
 		void setLQREnabled(bool value);
 		void setSpeedFilterFactor(float factor);

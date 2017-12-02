@@ -29,6 +29,8 @@ MotorsController::MotorsController() {
 	motorsEnabled = false;
 	motorSpeedLeft = 0;
 	motorSpeedRight = 0;
+	invertLeft = false;
+	invertRight = false;
 }
 
 MotorsController::~MotorsController() {
@@ -236,6 +238,14 @@ void MotorsController::disableMotors() {
 }
 
 void MotorsController::setMotorSpeeds(float speedLeft, float speedRight, int microstep, bool ignoreAcceleration) {
+	// Validate microstep value
+	if (microstep != 1 && (microstep == 0 || microstep % 2 || microstep > 32)) {
+		throw(std::string("Bad microstep value!"));
+	}
+
+	// Create data frame for PRU
+	MotorsController::DataFrame dataFrame;
+
 	// Clip speed values
 	if (speedLeft > 1.0f) {
 		speedLeft = 1.0f;
@@ -248,14 +258,15 @@ void MotorsController::setMotorSpeeds(float speedLeft, float speedRight, int mic
 		speedRight = -1.0f;
 	}
 
-	// Validate microstep value
-	if (microstep != 1 && (microstep == 0 || microstep % 2 || microstep > 32)) {
-		throw(std::string("Bad microstep value!"));
+	// If needed, invert the speeds
+	if (this->invertLeft) {
+		speedLeft = -speedLeft;
+	}
+	if (this->invertRight) {
+		speedRight = -speedRight;
 	}
 
-	// Create data frame for PRU
-	MotorsController::DataFrame dataFrame;
-
+	// Set whether the motors are to be enabled
 	dataFrame.enabled = this->motorsEnabled;
 
 	// Save microstep value
