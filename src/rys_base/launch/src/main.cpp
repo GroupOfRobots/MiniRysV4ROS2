@@ -16,6 +16,11 @@ int main(int argc, char * argv[]) {
 	rclcpp::init(argc, argv);
 	rclcpp::executors::SingleThreadedExecutor executor;
 
+	std::string robotName("rys");
+
+	double wheelRadius = 0.102;
+	double baseWidth = 0.15;
+
 	const uint8_t batteryInputNumbers[3] = { 3, 1, 6 };
 	const float batteryCoefficients[3] = { 734.4895, 340.7509, 214.1773 };
 	const uint8_t temperatureInputNumber = 5;
@@ -31,12 +36,12 @@ int main(int argc, char * argv[]) {
 		VL53L0X_ADDRESS_DEFAULT + 12
 	};
 
-	auto motorsNode = std::make_shared<MotorsControllerNode>("rys", "motors_controller", 10ms);
-	auto batteryNode = std::make_shared<BatteryNode>("rys", "sensor_battery", 1000ms, batteryInputNumbers, batteryCoefficients);
-	auto dwmNode = std::make_shared<DWMNode>("rys", "sensor_dwm1000", 1000ms);
-	auto imuNode = std::make_shared<IMUNode>("rys", "sensor_imu", 10ms, 3000ms);
-	auto temperatureNode = std::make_shared<TemperatureNode>("rys", "sensor_temperature", 2000ms, temperatureInputNumber, temperatureCoefficient);
-	auto vl53l0xNode = std::make_shared<VL53L0XNode>("rys", "sensor_ranges", 20ms, vl53l0xPins, vl53l0xAddresses);
+	auto motorsNode = std::make_shared<MotorsControllerNode>(robotName, "motors_controller", 10ms, wheelRadius, baseWidth);
+	auto batteryNode = std::make_shared<BatteryNode>(robotName, "sensor_battery", 1000ms, batteryInputNumbers, batteryCoefficients);
+	auto dwmNode = std::make_shared<DWMNode>(robotName, "sensor_dwm1000", 1000ms);
+	auto imuNode = std::make_shared<IMUNode>(robotName, "sensor_imu", 10ms, 3000ms);
+	auto temperatureNode = std::make_shared<TemperatureNode>(robotName, "sensor_temperature", 2000ms, temperatureInputNumber, temperatureCoefficient);
+	auto vl53l0xNode = std::make_shared<VL53L0XNode>(robotName, "sensor_ranges", 20ms, vl53l0xPins, vl53l0xAddresses);
 
 	executor.add_node(motorsNode);
 	executor.add_node(batteryNode);

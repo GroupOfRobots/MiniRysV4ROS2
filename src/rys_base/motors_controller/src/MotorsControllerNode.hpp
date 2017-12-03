@@ -4,9 +4,13 @@
 #include <chrono>
 #include <string>
 
+#include <kdl/frames.hpp>
+
 #include "rclcpp/rclcpp.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "builtin_interfaces/msg/time.hpp"
 #include "rys_interfaces/msg/imu_roll_rotation.hpp"
 #include "rys_interfaces/msg/steering.hpp"
 #include "rys_interfaces/srv/set_regulator_settings.hpp"
@@ -16,6 +20,9 @@
 
 class MotorsControllerNode : public rclcpp::Node {
 	private:
+		const float wheelRadius;
+		const float baseWidth;
+
 		bool enabled;
 		bool balancing;
 		std::chrono::milliseconds enableTimeout;
@@ -31,6 +38,9 @@ class MotorsControllerNode : public rclcpp::Node {
 		float throttle;
 		unsigned char steeringPrecision;
 
+		builtin_interfaces::msg::Time previousOdometryTime;
+		KDL::Frame currentOdometryFrame;
+
 		MotorsController * motorsController;
 
 		rclcpp::TimerBase::SharedPtr loopTimer;
@@ -38,6 +48,8 @@ class MotorsControllerNode : public rclcpp::Node {
 		rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr balancingEnableSubscriber;
 		rclcpp::Subscription<rys_interfaces::msg::Steering>::SharedPtr steeringSubscriber;
 		rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imuSubscriber;
+
+		rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odometryPublisher;
 
 		rclcpp::service::Service<rys_interfaces::srv::SetRegulatorSettings>::SharedPtr setRegulatorSettingsServer;
 		rclcpp::service::Service<rys_interfaces::srv::GetRegulatorSettings>::SharedPtr getRegulatorSettingsServer;
@@ -57,7 +69,9 @@ class MotorsControllerNode : public rclcpp::Node {
 		MotorsControllerNode(
 			const std::string & robotName,
 			const std::string & nodeName,
-			std::chrono::milliseconds rate
+			std::chrono::milliseconds rate,
+			float wheelRadius,
+			float baseWidth
 		);
 		~MotorsControllerNode();
 };

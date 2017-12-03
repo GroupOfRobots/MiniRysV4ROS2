@@ -14,8 +14,13 @@ using std::placeholders::_3;
 MotorsControllerNode::MotorsControllerNode(
 	const std::string & robotName,
 	const std::string & nodeName,
-	std::chrono::milliseconds rate
-) : rclcpp::Node(nodeName, robotName, true) {
+	std::chrono::milliseconds rate,
+	float wheelRadius,
+	float baseWidth
+) : rclcpp::Node(nodeName, robotName, true), wheelRadius(wheelRadius), baseWidth(baseWidth) {
+	// this->wheelRadius = wheelRadius;
+	// this->baseWidth = baseWidth;
+
 	this->enabled = false;
 	this->balancing = false;
 	this->enableTimeout = 5000ms;
@@ -30,6 +35,9 @@ MotorsControllerNode::MotorsControllerNode(
 	this->rotation = 0;
 	this->throttle = 0;
 	this->steeringPrecision = 1;
+
+	this->previousOdometryTime = rclcpp::Time::now();
+	this->currentOdometryFrame = KDL::Frame();
 
 	std::cout << "[MOTORS] Initializing motors controller...\n";
 	this->motorsController = new MotorsController();
@@ -54,6 +62,8 @@ MotorsControllerNode::MotorsControllerNode(
 	this->balancingEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_balancing", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
 	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
 	this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
+
+	this->odometryPublisher = this->create_publisher<nav_msgs::msg::Odometry>("/" + robotName + "/control/odometry", rmw_qos_profile_default);
 
 	this->setRegulatorSettingsServer = this->create_service<rys_interfaces::srv::SetRegulatorSettings>("/" + robotName + "/control/regulator_settings/set", std::bind(&MotorsControllerNode::setRegulatorSettingsCallback, this, _1, _2, _3));
 	this->getRegulatorSettingsServer = this->create_service<rys_interfaces::srv::GetRegulatorSettings>("/" + robotName + "/control/regulator_settings/get", std::bind(&MotorsControllerNode::getRegulatorSettingsCallback, this, _1, _2, _3));
@@ -90,6 +100,7 @@ void MotorsControllerNode::enableMessageCallback(const std_msgs::msg::Bool::Shar
 		this->motorsController->disableMotors();
 	}
 	this->enabled = message->data;
+	this->previousOdometryTime = rclcpp::Time::now();
 }
 
 void MotorsControllerNode::imuMessageCallback(const sensor_msgs::msg::Imu::SharedPtr message) {
@@ -237,10 +248,16 @@ void MotorsControllerNode::runLoop() {
 	} else {
 		// Standing up or not balancing - use controller
 		// Calculate target speeds for motors
-		float speed = (this->motorsController->getMotorSpeedLeft() + this->motorsController->getMotorSpeedRight()) / 2;
+		float leftSpeed = this->motorsController->getMotorSpeedLeftRaw();
+		float rightSpeed = this->motorsController->getMotorSpeedRightRaw();
+		float linearSpeed = (leftSpeed + rightSpeed) / 2;
 		float finalLeftSpeed = 0;
 		float finalRightSpeed = 0;
-		this->motorsController->calculateSpeeds(this->roll, this->rotationX, speed, this->throttle, this->rotation, finalLeftSpeed, finalRightSpeed, loopTime);
+		this->motorsController->calculateSpeeds(this->roll, this->rotationX, linearSpeed, this->throttle, this->rotation, finalLeftSpeed, finalRightSpeed, loopTime);
+
+		// Save current speeds in units suitable for odometry (m/s)
+		leftSpeed = this->motorsController->getMotorSpeedLeft() * this->wheelRadius;
+		rightSpeed = this->motorsController->getMotorSpeedRight() * this->wheelRadius;
 
 		// Set target speeds
 		try {
@@ -250,5 +267,65 @@ void MotorsControllerNode::runLoop() {
 			std::cout << "[MOTORS] Error setting motors speed: " << error << std::endl;
 			throw(std::string("Error setting motors speed"));
 		}
+
+		// Odometry
+		// First, retrieve the current time (as close to setting new target speeds as possible) and calculate the delta
+		auto timestampNow = rclcpp::Time::now();
+		float timeDelta = (timestampNow - this->previousOdometryTime).nanoseconds() * 0.000000001;
+		this->previousOdometryTime = timestampNow;
+
+		// Second, create an odometry message and fill whatever we can
+		auto odometryMessage = std::make_shared<nav_msgs::msg::Odometry>();
+		odometryMessage->header.stamp = timestampNow;
+		odometryMessage->header.frame_id = "odom";
+		odometryMessage->child_frame_id = "base_link";
+		// Actual covariance is unknown
+		for (unsigned int i = 0; i < odometryMessage->pose.covariance.size(); ++i) {
+			odometryMessage->pose.covariance[i] = 0.0;
+		}
+		for (unsigned int i = 0; i < odometryMessage->twist.covariance.size(); ++i) {
+			odometryMessage->twist.covariance[i] = 0.0;
+		}
+		// Differential drive robots CANNOT move in Z direction nor rotate along X and Y axes (at least odometry-wise)
+		odometryMessage->twist.twist.linear.z = 0;
+		odometryMessage->twist.twist.angular.x = 0;
+		odometryMessage->twist.twist.angular.y = 0;
+
+		// Third, calculate the difference frame by forward kinematics - trivial for equal speeds (front/back movement), slightly more complicated for different speeds
+		KDL::Frame odometryUpdateFrame;
+		if (leftSpeed == rightSpeed) {
+			// Only linear movement
+			odometryUpdateFrame = KDL::Frame(KDL::Vector(leftSpeed * timeDelta, 0, 0));
+			odometryMessage->twist.twist.linear.x = leftSpeed;
+			odometryMessage->twist.twist.linear.y = 0;
+			odometryMessage->twist.twist.angular.z = 0;
+		} else {
+			float linearVelocity = (rightSpeed + leftSpeed) / 2;
+			float angularVelocity = (rightSpeed - leftSpeed) / baseWidth;
+			float rotationPointDistance = linearVelocity / angularVelocity;
+			float rotationAngle = angularVelocity * timeDelta;
+			float deltaX = rotationPointDistance * std::sin(rotationAngle);
+			float deltaY = rotationPointDistance * (1.0 - std::cos(rotationAngle));
+			odometryUpdateFrame = KDL::Frame(KDL::Rotation::RotZ(rotationAngle), KDL::Vector(deltaX, deltaY, 0));
+
+			odometryMessage->twist.twist.linear.x = linearVelocity * std::cos(rotationAngle);
+			odometryMessage->twist.twist.linear.y = linearVelocity * std::sin(rotationAngle);
+			odometryMessage->twist.twist.angular.z = angularVelocity;
+		}
+
+		// Fourth, update the odometry frame and put it into the message
+		this->currentOdometryFrame = this->currentOdometryFrame * odometryUpdateFrame;
+		odometryMessage->pose.pose.position.x = this->currentOdometryFrame.p.x();
+		odometryMessage->pose.pose.position.y = this->currentOdometryFrame.p.y();
+		odometryMessage->pose.pose.position.z = this->currentOdometryFrame.p.z();
+		double rotX, rotY, rotZ, rotW;
+		this->currentOdometryFrame.M.GetQuaternion(rotX, rotY, rotZ, rotW);
+		odometryMessage->pose.pose.orientation.x = rotX;
+		odometryMessage->pose.pose.orientation.y = rotY;
+		odometryMessage->pose.pose.orientation.z = rotZ;
+		odometryMessage->pose.pose.orientation.w = rotW;
+
+		// Fifth, finally publish the odometry message
+		this->odometryPublisher->publish(odometryMessage);
 	}
 }

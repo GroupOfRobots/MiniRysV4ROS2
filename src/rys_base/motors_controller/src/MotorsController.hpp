@@ -15,7 +15,11 @@
 #define SPEED_TO_DEG 1200.0f
 
 #define MAX_ACCELERATION 1.0f
-#define MAX_MOTOR_SPEED 250000
+// Note: MAX_MOTOR_SPEED is in fact the MINIMUM delay (in PRU ticks) between steps, so to increase the real max speed decrease this constant.
+/// TODO: Move this delay/PRU_CLOCK/etc logic into PRU driver and make this controller operate on rev/s.
+#define MAX_MOTOR_SPEED 350000
+#define PRU_CLOCK 200 * 1000 * 1000
+#define STEPPER_STEPS_PER_REVOLUTION 200
 #define DEVICE_NAME "/dev/rpmsg_pru31"
 
 class MotorsController {
@@ -69,7 +73,7 @@ class MotorsController {
 		MotorsController();
 		~MotorsController();
 		void init();
-		void setInverting(bool invertLeft, bool invertRight);
+		void setInverting(const bool invertLeft, const bool invertRight);
 		void setBalancing(bool value);
 		void setLQREnabled(bool value);
 		void setSpeedFilterFactor(float factor);
@@ -93,6 +97,8 @@ class MotorsController {
 		void enableMotors();
 		void disableMotors();
 		void setMotorSpeeds(float speedLeft, float speedRight, int microstep, bool ignoreAcceleration = false);
+		float getMotorSpeedLeftRaw() const;
+		float getMotorSpeedRightRaw() const;
 		float getMotorSpeedLeft() const;
 		float getMotorSpeedRight() const;
 };

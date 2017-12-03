@@ -53,6 +53,11 @@ void MotorsController::init() {
 	this->disableMotors();
 }
 
+void MotorsController::setInverting(const bool invertLeft, const bool invertRight) {
+	this->invertLeft = invertLeft;
+	this->invertRight = invertRight;
+}
+
 void MotorsController::setBalancing(bool value) {
 	this->balancing = value;
 }
@@ -315,12 +320,28 @@ void MotorsController::setMotorSpeeds(float speedLeft, float speedRight, int mic
 	this->writePRUDataFrame(dataFrame);
 }
 
+float MotorsController::getMotorSpeedLeftRaw() const {
+	return this->invertLeft ? -this->motorSpeedLeft : this->motorSpeedLeft;
+}
+
+float MotorsController::getMotorSpeedRightRaw() const {
+	return this->invertRight ? -this->motorSpeedRight : this->motorSpeedRight;
+}
+
 float MotorsController::getMotorSpeedLeft() const {
-	return this->motorSpeedLeft;
+	if (!this->motorsEnabled || this->motorSpeedLeft == 0) {
+		return 0.0f;
+	}
+
+	return this->motorSpeedLeft * (M_PI * PRU_CLOCK)/(STEPPER_STEPS_PER_REVOLUTION * MAX_MOTOR_SPEED);
 }
 
 float MotorsController::getMotorSpeedRight() const {
-	return this->motorSpeedRight;
+	if (!this->motorsEnabled || this->motorSpeedRight == 0) {
+		return 0.0f;
+	}
+
+	return this->motorSpeedRight * (M_PI * PRU_CLOCK)/(STEPPER_STEPS_PER_REVOLUTION * MAX_MOTOR_SPEED);
 }
 
 void MotorsController::writePRUDataFrame(const MotorsController::DataFrame & frame) {
