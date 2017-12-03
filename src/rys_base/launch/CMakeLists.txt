@@ -14,7 +14,7 @@ find_package(rys_sensor_battery REQUIRED)
 find_package(rys_sensor_dwm1000 REQUIRED)
 find_package(rys_sensor_imu REQUIRED)
 find_package(rys_sensor_temperature REQUIRED)
-find_package(rys_sensor_vl53l0x REQUIRED)
+find_package(rys_sensor_ranges REQUIRED)
 
 add_executable(main
 	src/main.cpp
@@ -28,7 +28,7 @@ ament_target_dependencies(main
 	rys_sensor_dwm1000
 	rys_sensor_imu
 	rys_sensor_temperature
-	rys_sensor_vl53l0x
+	rys_sensor_ranges
 )
 
 add_executable(multithread
@@ -43,7 +43,7 @@ ament_target_dependencies(multithread
 	rys_sensor_dwm1000
 	rys_sensor_imu
 	rys_sensor_temperature
-	rys_sensor_vl53l0x
+	rys_sensor_ranges
 )
 
 # Install

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 ### Package name
-project(rys_sensor_vl53l0x)
+project(rys_sensor_ranges)
 
 ### Compile options
 include(../cmake_modules/compile_options.cmake)
@@ -14,13 +14,13 @@ find_package(std_msgs REQUIRED)
 find_package(rys_interfaces REQUIRED)
 
 set(HEADER_FILES
-	src/VL53L0XNode.hpp
+	src/RangesNode.hpp
 	src/VL53L0X.hpp
 	src/VL53L0X_defines.hpp
 	src/I2Cdev.hpp
 )
 set(SOURCE_FILES
-	src/VL53L0XNode.cpp
+	src/RangesNode.cpp
 	src/VL53L0X.cpp
 	src/I2Cdev.cpp
 )

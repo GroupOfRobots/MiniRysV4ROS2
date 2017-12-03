@@ -2,7 +2,7 @@
 #include <iostream>
 #include "rclcpp/rclcpp.hpp"
 #define I2C_DEV_PATH "/dev/i2c-2"
-#include "VL53L0XNode.hpp"
+#include "RangesNode.hpp"
 
 using namespace std::chrono_literals;
 
@@ -28,7 +28,7 @@ int main(int argc, char * argv[]) {
 		VL53L0X_ADDRESS_DEFAULT + 12
 	};
 
-	auto node = std::make_shared<VL53L0XNode>("rys", "sensor_ranges", 20ms, pins, addresses);
+	auto node = std::make_shared<RangesNode>("rys", "sensor_ranges", 20ms, pins, addresses);
 	rclcpp::spin(node);
 	rclcpp::shutdown();
 
