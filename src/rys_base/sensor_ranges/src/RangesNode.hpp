@@ -9,7 +9,7 @@
 
 #include "VL53L0X.hpp"
 
-class VL53L0XNode : public rclcpp::Node {
+class RangesNode : public rclcpp::Node {
 	private:
 		VL53L0X * sensors[5];
 		bool sensorInitialized[5];
@@ -20,14 +20,14 @@ class VL53L0XNode : public rclcpp::Node {
 		int readSensor(int sensorIndex);
 		void sensorsReadAndPublishData();
 	public:
-		VL53L0XNode(
+		RangesNode(
 			const std::string & robotName,
 			const std::string & nodeName,
 			const std::chrono::milliseconds loopDuration,
 			const uint8_t pins[5],
 			const uint8_t addresses[5]
 		);
-		~VL53L0XNode();
+		~RangesNode();
 };
 
 #endif

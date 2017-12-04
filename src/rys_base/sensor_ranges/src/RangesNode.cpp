@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "VL53L0XNode.hpp"
+#include "RangesNode.hpp"
 
-VL53L0XNode::VL53L0XNode(
+RangesNode::RangesNode(
 	const std::string & robotName,
 	const std::string & nodeName,
 	const std::chrono::milliseconds loopDuration,
@@ -50,11 +50,11 @@ VL53L0XNode::VL53L0XNode(
 	}
 
 	this->publisher = this->create_publisher<rys_interfaces::msg::Ranges>("/" + robotName + "/sensor/ranges", rmw_qos_profile_sensor_data);
-	this->timer = this->create_wall_timer(loopDuration, std::bind(&VL53L0XNode::sensorsReadAndPublishData, this));
+	this->timer = this->create_wall_timer(loopDuration, std::bind(&RangesNode::sensorsReadAndPublishData, this));
 	std::cout << "[RANGES] Node ready\n";
 }
 
-VL53L0XNode::~VL53L0XNode() {
+RangesNode::~RangesNode() {
 	for (int i = 0; i < 5; ++i) {
 		if (sensorInitialized[i]) {
 			sensors[i]->stopContinuous();
@@ -64,7 +64,7 @@ VL53L0XNode::~VL53L0XNode() {
 	}
 }
 
-int VL53L0XNode::readSensor(int sensorIndex) {
+int RangesNode::readSensor(int sensorIndex) {
 	if (!sensorInitialized[sensorIndex]) {
 		return -1;
 	}
@@ -87,7 +87,7 @@ int VL53L0XNode::readSensor(int sensorIndex) {
 	return value;
 }
 
-void VL53L0XNode::sensorsReadAndPublishData() {
+void RangesNode::sensorsReadAndPublishData() {
 	auto message = std::make_shared<rys_interfaces::msg::Ranges>();
 
 	message->header.stamp = rclcpp::Time::now();

@@ -17,7 +17,7 @@
 	<build_depend>rys_sensor_dwm1000</build_depend>
 	<build_depend>rys_sensor_imu</build_depend>
 	<build_depend>rys_sensor_temperature</build_depend>
-	<build_depend>rys_sensor_vl53l0x</build_depend>
+	<build_depend>rys_sensor_ranges</build_depend>
 
 	<exec_depend>rclcpp</exec_depend>
 	<exec_depend>std_msgs</exec_depend>
@@ -27,7 +27,7 @@
 	<exec_depend>rys_sensor_dwm1000</exec_depend>
 	<exec_depend>rys_sensor_imu</exec_depend>
 	<exec_depend>rys_sensor_temperature</exec_depend>
-	<exec_depend>rys_sensor_vl53l0x</exec_depend>
+	<exec_depend>rys_sensor_ranges</exec_depend>
 
 	<export>
 		<build_type>ament_cmake</build_type>
