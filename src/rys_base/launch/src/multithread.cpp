@@ -18,8 +18,8 @@ int main(int argc, char * argv[]) {
 
 	std::string robotName("rys");
 
-	double wheelRadius = 0.102;
-	double baseWidth = 0.15;
+	double wheelRadius = 0.055;
+	double baseWidth = 0.134;
 
 	const uint8_t batteryInputNumbers[3] = { 3, 1, 6 };
 	const float batteryCoefficients[3] = { 734.4895, 340.7509, 214.1773 };

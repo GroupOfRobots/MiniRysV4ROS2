@@ -333,7 +333,7 @@ float MotorsController::getMotorSpeedLeft() const {
 		return 0.0f;
 	}
 
-	return this->motorSpeedLeft * (M_PI * PRU_CLOCK)/(STEPPER_STEPS_PER_REVOLUTION * MAX_MOTOR_SPEED);
+	return this->motorSpeedLeft * (2 * M_PI * PRU_CLOCK)/(STEPPER_STEPS_PER_REVOLUTION * MAX_MOTOR_SPEED);
 }
 
 float MotorsController::getMotorSpeedRight() const {
@@ -341,7 +341,7 @@ float MotorsController::getMotorSpeedRight() const {
 		return 0.0f;
 	}
 
-	return this->motorSpeedRight * (M_PI * PRU_CLOCK)/(STEPPER_STEPS_PER_REVOLUTION * MAX_MOTOR_SPEED);
+	return this->motorSpeedRight * (2 * M_PI * PRU_CLOCK)/(STEPPER_STEPS_PER_REVOLUTION * MAX_MOTOR_SPEED);
 }
 
 void MotorsController::writePRUDataFrame(const MotorsController::DataFrame & frame) {
