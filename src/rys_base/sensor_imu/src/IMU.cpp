@@ -126,14 +126,11 @@ int IMU::getData(ImuData * data) {
 	return 1;
 }
 
-void IMU::setOffsets(float yawOffset, float pitchOffset, float rollOffset, bool relative) {
-	if (relative) {
-		this->yawOffset = this->yawOffset + yawOffset;
-		this->pitchOffset = this->pitchOffset + pitchOffset;
-		this->rollOffset = this->rollOffset + rollOffset;
-	} else {
-		this->yawOffset = yawOffset;
-		this->pitchOffset = pitchOffset;
-		this->rollOffset = rollOffset;
-	}
+void IMU::setOffsets(const int offsets[6]) {
+	this->mpu->setXAccelOffset(offsets[0]);
+	this->mpu->setYAccelOffset(offsets[1]);
+	this->mpu->setZAccelOffset(offsets[2]);
+	this->mpu->setXGyroOffset(offsets[3]);
+	this->mpu->setYGyroOffset(offsets[4]);
+	this->mpu->setZGyroOffset(offsets[5]);
 }

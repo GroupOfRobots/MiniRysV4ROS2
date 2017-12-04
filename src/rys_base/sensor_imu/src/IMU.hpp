@@ -29,7 +29,11 @@ class IMU {
 		~IMU();
 		void initialize();
 		int getData(ImuData * data);
-		void setOffsets(float yawOffset = 0.0f, float pitchOffset = 0.0f, float rollOffset = 0.0f, bool relative = true);
+		/**
+		* Set offsets to MPU6050 readings. Uses set*GyroOffset() and set*AccelOffset().
+		* \param offsets - list of offsets to apply, in order: ax, ay, az, gx, gy, gz
+		*/
+		void setOffsets(const int offsets[6]);
 };
 
 #endif

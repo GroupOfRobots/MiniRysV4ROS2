@@ -7,7 +7,8 @@ IMUNode::IMUNode(
 	const std::string & robotName,
 	const std::string & nodeName,
 	const std::chrono::milliseconds loopDuration,
-	const std::chrono::milliseconds calibrationDuration
+	const std::chrono::milliseconds calibrationDuration,
+	const int imuCalibrationOffsets[6]
 ) : rclcpp::Node(nodeName, robotName, true) {
 	this->calibration = false;
 	this->calibrationValuesSum = 0;
@@ -18,6 +19,7 @@ IMUNode::IMUNode(
 	std::cout << "[IMU] Initializing IMU...\n";
 	this->imu = new IMU();
 	this->imu->initialize();
+	this->imu->setOffsets(imuCalibrationOffsets);
 	std::cout << "[IMU] IMU initialized\n";
 
 	this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", rmw_qos_profile_sensor_data);

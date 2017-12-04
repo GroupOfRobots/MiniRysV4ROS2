@@ -21,6 +21,8 @@ int main(int argc, char * argv[]) {
 	double wheelRadius = 0.055;
 	double baseWidth = 0.134;
 
+	int imuOffsets[6] = {831, 1493, 1086, -155, -24, 19};
+
 	const uint8_t batteryInputNumbers[3] = { 3, 1, 6 };
 	const float batteryCoefficients[3] = { 734.4895, 340.7509, 214.1773 };
 	const uint8_t temperatureInputNumber = 5;
@@ -39,7 +41,7 @@ int main(int argc, char * argv[]) {
 	auto motorsNode = std::make_shared<MotorsControllerNode>(robotName, "motors_controller", 10ms, wheelRadius, baseWidth);
 	auto batteryNode = std::make_shared<BatteryNode>(robotName, "sensor_battery", 1000ms, batteryInputNumbers, batteryCoefficients);
 	auto dwmNode = std::make_shared<DWMNode>(robotName, "sensor_dwm1000", 1000ms);
-	auto imuNode = std::make_shared<IMUNode>(robotName, "sensor_imu", 10ms, 3000ms);
+	auto imuNode = std::make_shared<IMUNode>(robotName, "sensor_imu", 10ms, 3000ms, imuOffsets);
 	auto temperatureNode = std::make_shared<TemperatureNode>(robotName, "sensor_temperature", 2000ms, temperatureInputNumber, temperatureCoefficient);
 	auto rangesNode = std::make_shared<RangesNode>(robotName, "sensor_ranges", 20ms, vl53l0xPins, vl53l0xAddresses);
 

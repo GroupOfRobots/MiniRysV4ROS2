@@ -30,7 +30,8 @@ class IMUNode : public rclcpp::Node {
 			const std::string & robotName,
 			const std::string & nodeName,
 			const std::chrono::milliseconds loopDuration,
-			const std::chrono::milliseconds calibrationDuration
+			const std::chrono::milliseconds calibrationDuration,
+			const int imuCalibrationOffsets[6]
 		);
 		~IMUNode();
 };
