@@ -304,8 +304,8 @@ void MotorsControllerNode::runLoop() {
 			float angularVelocity = (rightSpeed - leftSpeed) / baseWidth;
 			float rotationPointDistance = linearVelocity / angularVelocity;
 			float rotationAngle = angularVelocity * timeDelta;
-			float deltaX = rotationPointDistance * std::sin(rotationAngle);
-			float deltaY = rotationPointDistance * (1.0 - std::cos(rotationAngle));
+			float deltaX = rotationPointDistance * (std::cos(rotationAngle) - 1.0);
+			float deltaY = rotationPointDistance * std::sin(rotationAngle);
 			odometryUpdateFrame = KDL::Frame(KDL::Rotation::RotZ(rotationAngle), KDL::Vector(deltaX, deltaY, 0));
 
 			odometryMessage->twist.twist.linear.x = linearVelocity * std::cos(rotationAngle);
