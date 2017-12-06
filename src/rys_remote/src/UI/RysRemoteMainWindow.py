@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from Gamepad import GamepadBridge
 from UI.Layouts import Ui_RysRemoteMainWindow
 from ROS import QTRosBridge
+from Mapper import Mapper
 
 class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	"""
@@ -43,11 +44,14 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.gamepadBridge.gamepadButtonChanged.connect(self.gamepadButtonChangedHandler)
 		self.gamepadBridge.gamepadListUpdated.connect(self.gamepadListUpdatedHandler)
 
+		self.mapper = Mapper(self, cellSize = 0.04, mapSize = 2.56)
+
 		self.rosBridge = QTRosBridge(self, robotName, nodeName)
 		self.rosBridge.batteryChanged.connect(self.batteryChangedHandler)
 		self.rosBridge.imuChanged.connect(self.imuChangedHandler)
 		self.rosBridge.temperatureChanged.connect(self.temperatureChangedHandler)
 		self.rosBridge.rangesChanged.connect(self.rangesChangedHandler)
+		# TODO: odometry
 		self.rosBridge.regulatorSettingsSetDone.connect(self.regulatorSettingsSetDoneHandler)
 		self.rosBridge.regulatorSettingsGetDone.connect(self.regulatorSettingsGetDoneHandler)
 		self.regulatorSettingsSetRequested.connect(self.rosBridge.regulatorSettingsSetRequested)
@@ -198,12 +202,13 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			self.ui.cell3Bar.setDisabled(False)
 
 	def imuChangedHandler(self, roll, rotationX):
-		# self.ui.rollDial.setValue(float(roll))
 		self.ui.rollDial.setValue(int(roll))
 		self.ui.rollValueLabel.setText("    Roll: %f" % roll)
 		self.ui.rotationXValueLabel.setText("Rotation: %f" % rotationX)
 
 	def rangesChangedHandler(self, front, back, top, left, right):
+		self.mapper.rangeReadingsHandler(front, back, top, left, right)
+
 		if (front >= 0):
 			self.ui.rangeFrontBar.setEnabled(True)
 			maxValue = self.ui.rangeFrontBar.maximum()

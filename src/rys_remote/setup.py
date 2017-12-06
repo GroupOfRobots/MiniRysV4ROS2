@@ -8,6 +8,7 @@ setup(
 	packages = [
 		'',
 		'Gamepad',
+		'Mapper',
 		'ROS',
 		'UI',
 		'UI.Layouts',
@@ -15,6 +16,7 @@ setup(
 	package_dir = {
 		'': 'src',
 		'Gamepad': 'src/Gamepad',
+		'Mapper': 'src/Mapper',
 		'ROS': 'src/ROS',
 		'UI': 'src/UI',
 		'UI.Layouts': 'src/UI/Layouts',

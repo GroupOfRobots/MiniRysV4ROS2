@@ -14,6 +14,7 @@ class QTRosBridge(QThread):
 	rangesChanged = pyqtSignal(int, int, int, int, int)
 	regulatorSettingsSetDone = pyqtSignal(bool, str)
 	regulatorSettingsGetDone = pyqtSignal(object)
+	# TODO: odometry
 
 	def __init__(self, parent, robotName, nodeName, enableMotorsMessageRate = 0.5, steeringMessageRate = 10):
 		super().__init__(parent)

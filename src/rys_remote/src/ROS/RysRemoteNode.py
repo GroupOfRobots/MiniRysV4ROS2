@@ -32,8 +32,9 @@ class RysRemoteNode(rclpy.Node):
 		imuTopicName = '/' + robotName + '/sensor/imu'
 		rangesTopicName = '/' + robotName + '/sensor/ranges'
 		temperatureTopicName = '/' + robotName + '/sensor/temperature'
+		# TODO: odometry
 		self.subscriptionBattery = self.create_subscription(RysMsgs.BatteryStatus, batteryTopicName, callbacks['battery'], qos_profile = rclpy.qos.qos_profile_default)
-		self.subscriptionImu = self.create_subscription(SensorMsgs.Imu, imuTopicName, callbacks['imu'], qos_profile = rclpy.qos.qos_profile_sensor_data)
+		# self.subscriptionImu = self.create_subscription(SensorMsgs.Imu, imuTopicName, callbacks['imu'], qos_profile = rclpy.qos.qos_profile_sensor_data)
 		self.subscriptionRanges = self.create_subscription(RysMsgs.Ranges, rangesTopicName, callbacks['ranges'], qos_profile = rclpy.qos.qos_profile_sensor_data)
 		self.subscriptionTemperature = self.create_subscription(RysMsgs.TemperatureStatus, temperatureTopicName, callbacks['temperature'], qos_profile = rclpy.qos.qos_profile_default)
 
