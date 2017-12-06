@@ -13,7 +13,7 @@
 	<exec_depend>rys_interfaces</exec_depend>
 	<exec_depend>std_msgs</exec_depend>
 	<exec_depend>sensor_msgs</exec_depend>
-	<exec_depend>orocos_kdl</exec_depend>
+	<exec_depend>python_orocos_kdl</exec_depend>
 
 	<export>
 		<build_type>ament_python</build_type>
