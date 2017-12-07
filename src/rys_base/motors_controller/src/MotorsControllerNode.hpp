@@ -11,7 +11,6 @@
 #include "sensor_msgs/msg/imu.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "builtin_interfaces/msg/time.hpp"
-#include "rys_interfaces/msg/imu_roll_rotation.hpp"
 #include "rys_interfaces/msg/steering.hpp"
 #include "rys_interfaces/srv/set_regulator_settings.hpp"
 #include "rys_interfaces/srv/get_regulator_settings.hpp"
