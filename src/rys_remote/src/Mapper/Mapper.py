@@ -1,6 +1,6 @@
-import QuadMapNode
+from Mapper.QuadMapNode import QuadMapNode
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
-# from PyKDL import Frame
+from PyKDL import Frame
 
 class Mapper(QThread):
 	"""docstring for Mapper"""
@@ -16,7 +16,7 @@ class Mapper(QThread):
 		self.timer.timeout.connect(self.timerCallback)
 		self.timer.start(200)
 
-		# self.robotPosition = Frame()
+		self.robotPosition = Frame()
 
 	def odometryHandler(self, message):
 		# Apply odometry transform onto robotPosition frame
