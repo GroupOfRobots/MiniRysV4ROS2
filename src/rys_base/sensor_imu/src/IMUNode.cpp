@@ -8,13 +8,16 @@ IMUNode::IMUNode(
 	const std::string & nodeName,
 	const std::chrono::milliseconds loopDuration,
 	const std::chrono::milliseconds calibrationDuration,
-	const int imuCalibrationOffsets[6]
-) : rclcpp::Node(nodeName, robotName, true) {
+	const int imuCalibrationOffsets[6],
+	const int infrequentPublishRate
+) : rclcpp::Node(nodeName, robotName, true), infrequentPublishRate(infrequentPublishRate) {
 	this->calibration = false;
 	this->calibrationValuesSum = 0;
 	this->calibrationIterations = 0;
 	this->calibrationDuration = calibrationDuration;
 	this->calibrationEndTime = std::chrono::high_resolution_clock::now();
+
+	this->infrequentPublishCount = 0;
 
 	std::cout << "[IMU] Initializing IMU...\n";
 	this->imu = new IMU();
@@ -23,6 +26,7 @@ IMUNode::IMUNode(
 	std::cout << "[IMU] IMU initialized\n";
 
 	this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", rmw_qos_profile_sensor_data);
+	this->imuInfrequentPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imuInfrequent", rmw_qos_profile_sensor_data);
 	this->calibrationSubscription = this->create_subscription<std_msgs::msg::Empty>("/" + robotName + "/control/imu/calibrate", std::bind(&IMUNode::imuCalibrateCallback, this, std::placeholders::_1));
 	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::timerCallback, this));
 	std::cout << "[IMU] Node ready\n";
@@ -79,6 +83,12 @@ void IMUNode::timerCallback() {
 	}
 
 	this->imuPublisher->publish(message);
+
+	this->infrequentPublishCount++;
+	if (this->infrequentPublishCount >= this->infrequentPublishRate) {
+		this->infrequentPublishCount = 0;
+		this->imuInfrequentPublisher->publish(message);
+	}
 
 	/// TODO: adjust to new measurement/message type
 	/*

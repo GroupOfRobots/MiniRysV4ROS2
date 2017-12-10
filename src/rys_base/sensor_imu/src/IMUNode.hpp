@@ -18,9 +18,12 @@ class IMUNode : public rclcpp::Node {
 		unsigned long int calibrationIterations;
 		std::chrono::milliseconds calibrationDuration;
 		std::chrono::time_point<std::chrono::high_resolution_clock> calibrationEndTime;
+		const int infrequentPublishRate;
+		int infrequentPublishCount;
 
 		rclcpp::TimerBase::SharedPtr timer;
 		rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuPublisher;
+		rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuInfrequentPublisher;
 		rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr calibrationSubscription;
 
 		void timerCallback();
@@ -31,7 +34,8 @@ class IMUNode : public rclcpp::Node {
 			const std::string & nodeName,
 			const std::chrono::milliseconds loopDuration,
 			const std::chrono::milliseconds calibrationDuration,
-			const int imuCalibrationOffsets[6]
+			const int imuCalibrationOffsets[6],
+			const int infrequentPublishRate = 50
 		);
 		~IMUNode();
 };
