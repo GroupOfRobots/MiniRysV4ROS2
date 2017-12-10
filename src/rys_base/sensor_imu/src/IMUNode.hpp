@@ -13,18 +13,12 @@
 class IMUNode : public rclcpp::Node {
 	private:
 		IMU * imu;
-		bool calibration;
-		float calibrationValuesSum;
-		unsigned long int calibrationIterations;
-		std::chrono::milliseconds calibrationDuration;
-		std::chrono::time_point<std::chrono::high_resolution_clock> calibrationEndTime;
 		const int infrequentPublishRate;
 		int infrequentPublishCount;
 
 		rclcpp::TimerBase::SharedPtr timer;
 		rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuPublisher;
 		rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuInfrequentPublisher;
-		rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr calibrationSubscription;
 
 		void timerCallback();
 		void imuCalibrateCallback(const std_msgs::msg::Empty::SharedPtr message);
