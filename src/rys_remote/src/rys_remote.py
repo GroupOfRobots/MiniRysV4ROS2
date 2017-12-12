@@ -27,8 +27,8 @@ def main(args = None):
 	rosBridge = QTRosBridge(app, robotName, nodeName)
 	mapper = Mapper(app, rosBridge, cellSize = 0.04, mapSize = 2.56)
 
-	mainWindow = RysRemoteMainWindow(app, gamepadBridge, rosBridge, mapper)
-	app.aboutToQuit.connect(mainWindow.quitEventHandler)
+	mainWindow = RysRemoteMainWindow(None, gamepadBridge, rosBridge, mapper)
+	app.aboutToQuit.connect(quitEventHandler)
 
 	gamepadBridge.start()
 	rosBridge.start()

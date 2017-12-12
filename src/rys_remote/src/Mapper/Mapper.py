@@ -25,9 +25,9 @@ class Mapper(QThread):
 		# top sensor is offset by ~10cm on Y axis from base frame
 		self.topRangeSensorFrame = PyKDL.Frame(PyKDL.Vector(0, 0.1, 0))
 		# right sensor is offset by half frame width in X and slightly above wheel radius in Y, also rotated
-		self.rightRangeSensorFrame = PyKDL.Frame(PyKDL.RotZ(-math.pi / 2), PyKDL.Vector(0.065, 0.06, 0))
+		self.rightRangeSensorFrame = PyKDL.Frame(PyKDL.Rotation.RotZ(-math.pi / 2), PyKDL.Vector(0.065, 0.06, 0))
 		# left sensor symmetrical to right sensor
-		self.leftRangeSensorFrame = PyKDL.Frame(PyKDL.RotZ(math.pi / 2), PyKDL.Vector(-0.065, 0.06, 0))
+		self.leftRangeSensorFrame = PyKDL.Frame(PyKDL.Rotation.RotZ(math.pi / 2), PyKDL.Vector(-0.065, 0.06, 0))
 
 		rosBridge.odometryChanged.connect(self.odometryHandler)
 		rosBridge.rangesChanged.connect(self.rangeReadingsHandler)
