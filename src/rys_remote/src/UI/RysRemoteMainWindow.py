@@ -1,19 +1,16 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-from Gamepad import GamepadBridge
 from UI.Layouts import Ui_RysRemoteMainWindow
-from ROS import QTRosBridge
-from Mapper import Mapper
 
 class RysRemoteMainWindow(QtWidgets.QMainWindow):
-	"""
+	'''
 	Main window class for RysRemote.
 	Inherits from QMainWindow.
-	"""
+	'''
 
 	regulatorSettingsSetRequested = QtCore.pyqtSignal(object)
 	regulatorSettingsGetRequested = QtCore.pyqtSignal()
 
-	def __init__(self, parent, robotName, nodeName):
+	def __init__(self, parent, gamepadBridge, rosBridge, mapper):
 		super(RysRemoteMainWindow, self).__init__(parent)
 
 		self.enabled = False
@@ -30,7 +27,6 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.steeringGraphicsView.setScene(self.gamepadScene)
 		self.ui.steeringGraphicsView.fitInView(self.gamepadScene.sceneRect(), QtCore.Qt.KeepAspectRatio)
 
-		self.ui.imuCalibrateButton.clicked.connect(self.imuCalibrateClickedHandler)
 		self.ui.setRegulatorParametersButton.clicked.connect(self.setRegulatorParametersClickedHandler)
 		self.ui.getRegulatorParametersButton.clicked.connect(self.getRegulatorParametersClickedHandler)
 		self.ui.enableButton.clicked.connect(self.enableClickedHandler)
@@ -39,37 +35,26 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.throttleComboBox.currentTextChanged.connect(self.throttleAxisChangedHandler)
 		self.ui.rotationComboBox.currentTextChanged.connect(self.rotationAxisChangedHandler)
 
-		self.gamepadBridge = GamepadBridge(self)
-		self.gamepadBridge.gamepadAxisChanged.connect(self.gamepadAxisChangedHandler)
-		self.gamepadBridge.gamepadButtonChanged.connect(self.gamepadButtonChangedHandler)
-		self.gamepadBridge.gamepadListUpdated.connect(self.gamepadListUpdatedHandler)
+		gamepadBridge.gamepadAxisChanged.connect(self.gamepadAxisChangedHandler)
+		gamepadBridge.gamepadButtonChanged.connect(self.gamepadButtonChangedHandler)
+		gamepadBridge.gamepadListUpdated.connect(self.gamepadListUpdatedHandler)
 
-		self.mapper = Mapper(self, cellSize = 0.04, mapSize = 2.56)
+		rosBridge.batteryChanged.connect(self.batteryChangedHandler)
+		rosBridge.imuChanged.connect(self.imuChangedHandler)
+		rosBridge.temperatureChanged.connect(self.temperatureChangedHandler)
+		rosBridge.rangesChanged.connect(self.rangesChangedHandler)
+		rosBridge.regulatorSettingsSetDone.connect(self.regulatorSettingsSetDoneHandler)
+		rosBridge.regulatorSettingsGetDone.connect(self.regulatorSettingsGetDoneHandler)
+		self.regulatorSettingsSetRequested.connect(rosBridge.regulatorSettingsSetRequested)
+		self.regulatorSettingsGetRequested.connect(rosBridge.regulatorSettingsGetRequested)
+		self.rosBridge = rosBridge
 
-		self.rosBridge = QTRosBridge(self, robotName, nodeName)
-		self.rosBridge.batteryChanged.connect(self.batteryChangedHandler)
-		self.rosBridge.imuChanged.connect(self.imuChangedHandler)
-		self.rosBridge.temperatureChanged.connect(self.temperatureChangedHandler)
-		self.rosBridge.rangesChanged.connect(self.rangesChangedHandler)
-		# TODO: odometry
-		self.rosBridge.regulatorSettingsSetDone.connect(self.regulatorSettingsSetDoneHandler)
-		self.rosBridge.regulatorSettingsGetDone.connect(self.regulatorSettingsGetDoneHandler)
-		self.regulatorSettingsSetRequested.connect(self.rosBridge.regulatorSettingsSetRequested)
-		self.regulatorSettingsGetRequested.connect(self.rosBridge.regulatorSettingsGetRequested)
+		mapper.mapGenerated.connect(self.mapGeneratedHandler)
 
 		self.adjustSize()
 		self.repaintSteering()
 
-		self.gamepadBridge.start()
-		self.rosBridge.start()
-
-		# Initialization actions
-		self.rosBridge.setEnabled(False)
-
-	""" UI event handlers """
-
-	def imuCalibrateClickedHandler(self):
-		self.rosBridge.calibrateImu()
+	''' UI event handlers '''
 
 	def setRegulatorParametersClickedHandler(self):
 		parameters = {
@@ -96,11 +81,11 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	def enableClickedHandler(self):
 		self.enabled = not self.enabled
 		self.rosBridge.setEnabled(self.enabled)
-		text = "Disable" if self.enabled else "Enable"
+		text = 'Disable' if self.enabled else 'Enable'
 
 		self.ui.enableButton.setText(text)
-		color = "red" if self.enabled else "green"
-		self.ui.enableButton.setStyleSheet("background-color: %s;" % color)
+		color = 'red' if self.enabled else 'green'
+		self.ui.enableButton.setStyleSheet('background-color: %s;' % color)
 
 	def balancingEnabledChangedHandler(self, value):
 		balancingEnabled = self.ui.balancingEnabledCheckBox.isChecked()
@@ -127,13 +112,13 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			self.rotationAxis = -1
 		self.rotation = 0
 
-	""" Gamepad bridge event handlers """
+	''' Gamepad bridge event handlers '''
 
 	def gamepadAxisChangedHandler(self, gamepadAxisEvent):
 		gamepadID = gamepadAxisEvent.gamepadID
 		axis = gamepadAxisEvent.axis
 		value = gamepadAxisEvent.value
-		print("axis event: joy %d, axis %d, value %f" % (gamepadID, axis, value))
+		print('axis event: joy %d, axis %d, value %f' % (gamepadID, axis, value))
 		multiplier = self.ui.multiplierDoubleSpinBox.value()
 
 		update = False
@@ -154,7 +139,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		gamepadID = gamepadButtonEvent.gamepadID
 		button = gamepadButtonEvent.button
 		value = gamepadButtonEvent.value
-		print("butt event: joy %d, butt %d, value %f" % (gamepadID, button, value))
+		print('butt event: joy %d, butt %d, value %f' % (gamepadID, button, value))
 
 	def gamepadListUpdatedHandler(self, gamepadList):
 		self.gamepadID = -1
@@ -180,7 +165,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			self.throttleAxis = -1
 			self.rotationAxis = -1
 
-	""" ROS event handlers """
+	''' ROS event handlers '''
 
 	def batteryChangedHandler(self, cell1, cell2, cell3):
 		maxValue = 5000
@@ -203,12 +188,11 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 	def imuChangedHandler(self, roll, rotationX):
 		self.ui.rollDial.setValue(int(roll))
-		self.ui.rollValueLabel.setText("    Roll: %f" % roll)
-		self.ui.rotationXValueLabel.setText("Rotation: %f" % rotationX)
+		self.ui.rollValueLabel.setText('    Roll: %f' % roll)
+		self.ui.rotationXValueLabel.setText('Rotation: %f' % rotationX)
 
-	def rangesChangedHandler(self, front, back, top, left, right):
-		self.mapper.rangeReadingsHandler(front, back, top, left, right)
-
+	def rangesChangedHandler(self, message):
+		front, back, top, left, right = message
 		if (front >= 0):
 			self.ui.rangeFrontBar.setEnabled(True)
 			maxValue = self.ui.rangeFrontBar.maximum()
@@ -249,12 +233,12 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 	def regulatorSettingsSetDoneHandler(self, success, errorText):
 		if success:
-			self.ui.statusBar.showMessage("Regulator parameters set!", 3000)
+			self.ui.statusBar.showMessage('Regulator parameters set!', 3000)
 		else:
-			self.ui.statusBar.showMessage("Error setting regulator parameters: %s" % errorText, 5000)
+			self.ui.statusBar.showMessage('Error setting regulator parameters: %s' % errorText, 5000)
 
 	def regulatorSettingsGetDoneHandler(self, parameters):
-		self.ui.statusBar.showMessage("Regulator parameters retrieved!", 3000)
+		self.ui.statusBar.showMessage('Regulator parameters retrieved!', 3000)
 
 		self.ui.speedFilteringSpinBox.setValue(parameters.speed_filter_factor)
 		self.ui.rollFilteringSpinBox.setValue(parameters.angle_filter_factor)
@@ -270,25 +254,12 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.lqrAngularVelocityKSpinBox.setValue(parameters.lqr_angular_velocity_k)
 		self.ui.lqrAngleKSpinBox.setValue(parameters.lqr_angle_k)
 
-	""" Miscelanneous event handlers """
+	''' Mapper events '''
 
-	def quitEventHandler(self):
-		# "Join" all QThreads
-		# Gamepad bridge
-		if self.gamepadBridge.isRunning():
-			loop = QtCore.QEventLoop()
-			self.gamepadBridge.finished.connect(loop.quit)
-			self.gamepadBridge.stopExecution()
-			loop.exec_()
+	def mapGeneratedHandler(self):
+		pass
 
-		# Ros bridge
-		if self.rosBridge.isRunning():
-			loop = QtCore.QEventLoop()
-			self.rosBridge.finished.connect(loop.quit)
-			self.rosBridge.stopExecution()
-			loop.exec_()
-
-	""" Other methods """
+	''' Other methods '''
 
 	def repaintSteering(self):
 		self.gamepadScene.clear()

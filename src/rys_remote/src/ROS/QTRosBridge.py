@@ -11,10 +11,10 @@ class QTRosBridge(QThread):
 	batteryChanged = pyqtSignal(int, int, int)
 	imuChanged = pyqtSignal(float, float)
 	temperatureChanged = pyqtSignal(int)
-	rangesChanged = pyqtSignal(int, int, int, int, int)
+	rangesChanged = pyqtSignal(object)
+	odometryChanged = pyqtSignal(object)
 	regulatorSettingsSetDone = pyqtSignal(bool, str)
 	regulatorSettingsGetDone = pyqtSignal(object)
-	# TODO: odometry
 
 	def __init__(self, parent, robotName, nodeName, enableMotorsMessageRate = 0.5, steeringMessageRate = 10):
 		super().__init__(parent)
@@ -32,6 +32,7 @@ class QTRosBridge(QThread):
 			'imu': self.imuSubscriptionCallback,
 			'ranges': self.rangeSensorSubscriptionCallback,
 			'temperature': self.temperatureSensorCallback,
+			'odometry': self.odometryCallback,
 		}
 		messageRates = {
 			'enableMotors': enableMotorsMessageRate,
@@ -85,7 +86,10 @@ class QTRosBridge(QThread):
 		self.temperatureChanged.emit(int(message.temperature))
 
 	def rangeSensorSubscriptionCallback(self, message):
-		self.rangesChanged.emit(message.front, message.back, message.top, message.left, message.right)
+		self.rangesChanged.emit(message)
+
+	def odometryCallback(self, message):
+		self.odometryChanged.emit(message)
 
 	""" QT signal handlers """
 

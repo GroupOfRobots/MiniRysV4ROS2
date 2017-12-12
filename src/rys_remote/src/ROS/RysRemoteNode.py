@@ -3,6 +3,7 @@ import time
 from rys_interfaces import msg as RysMsgs
 from rys_interfaces import srv as RysSrvs
 from std_msgs import msg as StdMsgs
+from nav_msgs import msg as NavigationMsgs
 from sensor_msgs import msg as SensorMsgs
 
 class RysRemoteNode(rclpy.Node):
@@ -29,14 +30,15 @@ class RysRemoteNode(rclpy.Node):
 
 		# Create ROS subscribers
 		batteryTopicName = '/' + robotName + '/sensor/battery'
-		imuTopicName = '/' + robotName + '/sensor/imu'
+		imuTopicName = '/' + robotName + '/sensor/imuInfrequent'
 		rangesTopicName = '/' + robotName + '/sensor/ranges'
 		temperatureTopicName = '/' + robotName + '/sensor/temperature'
-		# TODO: odometry
+		odometryTopicName = '/' + robotName + '/control/odometry'
 		self.subscriptionBattery = self.create_subscription(RysMsgs.BatteryStatus, batteryTopicName, callbacks['battery'], qos_profile = rclpy.qos.qos_profile_default)
-		# self.subscriptionImu = self.create_subscription(SensorMsgs.Imu, imuTopicName, callbacks['imu'], qos_profile = rclpy.qos.qos_profile_sensor_data)
+		self.subscriptionImu = self.create_subscription(SensorMsgs.Imu, imuTopicName, callbacks['imu'], qos_profile = rclpy.qos.qos_profile_sensor_data)
 		self.subscriptionRanges = self.create_subscription(RysMsgs.Ranges, rangesTopicName, callbacks['ranges'], qos_profile = rclpy.qos.qos_profile_sensor_data)
 		self.subscriptionTemperature = self.create_subscription(RysMsgs.TemperatureStatus, temperatureTopicName, callbacks['temperature'], qos_profile = rclpy.qos.qos_profile_default)
+		self.subscriptionOdometry = self.create_subscription(NavigationMsgs.Odometry, odometryTopicName, callbacks['odometry'], qos_profile = rclpy.qos.qos_profile_default)
 
 		self.enableTimer = self.create_timer(1.0 / messageRates['enableMotors'], self.enableTimerCallback)
 		self.steeringTimer = self.create_timer(1.0 / messageRates['steering'], self.steeringTimerCallback)
