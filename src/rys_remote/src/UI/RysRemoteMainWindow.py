@@ -1,14 +1,12 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from UI.Layouts import Ui_RysRemoteMainWindow
+from UI.RysRemoteRegulatorSettingsDialog import RysRemoteRegulatorSettingsDialog
 
 class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	'''
 	Main window class for RysRemote.
 	Inherits from QMainWindow.
 	'''
-
-	regulatorSettingsSetRequested = QtCore.pyqtSignal(object)
-	regulatorSettingsGetRequested = QtCore.pyqtSignal()
 
 	def __init__(self, parent, gamepadBridge, rosBridge, mapper):
 		super(RysRemoteMainWindow, self).__init__(parent)
@@ -20,6 +18,10 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.throttleAxis = -1
 		self.rotationAxis = -1
 
+		self.pathEnabled = True
+		self.positionEnabled = True
+		self.obstaclesEnabled = True
+
 		self.ui = Ui_RysRemoteMainWindow()
 		self.ui.setupUi(self)
 
@@ -27,13 +29,19 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.steeringGraphicsView.setScene(self.gamepadScene)
 		self.ui.steeringGraphicsView.fitInView(self.gamepadScene.sceneRect(), QtCore.Qt.KeepAspectRatio)
 
-		self.ui.setRegulatorParametersButton.clicked.connect(self.setRegulatorParametersClickedHandler)
-		self.ui.getRegulatorParametersButton.clicked.connect(self.getRegulatorParametersClickedHandler)
+		self.mapScene = QtWidgets.QGraphicsScene(self)
+		self.ui.mapGraphicsView.setScene(self.mapScene)
+		self.ui.mapGraphicsView.fitInView(self.mapScene.sceneRect(), QtCore.Qt.KeepAspectRatio)
+
 		self.ui.enableButton.clicked.connect(self.enableClickedHandler)
 		self.ui.balancingEnabledCheckBox.toggled.connect(self.balancingEnabledChangedHandler)
+		self.ui.regulatorSettingsButton.clicked.connect(self.regulatorSettingsButtonHandler)
 		self.ui.gamepadComboBox.currentIndexChanged.connect(self.gamepadChangedHandler)
 		self.ui.throttleComboBox.currentTextChanged.connect(self.throttleAxisChangedHandler)
 		self.ui.rotationComboBox.currentTextChanged.connect(self.rotationAxisChangedHandler)
+		self.ui.pathCheckBox.toggled.connect(self.pathToggledHandler)
+		self.ui.positionCheckBox.toggled.connect(self.positionToggledHandler)
+		self.ui.obstaclesCheckBox.toggled.connect(self.obstaclesToggledHandler)
 
 		gamepadBridge.gamepadAxisChanged.connect(self.gamepadAxisChangedHandler)
 		gamepadBridge.gamepadButtonChanged.connect(self.gamepadButtonChangedHandler)
@@ -43,40 +51,15 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		rosBridge.imuChanged.connect(self.imuChangedHandler)
 		rosBridge.temperatureChanged.connect(self.temperatureChangedHandler)
 		rosBridge.rangesChanged.connect(self.rangesChangedHandler)
-		rosBridge.regulatorSettingsSetDone.connect(self.regulatorSettingsSetDoneHandler)
-		rosBridge.regulatorSettingsGetDone.connect(self.regulatorSettingsGetDoneHandler)
-		self.regulatorSettingsSetRequested.connect(rosBridge.regulatorSettingsSetRequested)
-		self.regulatorSettingsGetRequested.connect(rosBridge.regulatorSettingsGetRequested)
 		self.rosBridge = rosBridge
 
 		mapper.mapGenerated.connect(self.mapGeneratedHandler)
+		self.mapper = mapper
 
 		self.adjustSize()
 		self.repaintSteering()
 
 	''' UI event handlers '''
-
-	def setRegulatorParametersClickedHandler(self):
-		parameters = {
-			'speedFilterFactor': self.ui.speedFilteringSpinBox.value(),
-			'rollFilterFactor': self.ui.rollFilteringSpinBox.value(),
-			'lqrEnabled': self.ui.lqrEnabledCheckBox.isChecked(),
-			'pidSpeedRegulatorEnabled': self.ui.pidSpeedStageEnabledCheckBox.isChecked(),
-			'pidSpeedKp': self.ui.pidSpeedKpSpinBox.value(),
-			'pidSpeedKi': self.ui.pidSpeedKiSpinBox.value(),
-			'pidSpeedKd': self.ui.pidSpeedKdSpinBox.value(),
-			'pidAngleKp': self.ui.pidAngleKpSpinBox.value(),
-			'pidAngleKi': self.ui.pidAngleKiSpinBox.value(),
-			'pidAngleKd': self.ui.pidAngleKdSpinBox.value(),
-			'lqrLinearVelocityK': self.ui.lqrLinearVelocityKSpinBox.value(),
-			'lqrAngularVelocityK': self.ui.lqrAngularVelocityKSpinBox.value(),
-			'lqrAngleK': self.ui.lqrAngleKSpinBox.value(),
-		}
-
-		self.regulatorSettingsSetRequested.emit(parameters)
-
-	def getRegulatorParametersClickedHandler(self):
-		self.regulatorSettingsGetRequested.emit()
 
 	def enableClickedHandler(self):
 		self.enabled = not self.enabled
@@ -91,6 +74,12 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		balancingEnabled = self.ui.balancingEnabledCheckBox.isChecked()
 		self.rosBridge.setBalancingEnabled(balancingEnabled)
 		# self.rosBridge.setBalancingEnabled(value)
+
+	def regulatorSettingsButtonHandler(self):
+		# Open regulator setting dialog
+		regulatorSettingsDialog = RysRemoteRegulatorSettingsDialog(self, self.rosBridge)
+		regulatorSettingsDialog.show()
+		regulatorSettingsDialog.exec_()
 
 	def gamepadChangedHandler(self, index):
 		try:
@@ -111,6 +100,15 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		except ValueError:
 			self.rotationAxis = -1
 		self.rotation = 0
+
+	def pathToggledHandler(self):
+		self.pathEnabled = self.ui.pathCheckBox.isChecked()
+
+	def positionToggledHandler(self):
+		self.positionEnabled = self.ui.positionCheckBox.isChecked()
+
+	def obstaclesToggledHandler(self):
+		self.obstaclesEnabled = self.ui.obstaclesCheckBox.isChecked()
 
 	''' Gamepad bridge event handlers '''
 
@@ -256,8 +254,32 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 	''' Mapper events '''
 
-	def mapGeneratedHandler(self):
-		pass
+	def mapGeneratedHandler(self, positions, positionAngle, obstacles):
+		width = self.ui.mapGraphicsView.size().width()
+		height = self.ui.mapGraphicsView.size().height()
+		brush = QtGui.QBrush(QtGui.QColor(0, 0, 200), QtCore.Qt.SolidPattern)
+		pen = QtGui.QPen(brush, 1.0)
+
+		halfMapSize = self.mapper.mapSize / 2
+
+		self.mapScene.clear()
+		self.mapScene.setSceneRect(0.0, 0.0, width, height)
+
+		if self.pathEnabled:
+			# Draw path
+			dotSize = 1
+			for position in positions:
+				# x and y are in <-mapSize/2; mapSize/2> range
+				# First, scale them to <0; 1>, then multiply by map scene size
+				x = (position[1] / halfMapSize + 0.5) * width
+				y = (position[0] / halfMapSize + 0.5) * height
+				self.mapScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
+		if self.positionEnabled:
+			# Draw robot's position
+			pass
+		if self.obstaclesEnabled:
+			# Draw obstacles
+			pass
 
 	''' Other methods '''
 

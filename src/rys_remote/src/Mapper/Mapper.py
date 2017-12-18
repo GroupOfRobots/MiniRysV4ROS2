@@ -4,12 +4,16 @@ import PyKDL
 import math
 
 class Mapper(QThread):
-	"""docstring for Mapper"""
+	'''docstring for Mapper'''
 
-	mapGenerated = pyqtSignal(list, int)
+	'''list of positions: (x, y), angle of current position: w, list of detected obstacles: (x, y)'''
+	mapGenerated = pyqtSignal(list, float, list)
 
 	def __init__(self, parent, rosBridge, cellSize = 0.04, mapSize = 2.56):
 		super().__init__(parent)
+
+		self.cellSize = cellSize
+		self.mapSize = mapSize
 
 		self.map = QuadMapNode(mapSize, cellSize)
 
@@ -51,7 +55,17 @@ class Mapper(QThread):
 
 	def timerCallback(self):
 		# Build new map and fire the signal
-		pass
+		positions = list()
+		for frameTuple in self.path:
+			x = frameTuple[1].p.x()
+			y = frameTuple[1].p.y()
+			positions.append((x, y))
+
+		positionAngle = self.path[len(self.path) - 1][1].M.GetQuaternion()[3]
+
+		obstacles = list()
+
+		self.mapGenerated.emit(positions, positionAngle, obstacles)
 
 	def run(self):
 		# Empty?

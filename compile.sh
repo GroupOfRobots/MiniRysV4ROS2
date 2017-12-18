@@ -4,7 +4,7 @@
 ARGS=""
 COMMON_PKGS="rys_interfaces"
 ROBOT_PKGS="rys_motors_controller rys_sensor_imu rys_sensor_ranges rys_sensor_dwm1000 rys_sensor_battery rys_sensor_temperature rys_launch"
-CONTROL_PKGS="rys_remote"
+REMOTE_PKGS="rys_remote"
 
 # Check whether ament is available
 command -v ament > /dev/null 2>&1;
@@ -23,10 +23,10 @@ if [ $1 = 'robot' ] ; then
 	exit
 fi
 
-if [ $1 = 'control' ] ; then
-	ament build ${ARGS} --only-packages ${CONTROL_PKGS} ${COMMON_PKGS}
+if [ $1 = 'remote' ] ; then
+	ament build ${ARGS} --only-packages ${REMOTE_PKGS} ${COMMON_PKGS}
 	exit
 fi
 
-echo "Invalid argument. Possible values: [none], 'robot', 'control'"
+echo "Invalid argument. Possible values: [none], 'robot', 'remote'"
 exit 1
