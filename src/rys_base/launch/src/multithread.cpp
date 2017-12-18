@@ -18,8 +18,8 @@ int main(int argc, char * argv[]) {
 
 	std::string robotName("rys");
 
-	double wheelRadius = 0.055;
-	double baseWidth = 0.134;
+	double wheelRadius = 0.056;
+	double baseWidth = 0.136;
 
 	int imuOffsets[6] = {831, 1493, 1086, -155, -24, 19};
 

@@ -301,6 +301,7 @@ void MotorsControllerNode::runLoop() {
 			// Mobile robots traditionally are Y-forward-oriented
 			float deltaX = rotationPointDistance * std::sin(rotationAngle);
 			float deltaY = rotationPointDistance * (1.0 - std::cos(rotationAngle));
+			// Those are for X-forward-oriented operation
 			// float deltaX = rotationPointDistance * (std::cos(rotationAngle) - 1.0);
 			// float deltaY = rotationPointDistance * std::sin(rotationAngle);
 			odometryFrame = KDL::Frame(KDL::Rotation::RotZ(rotationAngle), KDL::Vector(deltaX, deltaY, 0));
@@ -308,10 +309,7 @@ void MotorsControllerNode::runLoop() {
 			odometryMessage->twist.twist.linear.x = linearVelocity * std::cos(rotationAngle);
 			odometryMessage->twist.twist.linear.y = linearVelocity * std::sin(rotationAngle);
 			odometryMessage->twist.twist.angular.z = angularVelocity;
-
-			// std::cout << "V " << linearVelocity << " R " << angularVelocity << std::endl;
 		}
-		std::cout << "V " << rightSpeed << " "<< leftSpeed << " t " << loopTime << std::endl;
 
 		// Third, update the odometry frame and put it into the message
 		odometryMessage->pose.pose.position.x = odometryFrame.p.x();
