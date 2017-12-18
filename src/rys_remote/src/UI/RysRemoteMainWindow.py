@@ -22,6 +22,10 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.positionEnabled = True
 		self.obstaclesEnabled = True
 
+		self.mapPositions = list()
+		self.mapPositionAngle = 0
+		self.mapObstacles = list()
+
 		self.ui = Ui_RysRemoteMainWindow()
 		self.ui.setupUi(self)
 
@@ -54,6 +58,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.rosBridge = rosBridge
 
 		mapper.mapGenerated.connect(self.mapGeneratedHandler)
+		self.ui.clearMapButton.clicked.connect(mapper.clearMap)
 		self.mapper = mapper
 
 		self.adjustSize()
@@ -116,16 +121,18 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		gamepadID = gamepadAxisEvent.gamepadID
 		axis = gamepadAxisEvent.axis
 		value = gamepadAxisEvent.value
-		print('axis event: joy %d, axis %d, value %f' % (gamepadID, axis, value))
+
 		multiplier = self.ui.multiplierDoubleSpinBox.value()
 
 		update = False
 		if gamepadID is self.gamepadID:
 			if axis is self.throttleAxis:
 				self.throttle = value * multiplier
+				self.ui.gamepadXLabel.setText('X: %1.4f' % value)
 				update = True
 			elif axis is self.rotationAxis:
 				self.rotation = value * multiplier
+				self.ui.gamepadYLabel.setText('Y: %1.4f' % value)
 				update = True
 
 		if update:
@@ -134,10 +141,10 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			self.repaintSteering()
 
 	def gamepadButtonChangedHandler(self, gamepadButtonEvent):
-		gamepadID = gamepadButtonEvent.gamepadID
-		button = gamepadButtonEvent.button
-		value = gamepadButtonEvent.value
-		print('butt event: joy %d, butt %d, value %f' % (gamepadID, button, value))
+		pass
+		# gamepadID = gamepadButtonEvent.gamepadID
+		# button = gamepadButtonEvent.button
+		# value = gamepadButtonEvent.value
 
 	def gamepadListUpdatedHandler(self, gamepadList):
 		self.gamepadID = -1
@@ -255,31 +262,10 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	''' Mapper events '''
 
 	def mapGeneratedHandler(self, positions, positionAngle, obstacles):
-		width = self.ui.mapGraphicsView.size().width()
-		height = self.ui.mapGraphicsView.size().height()
-		brush = QtGui.QBrush(QtGui.QColor(0, 0, 200), QtCore.Qt.SolidPattern)
-		pen = QtGui.QPen(brush, 1.0)
-
-		halfMapSize = self.mapper.mapSize / 2
-
-		self.mapScene.clear()
-		self.mapScene.setSceneRect(0.0, 0.0, width, height)
-
-		if self.pathEnabled:
-			# Draw path
-			dotSize = 1
-			for position in positions:
-				# x and y are in <-mapSize/2; mapSize/2> range
-				# First, scale them to <0; 1>, then multiply by map scene size
-				x = (position[1] / halfMapSize + 0.5) * width
-				y = (position[0] / halfMapSize + 0.5) * height
-				self.mapScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
-		if self.positionEnabled:
-			# Draw robot's position
-			pass
-		if self.obstaclesEnabled:
-			# Draw obstacles
-			pass
+		self.mapPositions = positions
+		self.mapPositionAngle = positionAngle
+		self.mapObstacles = obstacles
+		self.repaintMap()
 
 	''' Other methods '''
 
@@ -296,3 +282,30 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		x = (self.rotation * 0.5 + 0.5) * width
 		dotSize = 10
 		self.gamepadScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
+
+	def repaintMap(self):
+		width = self.ui.mapGraphicsView.size().width()
+		height = self.ui.mapGraphicsView.size().height()
+		brush = QtGui.QBrush(QtGui.QColor(0, 0, 200), QtCore.Qt.SolidPattern)
+		pen = QtGui.QPen(brush, 1.0)
+
+		halfMapSize = self.mapper.mapSize / 2
+
+		self.mapScene.clear()
+		self.mapScene.setSceneRect(0.0, 0.0, width, height)
+
+		if self.pathEnabled:
+			# Draw path
+			dotSize = 1
+			for position in self.mapPositions:
+				# x and y are in <-mapSize/2; mapSize/2> range
+				# First, scale them to <0; 1>, then multiply by map scene size
+				x = (position[1] / halfMapSize + 0.5) * width
+				y = (position[0] / halfMapSize + 0.5) * height
+				self.mapScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
+		if self.positionEnabled:
+			# Draw robot's position
+			pass
+		if self.obstaclesEnabled:
+			# Draw obstacles
+			pass

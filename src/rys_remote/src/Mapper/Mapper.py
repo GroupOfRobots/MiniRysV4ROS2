@@ -9,6 +9,8 @@ class Mapper(QThread):
 	'''list of positions: (x, y), angle of current position: w, list of detected obstacles: (x, y)'''
 	mapGenerated = pyqtSignal(list, float, list)
 
+	startPosition = PyKDL.Frame(PyKDL.Rotation.RotZ(math.pi / 2))
+
 	def __init__(self, parent, rosBridge, cellSize = 0.04, mapSize = 2.56):
 		super().__init__(parent)
 
@@ -21,7 +23,8 @@ class Mapper(QThread):
 		self.timer.timeout.connect(self.timerCallback)
 		self.timer.start(200)
 
-		self.robotPosition = PyKDL.Frame()
+		# Robot is Y-forward-oriented, so it starts with angle=PI/2
+		self.robotPosition = PyKDL.Frame(Mapper.startPosition)
 		self.path = [(0, PyKDL.Frame(self.robotPosition))]
 
 		# All sensors 'aim' down their their Y axis
@@ -41,7 +44,7 @@ class Mapper(QThread):
 		poseTime = float(message.header.stamp.sec) + float(message.header.stamp.nanosec) / 1000000000
 		position = message.pose.pose.position
 		orientation = message.pose.pose.orientation
-		poseFrame = PyKDL.Frame(PyKDL.Rotation(orientation.x, orientation.y, orientation.z, orientation.w), PyKDL.Vector(position.x, position.y, position.z))
+		poseFrame = PyKDL.Frame(PyKDL.Rotation.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w), PyKDL.Vector(position.x, position.y, position.z))
 		# Apply odometry transform onto robotPosition frame
 		self.robotPosition = self.robotPosition * poseFrame
 		# Save the frame and time to the path
@@ -66,6 +69,10 @@ class Mapper(QThread):
 		obstacles = list()
 
 		self.mapGenerated.emit(positions, positionAngle, obstacles)
+
+	def clearMap(self):
+		self.robotPosition = PyKDL.Frame(Mapper.startPosition)
+		self.path = [(0, PyKDL.Frame(self.robotPosition))]
 
 	def run(self):
 		# Empty?
