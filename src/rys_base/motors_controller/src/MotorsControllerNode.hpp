@@ -38,7 +38,6 @@ class MotorsControllerNode : public rclcpp::Node {
 		unsigned char steeringPrecision;
 
 		builtin_interfaces::msg::Time previousOdometryTime;
-		KDL::Frame currentOdometryFrame;
 
 		MotorsController * motorsController;
 

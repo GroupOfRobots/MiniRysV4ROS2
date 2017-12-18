@@ -37,7 +37,6 @@ MotorsControllerNode::MotorsControllerNode(
 	this->steeringPrecision = 1;
 
 	this->previousOdometryTime = rclcpp::Time::now();
-	this->currentOdometryFrame = KDL::Frame();
 
 	std::cout << "[MOTORS] Initializing motors controller...\n";
 	this->motorsController = new MotorsController();
@@ -287,10 +286,10 @@ void MotorsControllerNode::runLoop() {
 		odometryMessage->twist.twist.angular.y = 0;
 
 		// Second, calculate the difference frame by forward kinematics - trivial for equal speeds (front/back movement), slightly more complicated for different speeds
-		KDL::Frame odometryUpdateFrame;
+		KDL::Frame odometryFrame;
 		if (leftSpeed == rightSpeed) {
 			// Only linear movement
-			odometryUpdateFrame = KDL::Frame(KDL::Vector(leftSpeed * loopTime, 0, 0));
+			odometryFrame = KDL::Frame(KDL::Vector(leftSpeed * loopTime, 0, 0));
 			odometryMessage->twist.twist.linear.x = leftSpeed;
 			odometryMessage->twist.twist.linear.y = 0;
 			odometryMessage->twist.twist.angular.z = 0;
@@ -304,22 +303,22 @@ void MotorsControllerNode::runLoop() {
 			float deltaY = rotationPointDistance * (1.0 - std::cos(rotationAngle));
 			// float deltaX = rotationPointDistance * (std::cos(rotationAngle) - 1.0);
 			// float deltaY = rotationPointDistance * std::sin(rotationAngle);
-			odometryUpdateFrame = KDL::Frame(KDL::Rotation::RotZ(rotationAngle), KDL::Vector(deltaX, deltaY, 0));
+			odometryFrame = KDL::Frame(KDL::Rotation::RotZ(rotationAngle), KDL::Vector(deltaX, deltaY, 0));
 
 			odometryMessage->twist.twist.linear.x = linearVelocity * std::cos(rotationAngle);
 			odometryMessage->twist.twist.linear.y = linearVelocity * std::sin(rotationAngle);
 			odometryMessage->twist.twist.angular.z = angularVelocity;
 
-			std::cout << "V " << linearVelocity << " R " << angularVelocity << std::endl;
+			// std::cout << "V " << linearVelocity << " R " << angularVelocity << std::endl;
 		}
+		std::cout << "V " << rightSpeed << " "<< leftSpeed << " t " << loopTime << std::endl;
 
 		// Third, update the odometry frame and put it into the message
-		this->currentOdometryFrame = this->currentOdometryFrame * odometryUpdateFrame;
-		odometryMessage->pose.pose.position.x = this->currentOdometryFrame.p.x();
-		odometryMessage->pose.pose.position.y = this->currentOdometryFrame.p.y();
-		odometryMessage->pose.pose.position.z = this->currentOdometryFrame.p.z();
+		odometryMessage->pose.pose.position.x = odometryFrame.p.x();
+		odometryMessage->pose.pose.position.y = odometryFrame.p.y();
+		odometryMessage->pose.pose.position.z = odometryFrame.p.z();
 		double rotX, rotY, rotZ, rotW;
-		this->currentOdometryFrame.M.GetQuaternion(rotX, rotY, rotZ, rotW);
+		odometryFrame.M.GetQuaternion(rotX, rotY, rotZ, rotW);
 		odometryMessage->pose.pose.orientation.x = rotX;
 		odometryMessage->pose.pose.orientation.y = rotY;
 		odometryMessage->pose.pose.orientation.z = rotZ;
