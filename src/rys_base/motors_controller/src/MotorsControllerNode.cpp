@@ -269,14 +269,9 @@ void MotorsControllerNode::runLoop() {
 		}
 
 		// Odometry
-		// First, retrieve the current time (as close to setting new target speeds as possible) and calculate the delta
-		auto timestampNow = rclcpp::Time::now();
-		float timeDelta = (timestampNow - this->previousOdometryTime).nanoseconds() * 0.000000001;
-		this->previousOdometryTime = timestampNow;
-
-		// Second, create an odometry message and fill whatever we can
+		// First, create an odometry message and fill whatever we can
 		auto odometryMessage = std::make_shared<nav_msgs::msg::Odometry>();
-		odometryMessage->header.stamp = timestampNow;
+		odometryMessage->header.stamp = rclcpp::Time::now();
 		odometryMessage->header.frame_id = "odom";
 		odometryMessage->child_frame_id = "base_link";
 		// Actual covariance is unknown
@@ -291,11 +286,11 @@ void MotorsControllerNode::runLoop() {
 		odometryMessage->twist.twist.angular.x = 0;
 		odometryMessage->twist.twist.angular.y = 0;
 
-		// Third, calculate the difference frame by forward kinematics - trivial for equal speeds (front/back movement), slightly more complicated for different speeds
+		// Second, calculate the difference frame by forward kinematics - trivial for equal speeds (front/back movement), slightly more complicated for different speeds
 		KDL::Frame odometryUpdateFrame;
 		if (leftSpeed == rightSpeed) {
 			// Only linear movement
-			odometryUpdateFrame = KDL::Frame(KDL::Vector(leftSpeed * timeDelta, 0, 0));
+			odometryUpdateFrame = KDL::Frame(KDL::Vector(leftSpeed * loopTime, 0, 0));
 			odometryMessage->twist.twist.linear.x = leftSpeed;
 			odometryMessage->twist.twist.linear.y = 0;
 			odometryMessage->twist.twist.angular.z = 0;
@@ -303,7 +298,7 @@ void MotorsControllerNode::runLoop() {
 			float linearVelocity = (rightSpeed + leftSpeed) / 2;
 			float angularVelocity = (rightSpeed - leftSpeed) / baseWidth;
 			float rotationPointDistance = linearVelocity / angularVelocity;
-			float rotationAngle = angularVelocity * timeDelta;
+			float rotationAngle = angularVelocity * loopTime;
 			// Mobile robots traditionally are Y-forward-oriented
 			float deltaX = rotationPointDistance * std::sin(rotationAngle);
 			float deltaY = rotationPointDistance * (1.0 - std::cos(rotationAngle));
@@ -314,9 +309,11 @@ void MotorsControllerNode::runLoop() {
 			odometryMessage->twist.twist.linear.x = linearVelocity * std::cos(rotationAngle);
 			odometryMessage->twist.twist.linear.y = linearVelocity * std::sin(rotationAngle);
 			odometryMessage->twist.twist.angular.z = angularVelocity;
+
+			std::cout << "V " << linearVelocity << " R " << angularVelocity << std::endl;
 		}
 
-		// Fourth, update the odometry frame and put it into the message
+		// Third, update the odometry frame and put it into the message
 		this->currentOdometryFrame = this->currentOdometryFrame * odometryUpdateFrame;
 		odometryMessage->pose.pose.position.x = this->currentOdometryFrame.p.x();
 		odometryMessage->pose.pose.position.y = this->currentOdometryFrame.p.y();
@@ -328,7 +325,7 @@ void MotorsControllerNode::runLoop() {
 		odometryMessage->pose.pose.orientation.z = rotZ;
 		odometryMessage->pose.pose.orientation.w = rotW;
 
-		// Fifth, finally publish the odometry message
+		// Fourth, finally publish the odometry message
 		this->odometryPublisher->publish(odometryMessage);
 	}
 }
