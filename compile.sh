@@ -5,6 +5,7 @@ ARGS=""
 COMMON_PKGS="rys_interfaces"
 ROBOT_PKGS="rys_motors_controller rys_sensor_imu rys_sensor_ranges rys_sensor_dwm1000 rys_sensor_battery rys_sensor_temperature rys_launch"
 REMOTE_PKGS="rys_remote"
+BUILD_CMD="ament build"
 
 # Check whether ament is available
 command -v ament > /dev/null 2>&1;
@@ -13,20 +14,17 @@ if [ $? -ne 0 ] ; then
 	exit 1
 fi
 
+startTime=`date +%s.%N`
 if [ -z $1 ] ; then
-	ament build ${ARGS}
-	exit
+	${BUILD_CMD} ${ARGS}
+elif [ $1 = 'robot' ] ; then
+	${BUILD_CMD} ${ARGS} --only-packages ${ROBOT_PKGS} ${COMMON_PKGS}
+elif [ $1 = 'remote' ] ; then
+	${BUILD_CMD} ${ARGS} --only-packages ${REMOTE_PKGS} ${COMMON_PKGS}
+else
+	echo "Invalid argument. Possible values: [none], 'robot', 'remote'"
+	exit 1
 fi
-
-if [ $1 = 'robot' ] ; then
-	ament build ${ARGS} --only-packages ${ROBOT_PKGS} ${COMMON_PKGS}
-	exit
-fi
-
-if [ $1 = 'remote' ] ; then
-	ament build ${ARGS} --only-packages ${REMOTE_PKGS} ${COMMON_PKGS}
-	exit
-fi
-
-echo "Invalid argument. Possible values: [none], 'robot', 'remote'"
-exit 1
+endTime=`date +%s.%N`
+runTime=$(echo "${endTime} - ${startTime}" | bc)
+echo -e "\nExecution time: ${runTime}"
