@@ -14,6 +14,8 @@ class Mapper(QThread):
 	def __init__(self, parent, rosBridge, cellSize = 0.04, mapSize = 2.56):
 		super().__init__(parent)
 
+		self.updated = True
+
 		self.cellSize = cellSize
 		self.mapSize = mapSize
 
@@ -40,39 +42,82 @@ class Mapper(QThread):
 		rosBridge.rangesChanged.connect(self.rangeReadingsHandler)
 
 	def odometryHandler(self, message):
-		# Construct a Frame out of the message
-		poseTime = float(message.header.stamp.sec) + float(message.header.stamp.nanosec) / 1000000000
+		# Construct a PyKDL.Frame out of the message
 		position = message.pose.pose.position
 		orientation = message.pose.pose.orientation
 		poseFrame = PyKDL.Frame(PyKDL.Rotation.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w), PyKDL.Vector(position.x, position.y, position.z))
+
+		# TODO: odometry filtering (e.g. from IMU) goes here
+
 		# Apply odometry transform onto robotPosition frame
 		self.robotPosition = self.robotPosition * poseFrame
+
 		# Save the frame and time to the path
+		poseTime = float(message.header.stamp.sec) + float(message.header.stamp.nanosec) / 1000000000
 		self.path.append((poseTime, PyKDL.Frame(self.robotPosition)))
 
+		# Mark path as updated so we'll emit it to GUI
+		self.updated = True
+
 	def rangeReadingsHandler(self, message):
-		# Apply sensors' transforms to the current odometry position
-		# Calculate linear functions' parameters
-		# Pass rangings to the quadmap
-		pass
+		# Left
+		# First, apply sensor's transform to the current odometry position
+		leftSensorPosition = self.robotPosition * self.leftRangeSensorFrame
+		# Then, calculate linear function parameters
+		leftSensorX0 = leftSensorPosition.p.x()
+		leftSensorX1 = leftSensorX0 + math.cos(leftSensorPosition.M.GetRPY()[2]) * message.left
+		leftSensorY0 = leftSensorPosition.p.y()
+		leftSensorA = leftSensorPosition.M.GetRPY()[2]
+		leftSensorB = leftSensorY0 - leftSensorA * leftSensorX0
+		# Then, pass calculated parameters to quadmap
+		self.map.addScan(leftSensorA, leftSensorB, leftSensorX0, leftSensorX1)
+
+		# Right
+		rightSensorPosition = self.robotPosition * self.rightRangeSensorFrame
+		rightSensorX0 = rightSensorPosition.p.x()
+		rightSensorX1 = rightSensorX0 + math.cos(rightSensorPosition.M.GetRPY()[2]) * message.right
+		rightSensorY0 = rightSensorPosition.p.y()
+		rightSensorA = rightSensorPosition.M.GetRPY()[2]
+		rightSensorB = rightSensorY0 - rightSensorA * rightSensorX0
+		self.map.addScan(rightSensorA, rightSensorB, rightSensorX0, rightSensorX1)
+
+		# Top
+		topSensorPosition = self.robotPosition * self.topRangeSensorFrame
+		topSensorX0 = topSensorPosition.p.x()
+		topSensorX1 = topSensorX0 + math.cos(topSensorPosition.M.GetRPY()[2]) * message.top
+		topSensorY0 = topSensorPosition.p.y()
+		topSensorA = topSensorPosition.M.GetRPY()[2]
+		topSensorB = topSensorY0 - topSensorA * topSensorX0
+		self.map.addScan(topSensorA, topSensorB, topSensorX0, topSensorX1)
+
+		self.updated = True
 
 	def timerCallback(self):
-		# Build new map and fire the signal
+		# Check whether there was an update
+		if not self.updated:
+			return
+		self.updated = False
+
+		# First, odometry position list
 		positions = list()
 		for frameTuple in self.path:
 			x = frameTuple[1].p.x()
 			y = frameTuple[1].p.y()
 			positions.append((x, y))
 
-		positionAngle = self.path[len(self.path) - 1][1].M.GetQuaternion()[3]
+		# Second, current heading
+		positionAngle = self.path[len(self.path) - 1][1].M.GetRPY()[2]
 
+		# Third, obstacle list
 		obstacles = list()
 
+		# Lastly, emit the signal
 		self.mapGenerated.emit(positions, positionAngle, obstacles)
 
 	def clearMap(self):
 		self.robotPosition = PyKDL.Frame(Mapper.startPosition)
 		self.path = [(0, PyKDL.Frame(self.robotPosition))]
+		self.updated = True
 
 	def run(self):
 		# Empty?
