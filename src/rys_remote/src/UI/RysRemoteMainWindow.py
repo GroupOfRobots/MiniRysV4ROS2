@@ -1,3 +1,4 @@
+import math
 from PyQt5 import QtWidgets, QtCore, QtGui
 from UI.Layouts import Ui_RysRemoteMainWindow
 from UI.RysRemoteRegulatorSettingsDialog import RysRemoteRegulatorSettingsDialog
@@ -108,12 +109,15 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 	def pathToggledHandler(self):
 		self.pathEnabled = self.ui.pathCheckBox.isChecked()
+		self.repaintMap()
 
 	def positionToggledHandler(self):
 		self.positionEnabled = self.ui.positionCheckBox.isChecked()
+		self.repaintMap()
 
 	def obstaclesToggledHandler(self):
 		self.obstaclesEnabled = self.ui.obstaclesCheckBox.isChecked()
+		self.repaintMap()
 
 	''' Gamepad bridge event handlers '''
 
@@ -270,42 +274,72 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	''' Other methods '''
 
 	def repaintSteering(self):
-		self.gamepadScene.clear()
 		height = self.ui.steeringGraphicsView.size().height()
 		width = self.ui.steeringGraphicsView.size().width()
-		self.gamepadScene.setSceneRect(0.0, 0.0, width, height)
 
 		brush = QtGui.QBrush(QtGui.QColor(200, 0, 0), QtCore.Qt.SolidPattern)
 		pen = QtGui.QPen(brush, 5.0)
+		dotSize = 10
 
+		self.gamepadScene.clear()
+		self.gamepadScene.setSceneRect(0.0, 0.0, width, height)
 		y = (self.throttle * 0.5 + 0.5) * height
 		x = (self.rotation * 0.5 + 0.5) * width
-		dotSize = 10
 		self.gamepadScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
 
 	def repaintMap(self):
 		width = self.ui.mapGraphicsView.size().width()
 		height = self.ui.mapGraphicsView.size().height()
-		brush = QtGui.QBrush(QtGui.QColor(0, 0, 200), QtCore.Qt.SolidPattern)
+		brush = QtGui.QBrush(QtGui.QColor(0, 0, 0), QtCore.Qt.SolidPattern)
 		pen = QtGui.QPen(brush, 1.0)
 
 		halfMapSize = self.mapper.mapSize / 2
 
+		sceneSize = min(width, height)
+		xOffset = (width - sceneSize) * 0.5
+		yOffset = (height - sceneSize) * 0.5
+
 		self.mapScene.clear()
 		self.mapScene.setSceneRect(0.0, 0.0, width, height)
 
-		if self.pathEnabled:
-			# Draw path
-			dotSize = 1
+		# Draw map borders (visual hint)
+		self.mapScene.addLine(xOffset - 0.5, yOffset - 0.5, xOffset + sceneSize - 0.5, yOffset - 0.5, pen)
+		self.mapScene.addLine(xOffset - 0.5, yOffset - 0.5, xOffset - 0.5, yOffset + sceneSize - 0.5, pen)
+		self.mapScene.addLine(xOffset + sceneSize - 0.5, yOffset - 0.5, xOffset + sceneSize - 0.5, yOffset + sceneSize - 0.5, pen)
+		self.mapScene.addLine(xOffset - 0.5, yOffset + sceneSize - 0.5, xOffset + sceneSize - 0.5, yOffset + sceneSize - 0.5, pen)
+
+		# Draw path
+		if self.pathEnabled and len(self.mapPositions):
+			brush = QtGui.QBrush(QtGui.QColor(0, 0, 200), QtCore.Qt.SolidPattern)
+			dotSize = 1.0
+			pen = QtGui.QPen(brush, dotSize)
 			for position in self.mapPositions:
 				# x and y are in <-mapSize/2; mapSize/2> range
 				# First, scale them to <0; 1>, then multiply by map scene size
-				x = (position[1] / halfMapSize + 0.5) * width
-				y = (position[0] / halfMapSize + 0.5) * height
-				self.mapScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
-		if self.positionEnabled:
-			# Draw robot's position
-			pass
-		if self.obstaclesEnabled:
-			# Draw obstacles
-			pass
+				x = (position[0] / halfMapSize + 0.5) * sceneSize + xOffset
+				# Y axis is reverted in QGraphicsScene (top is 0, bottom is height)
+				y = (position[1] / halfMapSize + 0.5) * sceneSize + yOffset
+				y = height - y
+				self.mapScene.addRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
+				# self.mapScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
+
+		# Draw robot's position
+		if self.positionEnabled and len(self.mapPositions):
+			brush = QtGui.QBrush(QtGui.QColor(0, 200, 0), QtCore.Qt.SolidPattern)
+			dotSize = 2.0
+			pen = QtGui.QPen(brush, dotSize)
+			length = 20.0
+
+			position = self.mapPositions[len(self.mapPositions) - 1]
+			x = (position[0] / halfMapSize + 0.5) * sceneSize + xOffset
+			y = (position[1] / halfMapSize + 0.5) * sceneSize + yOffset
+			x2 = x + length * math.cos(self.mapPositionAngle)
+			# As with path, mirror y
+			y2 = y - length * math.sin(self.mapPositionAngle)
+			self.mapScene.addLine(x, y, x2, y2, pen)
+
+		# Draw obstacles
+		if self.obstaclesEnabled and len(self.mapObstacles):
+			brush = QtGui.QBrush(QtGui.QColor(200, 0, 0), QtCore.Qt.SolidPattern)
+			dotSize = 1.0
+			pen = QtGui.QPen(brush, dotSize)
