@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1051</width>
-    <height>779</height>
+    <width>797</width>
+    <height>626</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,16 +17,58 @@
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <widget class="QGroupBox" name="receivingGroupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="title">
        <string>Receiving</string>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="spacing">
+        <number>5</number>
+       </property>
+       <property name="leftMargin">
+        <number>5</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>5</number>
+       </property>
+       <property name="bottomMargin">
+        <number>5</number>
+       </property>
        <item>
         <widget class="QGroupBox" name="rangeSensorsGroupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>Range sensors</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout">
+          <property name="spacing">
+           <number>5</number>
+          </property>
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="topMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>5</number>
+          </property>
+          <property name="bottomMargin">
+           <number>5</number>
+          </property>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_8">
             <item>
@@ -330,10 +372,31 @@
        </item>
        <item>
         <widget class="QGroupBox" name="batterySensorsGroupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>Battery &amp; Temperature</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
+          <property name="spacing">
+           <number>5</number>
+          </property>
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="topMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>5</number>
+          </property>
+          <property name="bottomMargin">
+           <number>5</number>
+          </property>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_13">
             <item>
@@ -389,13 +452,6 @@
            </layout>
           </item>
           <item>
-           <widget class="Line" name="line_10">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item>
            <layout class="QHBoxLayout" name="horizontalLayout_14">
             <item>
              <widget class="QLabel" name="cell2Label">
@@ -448,13 +504,6 @@
              </widget>
             </item>
            </layout>
-          </item>
-          <item>
-           <widget class="Line" name="line_11">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_15">
@@ -576,10 +625,31 @@
        </item>
        <item>
         <widget class="QGroupBox" name="imuGroupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>IMU</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
+          <property name="spacing">
+           <number>5</number>
+          </property>
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="topMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>5</number>
+          </property>
+          <property name="bottomMargin">
+           <number>5</number>
+          </property>
           <item>
            <widget class="QDial" name="rollDial">
             <property name="enabled">
@@ -593,8 +663,8 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>100</width>
-              <height>100</height>
+              <width>80</width>
+              <height>80</height>
              </size>
             </property>
             <property name="minimum">
@@ -671,497 +741,587 @@
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="steeringGroupBox">
-      <property name="title">
-       <string>Steering</string>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
-       <item>
-        <widget class="QPushButton" name="enableButton">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QGroupBox" name="mapGroupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Map</string>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="spacing">
+          <number>5</number>
          </property>
-         <property name="minimumSize">
-          <size>
-           <width>150</width>
-           <height>150</height>
-          </size>
+         <property name="leftMargin">
+          <number>5</number>
          </property>
-         <property name="sizeIncrement">
-          <size>
-           <width>10</width>
-           <height>10</height>
-          </size>
+         <property name="topMargin">
+          <number>0</number>
          </property>
-         <property name="autoFillBackground">
-          <bool>false</bool>
+         <property name="rightMargin">
+          <number>5</number>
          </property>
-         <property name="styleSheet">
-          <string notr="true">background-color: green;</string>
+         <property name="bottomMargin">
+          <number>5</number>
          </property>
-         <property name="text">
-          <string>Enable</string>
-         </property>
-         <property name="flat">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGraphicsView" name="steeringGraphicsView">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>150</width>
-           <height>150</height>
-          </size>
-         </property>
-         <property name="sizeIncrement">
-          <size>
-           <width>10</width>
-           <height>10</height>
-          </size>
-         </property>
-         <property name="baseSize">
-          <size>
-           <width>200</width>
-           <height>200</height>
-          </size>
-         </property>
-         <property name="verticalScrollBarPolicy">
-          <enum>Qt::ScrollBarAlwaysOff</enum>
-         </property>
-         <property name="horizontalScrollBarPolicy">
-          <enum>Qt::ScrollBarAlwaysOff</enum>
-         </property>
-         <property name="optimizationFlags">
-          <set>QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="Line" name="line">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="axisVerticalLayout">
          <item>
-          <widget class="QLabel" name="gamepadXLabel">
+          <widget class="QGraphicsView" name="mapGraphicsView">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="minimumSize">
-            <size>
-             <width>60</width>
-             <height>30</height>
-            </size>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
            </property>
-           <property name="text">
-            <string>X: 0.000</string>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
            </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
+           <property name="optimizationFlags">
+            <set>QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState</set>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="gamepadYLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
+          <layout class="QVBoxLayout" name="mapSettingsVerticalLayout">
+           <property name="sizeConstraint">
+            <enum>QLayout::SetDefaultConstraint</enum>
            </property>
-           <property name="minimumSize">
-            <size>
-             <width>60</width>
-             <height>30</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Y: 0.000</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="gamepadHorizontalLayout">
            <item>
-            <widget class="QLabel" name="gamepadComboBoxLabel">
+            <widget class="QCheckBox" name="positionCheckBox">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Position</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="pathCheckBox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Path</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="obstaclesCheckBox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Obstacles</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="clearMapButton">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Clear map</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="steeringGroupBox">
+        <property name="title">
+         <string>Steering</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_6">
+         <property name="spacing">
+          <number>5</number>
+         </property>
+         <property name="leftMargin">
+          <number>5</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>5</number>
+         </property>
+         <property name="bottomMargin">
+          <number>5</number>
+         </property>
+         <item>
+          <widget class="Line" name="line_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <property name="spacing">
+            <number>6</number>
+           </property>
+           <item>
+            <layout class="QVBoxLayout" name="axisVerticalLayout">
+             <item>
+              <widget class="QLabel" name="gamepadXLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>60</width>
+                 <height>25</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>X: 0.000</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="gamepadYLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>60</width>
+                 <height>25</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Y: 0.000</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="gamepadHorizontalLayout">
+               <item>
+                <widget class="QLabel" name="gamepadComboBoxLabel">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>60</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Gamepad</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="gamepadComboBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>70</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>[none]</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="throttleHorizontalLayout">
+               <item>
+                <widget class="QLabel" name="throttleComboBoxLabel">
+                 <property name="minimumSize">
+                  <size>
+                   <width>60</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Throttle</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="throttleComboBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>70</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string notr="true">[none]</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>0</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>1</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>2</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>3</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>4</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="rotationHorizontalLayout">
+               <item>
+                <widget class="QLabel" name="rotationComboBoxLabel">
+                 <property name="minimumSize">
+                  <size>
+                   <width>60</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Rotation</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="rotationComboBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>70</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string notr="true">[none]</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>0</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>1</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>2</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>3</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>4</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_5">
+             <item>
+              <widget class="QCheckBox" name="balancingEnabledCheckBox">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>25</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Balancing</string>
+               </property>
+               <property name="checked">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="multiplierHorizontalLayout">
+               <item>
+                <widget class="QLabel" name="multiplierComboBoxLabel">
+                 <property name="minimumSize">
+                  <size>
+                   <width>60</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Multiplier</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QDoubleSpinBox" name="multiplierDoubleSpinBox">
+                 <property name="minimumSize">
+                  <size>
+                   <width>70</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <property name="maximum">
+                  <double>1.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.010000000000000</double>
+                 </property>
+                 <property name="value">
+                  <double>1.000000000000000</double>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="precisionHorizontalLayout">
+               <item>
+                <widget class="QLabel" name="precisionComboBoxLabel">
+                 <property name="minimumSize">
+                  <size>
+                   <width>60</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Precision</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="precisionSpinBox">
+                 <property name="minimumSize">
+                  <size>
+                   <width>70</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>32</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QPushButton" name="regulatorSettingsButton">
+               <property name="text">
+                <string>Regulator settings</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>5</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QGraphicsView" name="steeringGraphicsView">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
              <property name="minimumSize">
               <size>
-               <width>60</width>
-               <height>30</height>
+               <width>150</width>
+               <height>150</height>
               </size>
              </property>
-             <property name="text">
-              <string>Gamepad</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="gamepadComboBox">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="minimumSize">
+             <property name="sizeIncrement">
               <size>
-               <width>70</width>
-               <height>30</height>
+               <width>10</width>
+               <height>10</height>
               </size>
              </property>
-             <item>
-              <property name="text">
-               <string>[none]</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="throttleHorizontalLayout">
-           <item>
-            <widget class="QLabel" name="throttleComboBoxLabel">
-             <property name="minimumSize">
+             <property name="baseSize">
               <size>
-               <width>60</width>
-               <height>30</height>
+               <width>200</width>
+               <height>200</height>
               </size>
              </property>
-             <property name="text">
-              <string>Throttle</string>
+             <property name="verticalScrollBarPolicy">
+              <enum>Qt::ScrollBarAlwaysOff</enum>
              </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
+             <property name="horizontalScrollBarPolicy">
+              <enum>Qt::ScrollBarAlwaysOff</enum>
+             </property>
+             <property name="optimizationFlags">
+              <set>QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState</set>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QComboBox" name="throttleComboBox">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
+            <widget class="QPushButton" name="enableButton">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
              <property name="minimumSize">
               <size>
-               <width>70</width>
-               <height>30</height>
+               <width>150</width>
+               <height>150</height>
               </size>
              </property>
-             <item>
-              <property name="text">
-               <string notr="true">[none]</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>0</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>1</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>2</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>3</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>4</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="rotationHorizontalLayout">
-           <item>
-            <widget class="QLabel" name="rotationComboBoxLabel">
-             <property name="minimumSize">
+             <property name="sizeIncrement">
               <size>
-               <width>60</width>
-               <height>30</height>
+               <width>10</width>
+               <height>10</height>
               </size>
              </property>
-             <property name="text">
-              <string>Rotation</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="rotationComboBox">
-             <property name="enabled">
+             <property name="autoFillBackground">
               <bool>false</bool>
              </property>
-             <property name="minimumSize">
-              <size>
-               <width>70</width>
-               <height>30</height>
-              </size>
-             </property>
-             <item>
-              <property name="text">
-               <string notr="true">[none]</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>0</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>1</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>2</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>3</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>4</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_5">
-         <item>
-          <widget class="QCheckBox" name="balancingEnabledCheckBox">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>30</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Balancing</string>
-           </property>
-           <property name="checked">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="multiplierHorizontalLayout">
-           <item>
-            <widget class="QLabel" name="multiplierComboBoxLabel">
-             <property name="minimumSize">
-              <size>
-               <width>60</width>
-               <height>30</height>
-              </size>
+             <property name="styleSheet">
+              <string notr="true">background-color: green;</string>
              </property>
              <property name="text">
-              <string>Multiplier</string>
+              <string>Enable</string>
              </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QDoubleSpinBox" name="multiplierDoubleSpinBox">
-             <property name="minimumSize">
-              <size>
-               <width>70</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="maximum">
-              <double>1.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.010000000000000</double>
-             </property>
-             <property name="value">
-              <double>1.000000000000000</double>
+             <property name="flat">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
           </layout>
          </item>
-         <item>
-          <layout class="QHBoxLayout" name="precisionHorizontalLayout">
-           <item>
-            <widget class="QLabel" name="precisionComboBoxLabel">
-             <property name="minimumSize">
-              <size>
-               <width>60</width>
-               <height>30</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Precision</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QSpinBox" name="precisionSpinBox">
-             <property name="minimumSize">
-              <size>
-               <width>70</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="minimum">
-              <number>1</number>
-             </property>
-             <property name="maximum">
-              <number>32</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QPushButton" name="regulatorSettingsButton">
-           <property name="text">
-            <string>Regulator settings</string>
-           </property>
-          </widget>
-         </item>
         </layout>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
-     <widget class="QGroupBox" name="mapGroupBox">
-      <property name="title">
-       <string>Map</string>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <item>
-        <widget class="QGraphicsView" name="mapGraphicsView">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="verticalScrollBarPolicy">
-          <enum>Qt::ScrollBarAlwaysOff</enum>
-         </property>
-         <property name="horizontalScrollBarPolicy">
-          <enum>Qt::ScrollBarAlwaysOff</enum>
-         </property>
-         <property name="optimizationFlags">
-          <set>QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="mapSettingsVerticalLayout">
-         <item>
-          <widget class="QCheckBox" name="positionCheckBox">
-           <property name="text">
-            <string>Position</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="pathCheckBox">
-           <property name="text">
-            <string>Path</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="obstaclesCheckBox">
-           <property name="text">
-            <string>Obstacles</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="clearMapButton">
-           <property name="text">
-            <string>Clear map</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <resources/>
  <connections/>
