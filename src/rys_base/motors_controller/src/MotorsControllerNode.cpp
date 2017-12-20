@@ -255,8 +255,9 @@ void MotorsControllerNode::runLoop() {
 		this->motorsController->calculateSpeeds(this->roll, this->rotationX, linearSpeed, this->throttle, this->rotation, finalLeftSpeed, finalRightSpeed, loopTime);
 
 		// Save current speeds in units suitable for odometry (m/s)
-		leftSpeed = this->motorsController->getMotorSpeedLeft() * this->wheelRadius;
-		rightSpeed = this->motorsController->getMotorSpeedRight() * this->wheelRadius;
+		std::cout << this->motorsController->getMotorSpeedLeft() << std::endl;
+		leftSpeed = this->motorsController->getMotorSpeedLeft() * this->wheelRadius * 2.0 * M_PI;
+		rightSpeed = this->motorsController->getMotorSpeedRight() * this->wheelRadius * 2.0 * M_PI;
 
 		// Set target speeds
 		try {
