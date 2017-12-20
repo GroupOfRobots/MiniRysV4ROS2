@@ -106,10 +106,11 @@ class Mapper(QThread):
 			positions.append((x, y))
 
 		# Second, current heading
+		# Get yaw from last element of the path
 		positionAngle = self.path[len(self.path) - 1][1].M.GetRPY()[2]
 
 		# Third, obstacle list
-		obstacles = list()
+		obstacles = self.map.getOccupancyMap()
 
 		# Lastly, emit the signal
 		self.mapGenerated.emit(positions, positionAngle, obstacles)

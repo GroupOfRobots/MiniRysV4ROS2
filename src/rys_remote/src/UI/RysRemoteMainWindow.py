@@ -337,9 +337,17 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			# As with path, mirror y
 			y2 = y - length * math.sin(self.mapPositionAngle)
 			self.mapScene.addLine(x, y, x2, y2, pen)
+			dotSize = 4.0
+			self.mapScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
 
 		# Draw obstacles
 		if self.obstaclesEnabled and len(self.mapObstacles):
 			brush = QtGui.QBrush(QtGui.QColor(200, 0, 0), QtCore.Qt.SolidPattern)
-			dotSize = 1.0
+			# dotSize = 1.0
+			dotSize = sceneSize / (self.mapper.mapSize / self.mapper.cellSize)
 			pen = QtGui.QPen(brush, dotSize)
+
+			for obstacle in self.mapObstacles:
+				x = obstacle[0]
+				y = obstacle[1]
+				self.mapScene.addRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)

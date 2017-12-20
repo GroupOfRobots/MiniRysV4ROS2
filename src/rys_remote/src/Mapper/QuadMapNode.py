@@ -69,10 +69,10 @@ class QuadMapNode(object):
 			if self.size > self.minSize:
 				# If sub-cells were not initialized, do it now
 				if self.subCells is None:
-					topRightCell = QuadMapNode(self.size / 2, self.minSize, self.x + self.size / 4, self.y + self.size / 4, self.freeThreshold, self.scanCount)
-					topLeftCell = QuadMapNode(self.size / 2, self.minSize, self.x - self.size / 4, self.y + self.size / 4, self.freeThreshold, self.scanCount)
-					bottomLeftCell = QuadMapNode(self.size / 2, self.minSize, self.x - self.size / 4, self.y - self.size / 4, self.freeThreshold, self.scanCount)
-					bottomRightCell = QuadMapNode(self.size / 2, self.minSize, self.x + self.size / 4, self.y - self.size / 4, self.freeThreshold, self.scanCount)
+					topRightCell = QuadMapNode(self.size / 2, self.minSize, self.x + self.size / 4, self.y + self.size / 4, self.freeThreshold, 0)
+					topLeftCell = QuadMapNode(self.size / 2, self.minSize, self.x - self.size / 4, self.y + self.size / 4, self.freeThreshold, 0)
+					bottomLeftCell = QuadMapNode(self.size / 2, self.minSize, self.x - self.size / 4, self.y - self.size / 4, self.freeThreshold, 0)
+					bottomRightCell = QuadMapNode(self.size / 2, self.minSize, self.x + self.size / 4, self.y - self.size / 4, self.freeThreshold, 0)
 					self.subCells = [topRightCell, topLeftCell, bottomLeftCell, bottomRightCell]
 
 				for cell in self.subCells:
@@ -80,7 +80,15 @@ class QuadMapNode(object):
 			else:
 				self.occupiedScanCount = self.occupiedScanCount + 1
 
-	def isKnown(self, x, y):
+	def isKnown(self, x = None, y = None):
+		if self.scanCount == 0:
+			return False
+
+		if x is None and y is None:
+			return self.isKnown(self.x, self.y)
+		elif x is None or y is None:
+			raise TypeError('missing either x or y')
+
 		if self.subCells:
 			if x >= self.x and y >= self.y:
 				return self.subCells[0].isKnown(x, y)
@@ -93,7 +101,15 @@ class QuadMapNode(object):
 
 		return self.scanCount > 0
 
-	def isFree(self, x, y):
+	def isFree(self, x = None, y = None):
+		if self.scanCount == 0:
+			return True
+
+		if x is None and y is None:
+			return self.isFree(self.x, self.y)
+		elif x is None or y is None:
+			raise TypeError('missing either x or y')
+
 		if self.subCells:
 			if x >= self.x and y >= self.y:
 				return self.subCells[0].isFree(x, y)
@@ -105,8 +121,18 @@ class QuadMapNode(object):
 				return self.subCells[4].isFree(x, y)
 
 		# return false if occupied scan count is higher than 1-threshold
-		return self.isKnown() and (self.occupiedScanCount / self.scanCount) < (1 - self.freeThreshold)
+		return self.isKnown() and (self.occupiedScanCount / self.scanCount) < (1.0 - self.freeThreshold)
 
 	def getOccupancyMap(self):
-		'''Should build and return simplified occupancy map as a list of either booleans or lists'''
-		pass
+		'''Build and return simplified occupancy map as a list of (x, y) tuples'''
+		if self.subCells is None:
+			if self.isFree():
+				return list()
+			else:
+				return list((self.x, self.y))
+
+		occupied = list()
+		for cell in self.subCells:
+			occupied.extend(cell.getOccupancyMap())
+
+		return occupied
