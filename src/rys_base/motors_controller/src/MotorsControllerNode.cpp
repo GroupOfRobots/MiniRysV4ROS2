@@ -37,6 +37,7 @@ MotorsControllerNode::MotorsControllerNode(
 	this->steeringPrecision = 1;
 
 	this->previousOdometryTime = rclcpp::Time::now();
+	this->currentOdometryFrame = KDL::Frame(KDL::Rotation::RotZ(M_PI/2));
 
 	std::cout << "[MOTORS] Initializing motors controller...\n";
 	this->motorsController = new MotorsController();
@@ -255,7 +256,6 @@ void MotorsControllerNode::runLoop() {
 		this->motorsController->calculateSpeeds(this->roll, this->rotationX, linearSpeed, this->throttle, this->rotation, finalLeftSpeed, finalRightSpeed, loopTime);
 
 		// Save current speeds in units suitable for odometry (m/s)
-		std::cout << this->motorsController->getMotorSpeedLeft() << std::endl;
 		leftSpeed = this->motorsController->getMotorSpeedLeft() * this->wheelRadius * 2.0 * M_PI;
 		rightSpeed = this->motorsController->getMotorSpeedRight() * this->wheelRadius * 2.0 * M_PI;
 
@@ -322,6 +322,11 @@ void MotorsControllerNode::runLoop() {
 		odometryMessage->pose.pose.orientation.y = rotY;
 		odometryMessage->pose.pose.orientation.z = rotZ;
 		odometryMessage->pose.pose.orientation.w = rotW;
+
+		this->currentOdometryFrame = this->currentOdometryFrame * odometryFrame;
+		double r, p, y;
+		this->currentOdometryFrame.M.GetRPY(r, p, y);
+		std::cout << "heading: " << y << std::endl;
 
 		// Fourth, finally publish the odometry message
 		this->odometryPublisher->publish(odometryMessage);
