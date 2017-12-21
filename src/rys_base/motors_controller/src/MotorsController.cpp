@@ -1,4 +1,5 @@
 #include "MotorsController.hpp"
+#include <cmath>
 
 MotorsController::MotorsController() {
 	balancing = true;
@@ -332,7 +333,7 @@ float MotorsController::getMotorSpeedLeft() const {
 		return 0.0f;
 	}
 
-	return this->motorSpeedLeft * (this->invertLeft ? -1.0 : 1.0) * PRU_CLOCK/(STEPPER_STEPS_PER_REVOLUTION * MAX_MOTOR_SPEED);
+	return this->motorSpeedLeft * (this->invertLeft ? -1 : 1) * PRU_CLOCK/(STEPPER_STEPS_PER_REVOLUTION * MAX_MOTOR_SPEED) * SPEED_MULTIPLIER;
 }
 
 float MotorsController::getMotorSpeedRight() const {
@@ -340,7 +341,7 @@ float MotorsController::getMotorSpeedRight() const {
 		return 0.0f;
 	}
 
-	return this->motorSpeedRight * (this->invertRight ? -1.0 : 1.0) * PRU_CLOCK/(STEPPER_STEPS_PER_REVOLUTION * MAX_MOTOR_SPEED);
+	return this->motorSpeedRight * (this->invertRight ? -1 : 1) * PRU_CLOCK/(STEPPER_STEPS_PER_REVOLUTION * MAX_MOTOR_SPEED) * SPEED_MULTIPLIER;
 }
 
 void MotorsController::writePRUDataFrame(const MotorsController::DataFrame & frame) {

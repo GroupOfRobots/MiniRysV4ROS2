@@ -7,7 +7,6 @@
 #include <ctime>
 #include <fstream>
 #include <mutex>
-#include <ratio>
 
 #define ANGLE_MAX 15
 #define DEG_TO_RAD 0.017453f
@@ -17,9 +16,11 @@
 #define MAX_ACCELERATION 1.0f
 // Note: MAX_MOTOR_SPEED is in fact the MINIMUM delay (in PRU ticks) between steps, so to increase the real max speed decrease this constant.
 /// TODO: Move this delay/PRU_CLOCK/etc logic into PRU driver and make this controller operate on rev/s.
-#define MAX_MOTOR_SPEED 400000
-#define PRU_CLOCK 200 * 1000 * 1000
-#define STEPPER_STEPS_PER_REVOLUTION 200
+#define MAX_MOTOR_SPEED 400000.0f
+#define PRU_CLOCK 200.0f * 1000.0f * 1000.0f
+#define STEPPER_STEPS_PER_REVOLUTION 200.0f
+// A 'magic number' that makes the speed calculations right. Required probably because by a bug in PRU firmware.
+#define SPEED_MULTIPLIER 0.5f
 #define DEVICE_NAME "/dev/rpmsg_pru31"
 
 class MotorsController {
