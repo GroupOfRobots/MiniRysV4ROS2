@@ -45,7 +45,9 @@ class Mapper(QThread):
 		# Construct a PyKDL.Frame out of the message
 		position = message.pose.pose.position
 		orientation = message.pose.pose.orientation
-		poseFrame = PyKDL.Frame(PyKDL.Rotation.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w), PyKDL.Vector(position.x, position.y, position.z))
+		positionVector = PyKDL.Vector(position.x, position.y, position.z)
+		orientationQuaternion = PyKDL.Rotation.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w)
+		poseFrame = PyKDL.Frame(orientationQuaternion, positionVector)
 
 		# TODO: odometry filtering (e.g. from IMU) goes here
 

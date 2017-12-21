@@ -293,7 +293,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		brush = QtGui.QBrush(QtGui.QColor(0, 0, 0), QtCore.Qt.SolidPattern)
 		pen = QtGui.QPen(brush, 1.0)
 
-		halfMapSize = self.mapper.mapSize / 2
+		mapSize = self.mapper.mapSize
 
 		sceneSize = min(width, height)
 		xOffset = (width - sceneSize) * 0.5
@@ -316,10 +316,9 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			for position in self.mapPositions:
 				# x and y are in <-mapSize/2; mapSize/2> range
 				# First, scale them to <0; 1>, then multiply by map scene size
-				x = (position[0] / halfMapSize + 0.5) * sceneSize + xOffset
+				x = (0.5 + position[0] / mapSize) * sceneSize + xOffset
 				# Y axis is reverted in QGraphicsScene (top is 0, bottom is height)
-				y = (position[1] / halfMapSize + 0.5) * sceneSize + yOffset
-				y = height - y
+				y = (0.5 + position[1] / mapSize) * sceneSize + yOffset
 				self.mapScene.addRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
 				# self.mapScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
 
@@ -331,11 +330,11 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			length = 20.0
 
 			position = self.mapPositions[len(self.mapPositions) - 1]
-			x = (position[0] / halfMapSize + 0.5) * sceneSize + xOffset
-			y = (position[1] / halfMapSize + 0.5) * sceneSize + yOffset
-			x2 = x + length * math.cos(self.mapPositionAngle)
+			x = (0.5 + position[0] / mapSize) * sceneSize + xOffset
+			y = (0.5 + position[1] / mapSize) * sceneSize + yOffset
+			x2 = x + length * math.cos(-self.mapPositionAngle)
 			# As with path, mirror y
-			y2 = y - length * math.sin(self.mapPositionAngle)
+			y2 = y + length * math.sin(-self.mapPositionAngle)
 			self.mapScene.addLine(x, y, x2, y2, pen)
 			dotSize = 4.0
 			self.mapScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
@@ -348,6 +347,6 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			pen = QtGui.QPen(brush, dotSize)
 
 			for obstacle in self.mapObstacles:
-				x = obstacle[0]
-				y = obstacle[1]
+				x = (0.5 + obstacle[0] / mapSize) * sceneSize + xOffset
+				y = (0.5 + obstacle[1] / mapSize) * sceneSize + yOffset
 				self.mapScene.addRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
