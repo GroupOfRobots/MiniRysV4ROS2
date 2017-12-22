@@ -30,7 +30,7 @@ IMUNode::~IMUNode() {
 void IMUNode::timerCallback() {
 	auto message = std::make_shared<sensor_msgs::msg::Imu>();
 
-	message->header.stamp = rclcpp::Time::now();
+	message->header.stamp = this->now();
 	message->header.frame_id = "MPU6050";
 
 	IMU::ImuData data;

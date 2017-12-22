@@ -26,7 +26,7 @@ MotorsControllerNode::MotorsControllerNode(
 	this->enableTimeout = 5000ms;
 	this->enableTimerEnd = std::chrono::high_resolution_clock::now();
 	this->previous = std::chrono::high_resolution_clock::now();
-	this->now = std::chrono::high_resolution_clock::now();
+	this->timeNow = std::chrono::high_resolution_clock::now();
 
 	this->roll = 0;
 	this->rollPrevious = 0;
@@ -36,7 +36,6 @@ MotorsControllerNode::MotorsControllerNode(
 	this->throttle = 0;
 	this->steeringPrecision = 1;
 
-	this->previousOdometryTime = rclcpp::Time::now();
 	this->currentOdometryFrame = KDL::Frame(KDL::Rotation::RotZ(M_PI/2));
 
 	std::cout << "[MOTORS] Initializing motors controller...\n";
@@ -108,7 +107,7 @@ void MotorsControllerNode::enableMessageCallback(const std_msgs::msg::Bool::Shar
 		this->motorsController->disableMotors();
 	}
 	this->enabled = message->data;
-	this->previousOdometryTime = rclcpp::Time::now();
+	this->previous = std::chrono::high_resolution_clock::now();
 }
 
 void MotorsControllerNode::imuMessageCallback(const sensor_msgs::msg::Imu::SharedPtr message) {
@@ -209,7 +208,8 @@ void MotorsControllerNode::standUp() {
 
 	// Drive forward full-speed, wait until we've passed '0' point
 	this->motorsRunTimed(-multiplier * 1.0f, -multiplier * 1.0f, 1, 100);
-	rclcpp::rate::WallRate standUpLoopRate(100);
+
+	rclcpp::WallRate standUpLoopRate(100);
 	while (rclcpp::ok() && this->enabled) {
 		// Passing '0' point depends on from which side we're standing up
 		if ((multiplier * this->roll) <= 0) {
@@ -221,17 +221,17 @@ void MotorsControllerNode::standUp() {
 }
 
 void MotorsControllerNode::runLoop() {
-	this->now = std::chrono::high_resolution_clock::now();
-	auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->now - this->previous);
+	this->timeNow = std::chrono::high_resolution_clock::now();
+	auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->timeNow - this->previous);
 	float loopTime = loopTimeSpan.count();
-	this->previous = this->now;
+	this->previous = this->timeNow;
 
 	if (!this->enabled) {
 		return;
 	}
 
 	// Check enable timer
-	if (this->enableTimerEnd < this->now) {
+	if (this->enableTimerEnd < this->timeNow) {
 		this->enabled = false;
 		this->motorsController->disableMotors();
 		return;
@@ -279,7 +279,7 @@ void MotorsControllerNode::runLoop() {
 		// Odometry
 		// First, create an odometry message and fill whatever we can
 		auto odometryMessage = std::make_shared<nav_msgs::msg::Odometry>();
-		odometryMessage->header.stamp = rclcpp::Time::now();
+		odometryMessage->header.stamp = this->now();
 		odometryMessage->header.frame_id = "odom";
 		odometryMessage->child_frame_id = "base_link";
 		// Actual covariance is unknown

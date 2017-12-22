@@ -29,7 +29,7 @@ BatteryNode::~BatteryNode() {}
 void BatteryNode::publishData() {
 	auto message = std::make_shared<rys_interfaces::msg::BatteryStatus>();
 
-	message->header.stamp = rclcpp::Time::now();
+	message->header.stamp = this->now();
 	message->header.frame_id = "ADC";
 
 	std::ifstream file;

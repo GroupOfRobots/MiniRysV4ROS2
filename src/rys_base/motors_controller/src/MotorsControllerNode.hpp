@@ -27,7 +27,7 @@ class MotorsControllerNode : public rclcpp::Node {
 		std::chrono::milliseconds enableTimeout;
 		std::chrono::time_point<std::chrono::high_resolution_clock> enableTimerEnd;
 		std::chrono::time_point<std::chrono::high_resolution_clock> previous;
-		std::chrono::time_point<std::chrono::high_resolution_clock> now;
+		std::chrono::time_point<std::chrono::high_resolution_clock> timeNow;
 
 		float roll;
 		float rollPrevious;
@@ -50,8 +50,8 @@ class MotorsControllerNode : public rclcpp::Node {
 
 		rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odometryPublisher;
 
-		rclcpp::service::Service<rys_interfaces::srv::SetRegulatorSettings>::SharedPtr setRegulatorSettingsServer;
-		rclcpp::service::Service<rys_interfaces::srv::GetRegulatorSettings>::SharedPtr getRegulatorSettingsServer;
+		rclcpp::Service<rys_interfaces::srv::SetRegulatorSettings>::SharedPtr setRegulatorSettingsServer;
+		rclcpp::Service<rys_interfaces::srv::GetRegulatorSettings>::SharedPtr getRegulatorSettingsServer;
 
 		void motorsRunTimed(const float leftSpeed, const float rightSpeed, const int microstep, const int milliseconds);
 		void standUp();

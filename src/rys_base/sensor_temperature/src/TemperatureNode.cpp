@@ -30,7 +30,7 @@ TemperatureNode::~TemperatureNode() {}
 void TemperatureNode::publishData() {
 	auto message = std::make_shared<rys_interfaces::msg::TemperatureStatus>();
 
-	message->header.stamp = rclcpp::Time::now();
+	message->header.stamp = this->now();
 	message->header.frame_id = "LM35";
 
 	const int readings = 5;

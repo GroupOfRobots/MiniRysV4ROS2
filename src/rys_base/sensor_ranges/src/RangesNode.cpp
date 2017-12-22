@@ -90,7 +90,7 @@ int RangesNode::readSensor(int sensorIndex) {
 void RangesNode::sensorsReadAndPublishData() {
 	auto message = std::make_shared<rys_interfaces::msg::Ranges>();
 
-	message->header.stamp = rclcpp::Time::now();
+	message->header.stamp = this->now();
 	message->header.frame_id = "vl53l0x";
 
 	// Read sensors - offloaded to separate function as there are identical checks for every sensor
