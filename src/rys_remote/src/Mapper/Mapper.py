@@ -54,6 +54,8 @@ class Mapper(QThread):
 		# Apply odometry transform onto robotPosition frame
 		self.robotPosition = self.robotPosition * poseFrame
 
+		print('time: %f heading: %f' % (message.header.stamp.sec + message.header.stamp.nanosec * 0.000000001, self.robotPosition.M.GetRPY()[2]))
+
 		# Save the frame and time to the path
 		poseTime = float(message.header.stamp.sec) + float(message.header.stamp.nanosec) / 1000000000
 		self.path.append((poseTime, PyKDL.Frame(self.robotPosition)))
@@ -74,7 +76,7 @@ class Mapper(QThread):
 		# Then, pass calculated parameters to quadmap
 		self.map.addScan(leftSensorA, leftSensorB, leftSensorX0, leftSensorX1)
 
-		# Right
+		# Right, same thing
 		rightSensorPosition = self.robotPosition * self.rightRangeSensorFrame
 		rightSensorX0 = rightSensorPosition.p.x()
 		rightSensorX1 = rightSensorX0 + math.cos(rightSensorPosition.M.GetRPY()[2]) * message.right
@@ -109,7 +111,8 @@ class Mapper(QThread):
 
 		# Second, current heading
 		# Get yaw from last element of the path
-		positionAngle = self.path[len(self.path) - 1][1].M.GetRPY()[2]
+		# positionAngle = self.path[len(self.path) - 1][1].M.GetRPY()[2]
+		positionAngle = self.robotPosition.M.GetRPY()[2]
 
 		# Third, obstacle list
 		obstacles = self.map.getOccupancyMap()
