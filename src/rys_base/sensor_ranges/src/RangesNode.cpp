@@ -1,6 +1,6 @@
-#include <iostream>
-
 #include "RangesNode.hpp"
+#include <iostream>
+#include <stdexcept>
 
 RangesNode::RangesNode(
 	const std::string & robotName,
@@ -15,8 +15,8 @@ RangesNode::RangesNode(
 		this->sensorInitialized[i] = false;
 		try {
 			this->sensors[i]->powerOff();
-		} catch (std::string & errorString) {
-			std::cerr << "[RANGES] Error disabling sensor " << i << ": " << errorString << std::endl;
+		} catch (const std::exception & error) {
+			std::cerr << "[RANGES] Error disabling sensor " << i << ": " << error.what() << std::endl;
 		}
 	}
 
@@ -32,8 +32,8 @@ RangesNode::RangesNode(
 			this->sensors[i]->setMeasurementTimingBudget(20000);
 			this->sensors[i]->setAddress(addresses[i]);
 			this->sensorInitialized[i] = true;
-		} catch (std::string & errorString) {
-			std::cerr << "[RANGES] Error initializing sensor " << i << ": " << errorString << std::endl;
+		} catch (const std::exception & error) {
+			std::cerr << "[RANGES] Error initializing sensor " << i << ": " << error.what() << std::endl;
 		}
 	}
 
@@ -73,8 +73,8 @@ int RangesNode::readSensor(int sensorIndex) {
 	// Actual reading can throw
 	try {
 		value = sensors[sensorIndex]->readRangeContinuousMillimeters();
-	} catch (std::string & error) {
-		std::cout << "[RANGES] Error reading distances from sensor " << sensorIndex << ": " << error << std::endl;
+	} catch (const std::exception & error) {
+		std::cout << "[RANGES] Error reading distances from sensor " << sensorIndex << ": " << error.what() << std::endl;
 		return -1;
 	}
 

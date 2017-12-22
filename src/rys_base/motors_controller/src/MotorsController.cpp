@@ -1,5 +1,6 @@
 #include "MotorsController.hpp"
 #include <cmath>
+#include <stdexcept>
 
 MotorsController::MotorsController() {
 	balancing = true;
@@ -245,7 +246,7 @@ void MotorsController::disableMotors() {
 void MotorsController::setMotorSpeeds(float speedLeft, float speedRight, int microstep, bool ignoreAcceleration) {
 	// Validate microstep value
 	if (microstep != 1 && (microstep == 0 || microstep % 2 || microstep > 32)) {
-		throw(std::string("Bad microstep value!"));
+		throw(std::domain_error("Bad microstep value! Allowed ones are powers of 2 from 1 to 32"));
 	}
 
 	// Create data frame for PRU
@@ -353,7 +354,7 @@ void MotorsController::writePRUDataFrame(const MotorsController::DataFrame & fra
 		this->motorPruFile.close();
 		std::string errorString("Failed writing to file: ");
 		errorString += std::string(DEVICE_NAME);
-		throw(errorString);
+		throw(std::runtime_error(errorString));
 	} else {
 		this->motorPruFile.write((char*)(&frame), (int)(sizeof(MotorsController::DataFrame)));
 	}

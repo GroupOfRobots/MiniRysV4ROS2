@@ -10,6 +10,7 @@
  */
 
 #include "DWM.hpp"
+#include <stdexcept>
 
 // For console output
 #include <iostream>
@@ -71,7 +72,7 @@ void DWM::initialize(bool ranging) {
 
 	std::cout << "Initializing DW1000\n";
 	if (dwt_initialise(DWT_LOADNONE) == DWT_ERROR) {
-		throw(std::string("Error initializing DWT!\n"));
+		throw(std::runtime_error("Error initializing DWT!"));
 	}
 
 	std::cout << "Setting SPI rate HIGH\n";
@@ -168,7 +169,7 @@ uint8_t * DWM::receiveFrame() {
 		dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_ERR);
 
 		std::cout << "MSG Receive error!\n";
-		throw(std::string("MSG Receive error"));
+		throw(std::runtime_error("MSG Receive error"));
 	}
 }
 
@@ -243,7 +244,7 @@ double DWM::readRange() {
 		dwt_rxreset();
 
 		std::cout << "MSG Receive error!\n";
-		throw(std::string("MSG Receive error"));
+		throw(std::runtime_error("MSG Receive error"));
 	}
 
 	return 65536.0;
@@ -254,20 +255,20 @@ double DWM::readRange() {
 void DWM::spiSetRateLow() {
 	spiSpeed = SPI_SPEED_SLOW;
 	if (ioctl(spiFileDescriptor, SPI_IOC_WR_MAX_SPEED_HZ, &(spiSpeed)) == -1) {
-		throw(std::string("SPI: Can't set max speed HZ"));
+		throw(std::runtime_error("SPI: Can't set max speed HZ"));
 	}
 	if (ioctl(spiFileDescriptor, SPI_IOC_RD_MAX_SPEED_HZ, &(spiSpeed)) == -1) {
-		throw(std::string("SPI: Can't get max speed HZ."));
+		throw(std::runtime_error("SPI: Can't get max speed HZ."));
 	}
 }
 
 void DWM::spiSetRateHigh() {
 	spiSpeed = SPI_SPEED_FAST;
 	if (ioctl(spiFileDescriptor, SPI_IOC_WR_MAX_SPEED_HZ, &(spiSpeed)) == -1) {
-		throw(std::string("SPI: Can't set max speed HZ"));
+		throw(std::runtime_error("SPI: Can't set max speed HZ"));
 	}
 	if (ioctl(spiFileDescriptor, SPI_IOC_RD_MAX_SPEED_HZ, &(spiSpeed)) == -1) {
-		throw(std::string("SPI: Can't get max speed HZ."));
+		throw(std::runtime_error("SPI: Can't get max speed HZ."));
 	}
 }
 
@@ -281,7 +282,7 @@ void DWM::initializeHardware() {
 	file.open("/sys/class/gpio/export", std::ofstream::out);
 	if (!file.is_open() || !file.good()) {
 		file.close();
-		throw(std::string("Failed opening file: /sys/class/gpio/export"));
+		throw(std::runtime_error("Failed opening file: /sys/class/gpio/export"));
 	}
 	file << this->resetPin;
 	file << this->irqPin;
@@ -290,7 +291,7 @@ void DWM::initializeHardware() {
 	file.open(resetPinDirectionFilename.c_str(), std::ofstream::out);
 	if (!file.is_open() || !file.good()) {
 		file.close();
-		throw(std::string("Failed opening file: ") + resetPinDirectionFilename);
+		throw(std::runtime_error(std::string("Failed opening file: ") + resetPinDirectionFilename));
 	}
 	file << "out";
 	file.close();
@@ -298,32 +299,32 @@ void DWM::initializeHardware() {
 	file.open(irqPinDirectionFilename.c_str(), std::ofstream::out);
 	if (!file.is_open() || !file.good()) {
 		file.close();
-		throw(std::string("Failed opening file: ") + irqPinDirectionFilename);
+		throw(std::runtime_error(std::string("Failed opening file: ") + irqPinDirectionFilename));
 	}
 	file << "out";
 	file.close();
 
 	// The following calls set up the SPI bus properties
 	if ((spiFileDescriptor = open(SPI_PATH, O_RDWR)) < 0) {
-		throw(std::string("SPI Error: Can't open device."));
+		throw(std::runtime_error("SPI Error: Can't open device."));
 	}
 	if (ioctl(spiFileDescriptor, SPI_IOC_WR_MODE, &(spiMode)) == -1) {
-		throw(std::string("SPI: Can't set SPI mode."));
+		throw(std::runtime_error("SPI: Can't set SPI mode."));
 	}
 	if (ioctl(spiFileDescriptor, SPI_IOC_RD_MODE, &(spiMode)) == -1) {
-		throw(std::string("SPI: Can't get SPI mode."));
+		throw(std::runtime_error("SPI: Can't get SPI mode."));
 	}
 	if (ioctl(spiFileDescriptor, SPI_IOC_WR_BITS_PER_WORD, &(spiBits)) == -1) {
-		throw(std::string("SPI: Can't set bits per word."));
+		throw(std::runtime_error("SPI: Can't set bits per word."));
 	}
 	if (ioctl(spiFileDescriptor, SPI_IOC_RD_BITS_PER_WORD, &(spiBits)) == -1) {
-		throw(std::string("SPI: Can't get bits per word."));
+		throw(std::runtime_error("SPI: Can't get bits per word."));
 	}
 	if (ioctl(spiFileDescriptor, SPI_IOC_WR_MAX_SPEED_HZ, &(spiSpeed)) == -1) {
-		throw(std::string("SPI: Can't set max speed HZ"));
+		throw(std::runtime_error("SPI: Can't set max speed HZ"));
 	}
 	if (ioctl(spiFileDescriptor, SPI_IOC_RD_MAX_SPEED_HZ, &(spiSpeed)) == -1) {
-		throw(std::string("SPI: Can't get max speed HZ."));
+		throw(std::runtime_error("SPI: Can't get max speed HZ."));
 	}
 }
 
@@ -333,7 +334,7 @@ void DWM::reset() {
 	file.open(this->resetPinFilename.c_str(), std::ofstream::out);
 	if (!file.is_open() || !file.good()) {
 		file.close();
-		throw(std::string("Failed opening file: ") + this->resetPinFilename);
+		throw(std::runtime_error(std::string("Failed opening file: ") + this->resetPinFilename));
 	}
 	file << '0';
 	file.close();
@@ -343,7 +344,7 @@ void DWM::reset() {
 	file.open(this->resetPinFilename.c_str(), std::ofstream::out);
 	if (!file.is_open() || !file.good()) {
 		file.close();
-		throw(std::string("Failed opening file: ") + this->resetPinFilename);
+		throw(std::runtime_error(std::string("Failed opening file: ") + this->resetPinFilename));
 	}
 	file << '1';
 	file.close();

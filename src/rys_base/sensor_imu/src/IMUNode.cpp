@@ -1,5 +1,5 @@
 #include "IMUNode.hpp"
-
+#include <stdexcept>
 #include <iostream>
 #include <memory>
 
@@ -37,8 +37,8 @@ void IMUNode::timerCallback() {
 	int result;
 	try {
 		result = this->imu->getData(&data);
-	} catch (std::string & error) {
-		std::cout << "[IMU] Error getting IMU reading: " << error << std::endl;
+	} catch (const std::exception & error) {
+		std::cout << "[IMU] Error getting IMU reading: " << error.what() << std::endl;
 		return;
 	}
 

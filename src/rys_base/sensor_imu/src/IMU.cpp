@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include <stdexcept>
 
 IMU::IMU() {
 	this->mpu = new MPU6050();
@@ -26,7 +27,7 @@ void IMU::initialize() {
 
 	// verify connection
 	if (!this->mpu->testConnection()) {
-		throw(std::string("MPU6050 connection failed"));
+		throw(std::runtime_error("MPU6050 connection failed"));
 	}
 
 	// load and configure the DMP
@@ -46,7 +47,7 @@ void IMU::initialize() {
 		// 1 = initial memory load failed
 		// 2 = DMP configuration updates failed
 		// (if it's going to break, usually the code will be 1)
-		throw(std::string("DMP Initialization failed (code %d)", devStatus));
+		throw(std::runtime_error(std::string("DMP Initialization failed: ") + std::to_string(devStatus)));
 	}
 }
 
