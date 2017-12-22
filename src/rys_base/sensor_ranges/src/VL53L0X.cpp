@@ -1,4 +1,5 @@
 #include "VL53L0X.hpp"
+#include "I2Cdev.hpp"
 
 #include <cerrno>
 // strerror()
@@ -7,7 +8,7 @@
 #include <ctime>
 #include <string>
 #include <unistd.h>
-#include "I2Cdev.hpp"
+#include <stdexcept>
 
 /*** Defines ***/
 
@@ -64,7 +65,7 @@ void VL53L0X::initGPIO() {
 		file.open("/sys/class/gpio/export", std::ofstream::out);
 		if (!file.is_open() || !file.good()) {
 			file.close();
-			throw(std::string("Failed opening file: /sys/class/gpio/export"));
+			throw(std::runtime_error("Failed opening file: /sys/class/gpio/export"));
 		}
 		file << this->xshutGPIOPin;
 		file.close();
@@ -72,7 +73,7 @@ void VL53L0X::initGPIO() {
 		file.open(gpioDirectionFilename.c_str(), std::ofstream::out);
 		if (!file.is_open() || !file.good()) {
 			file.close();
-			throw(std::string("Failed opening file: ") + gpioDirectionFilename);
+			throw(std::runtime_error(std::string("Failed opening file: ") + gpioDirectionFilename));
 		}
 		file << "out";
 		file.close();
@@ -122,7 +123,7 @@ void VL53L0X::init(bool ioMode2v8) {
 	uint8_t spadCount;
 	bool spadTypeIsAperture;
 	if (!this->getSPADInfo(&spadCount, &spadTypeIsAperture)) {
-		throw(std::string("Failed retrieving SPAD info!"));
+		throw(std::runtime_error("Failed retrieving SPAD info!"));
 	}
 
 	// The SPAD map (RefGoodSpadMap) is read by VL53L0X_get_info_from_device() in the API,
@@ -286,7 +287,7 @@ void VL53L0X::init(bool ioMode2v8) {
 
 	this->writeRegister(SYSTEM_SEQUENCE_CONFIG, 0x01);
 	if (!this->performSingleRefCalibration(0x40)) {
-		throw(std::string("Failed performing ref/vhv calibration!"));
+		throw(std::runtime_error("Failed performing ref/vhv calibration!"));
 	}
 
 	// -- VL53L0X_perform_vhv_calibration() end
@@ -295,7 +296,7 @@ void VL53L0X::init(bool ioMode2v8) {
 
 	this->writeRegister(SYSTEM_SEQUENCE_CONFIG, 0x02);
 	if (!this->performSingleRefCalibration(0x00)) {
-		throw(std::string("Failed performing ref/phase calibration!"));
+		throw(std::runtime_error("Failed performing ref/phase calibration!"));
 	}
 
 	// -- VL53L0X_perform_phase_calibration() end
@@ -318,7 +319,7 @@ void VL53L0X::powerOn() {
 		file.open(this->gpioFilename.c_str(), std::ofstream::out);
 		if (!file.is_open() || !file.good()) {
 			file.close();
-			throw(std::string("Failed opening file: ") + this->gpioFilename);
+			throw(std::runtime_error(std::string("Failed opening file: ") + this->gpioFilename));
 		}
 		file << "1";
 		file.close();
@@ -340,7 +341,7 @@ void VL53L0X::powerOff() {
 		file.open(this->gpioFilename.c_str(), std::ofstream::out);
 		if (!file.is_open() || !file.good()) {
 			file.close();
-			throw(std::string("Failed opening file: ") + this->gpioFilename);
+			throw(std::runtime_error(std::string("Failed opening file: ") + this->gpioFilename));
 		}
 		file << "0";
 		file.close();
@@ -350,7 +351,7 @@ void VL53L0X::powerOff() {
 void VL53L0X::writeRegister(uint8_t reg, uint8_t value) {
 	bool p = I2Cdev::writeByte(this->address, reg, value);
 	if (!p) {
-		throw(std::string("Error writing byte to register: ") + std::string(strerror(errno)));
+		throw(std::runtime_error(std::string("Error writing byte to register: ") + strerror(errno)));
 	}
 }
 
@@ -358,7 +359,7 @@ void VL53L0X::writeRegister16Bit(uint8_t reg, uint16_t value) {
 	// No need to reverse endinaness as writeWord does that for us
 	bool p = I2Cdev::writeWord(this->address, reg, value);
 	if (!p) {
-		throw(std::string("Error writing word to register: ") + std::string(strerror(errno)));
+		throw(std::runtime_error(std::string("Error writing word to register: ") + strerror(errno)));
 	}
 }
 
@@ -372,7 +373,7 @@ void VL53L0X::writeRegister32Bit(uint8_t reg, uint32_t value) {
 
 	bool p = I2Cdev::writeBytes(this->address, reg, 4, data);
 	if (!p) {
-		throw(std::string("Error writing dword to register"));
+		throw(std::runtime_error("Error writing dword to register"));
 	}
 }
 
@@ -383,7 +384,7 @@ void VL53L0X::writeRegisterMultiple(uint8_t reg, const uint8_t* source, uint8_t 
 	}
 	bool p = I2Cdev::writeBytes(this->address, reg, count, data);
 	if (!p) {
-		throw(std::string("Error writing block to register"));
+		throw(std::runtime_error("Error writing block to register"));
 	}
 }
 
@@ -391,7 +392,7 @@ uint8_t VL53L0X::readRegister(uint8_t reg) {
 	uint8_t data;
 	int8_t p = I2Cdev::readByte(this->address, reg, &data);
 	if (p == -1) {
-		throw(std::string("Error reading byte from register"));
+		throw(std::runtime_error("Error reading byte from register"));
 	}
 	return data;
 }
@@ -402,7 +403,7 @@ uint16_t VL53L0X::readRegister16Bit(uint8_t reg) {
 	int8_t p = I2Cdev::readBytes(this->address, reg, 2, data);
 
 	if (p == -1) {
-		throw(std::string("Error reading word from register"));
+		throw(std::runtime_error("Error reading word from register"));
 	}
 
 	// Reverse endianness - readBytes doesn't do it for us
@@ -415,7 +416,7 @@ uint32_t VL53L0X::readRegister32Bit(uint8_t reg) {
 	int8_t p = I2Cdev::readBytes(this->address, reg, 4, data);
 
 	if (p == -1) {
-		throw(std::string("Error reading dword from register"));
+		throw(std::runtime_error("Error reading dword from register"));
 	}
 
 	uint32_t value = 0;
@@ -432,7 +433,7 @@ void VL53L0X::readRegisterMultiple(uint8_t reg, uint8_t* destination, uint8_t co
 	int8_t p = I2Cdev::readBytes(this->address, reg, count, data);
 
 	if (p == -1) {
-		throw(std::string("Error reading block from register"));
+		throw(std::runtime_error("Error reading block from register"));
 	}
 
 	for (uint8_t i = 0; i < count; ++i) {

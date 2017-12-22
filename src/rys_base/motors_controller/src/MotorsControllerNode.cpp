@@ -1,10 +1,10 @@
+#include "MotorsControllerNode.hpp"
 #include <cmath>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <thread>
-
-#include "MotorsControllerNode.hpp"
+#include <stdexcept>
 
 using namespace std::chrono_literals;
 using std::placeholders::_1;
@@ -42,9 +42,9 @@ MotorsControllerNode::MotorsControllerNode(
 	this->motorsController = new MotorsController();
 	try {
 		this->motorsController->init();
-	} catch (std::string & error) {
-		std::cout << "[MOTORS] Error initializing controller: " << error << std::endl;
-		throw(std::string("Controller init error"));
+	} catch (const std::exception & error) {
+		std::cout << "[MOTORS] Error initializing controller: " << error.what() << std::endl;
+		throw(error);
 	}
 
 	this->motorsController->setInverting(true, false);
@@ -249,9 +249,9 @@ void MotorsControllerNode::runLoop() {
 			// Zero-out regulators: PID's errors and integrals, loop timer etc
 			this->motorsController->zeroRegulators();
 			this->previous = std::chrono::high_resolution_clock::now();
-		} catch (std::string & error) {
-			std::cout << "[MOTORS] Error standing up from laying: " << error << std::endl;
-			throw(std::string("Error standing up from laying"));
+		} catch (const std::exception & error) {
+			std::cout << "[MOTORS] Error standing up from laying: " << error.what() << std::endl;
+			throw(error);
 		}
 	} else {
 		// Standing up or not balancing - use controller
@@ -271,9 +271,9 @@ void MotorsControllerNode::runLoop() {
 		try {
 			unsigned char microstep = this->balancing ? 32 : this->steeringPrecision;
 			this->motorsController->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, microstep);
-		} catch (std::string & error) {
-			std::cout << "[MOTORS] Error setting motors speed: " << error << std::endl;
-			throw(std::string("Error setting motors speed"));
+		} catch (const std::exception & error) {
+			std::cout << "[MOTORS] Error setting motors speed: " << error.what() << std::endl;
+			throw(error);
 		}
 
 		// Odometry
