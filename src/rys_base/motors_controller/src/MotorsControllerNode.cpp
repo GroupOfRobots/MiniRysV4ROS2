@@ -63,7 +63,15 @@ MotorsControllerNode::MotorsControllerNode(
 	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
 	this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
 
-	this->odometryPublisher = this->create_publisher<nav_msgs::msg::Odometry>("/" + robotName + "/control/odometry", rmw_qos_profile_default);
+	const rmw_qos_profile_t odometryQosProfile = {
+		RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+		20,
+		RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+		RMW_QOS_POLICY_DURABILITY_VOLATILE,
+		false
+	};
+
+	this->odometryPublisher = this->create_publisher<nav_msgs::msg::Odometry>("/" + robotName + "/control/odometry", odometryQosProfile);
 
 	this->setRegulatorSettingsServer = this->create_service<rys_interfaces::srv::SetRegulatorSettings>("/" + robotName + "/control/regulator_settings/set", std::bind(&MotorsControllerNode::setRegulatorSettingsCallback, this, _1, _2, _3));
 	this->getRegulatorSettingsServer = this->create_service<rys_interfaces::srv::GetRegulatorSettings>("/" + robotName + "/control/regulator_settings/get", std::bind(&MotorsControllerNode::getRegulatorSettingsCallback, this, _1, _2, _3));
@@ -326,7 +334,7 @@ void MotorsControllerNode::runLoop() {
 		this->currentOdometryFrame = this->currentOdometryFrame * odometryFrame;
 		double r, p, y;
 		this->currentOdometryFrame.M.GetRPY(r, p, y);
-		std::cout << "heading: " << y << std::endl;
+		std::cout << "time: " << odometryMessage->header.stamp.sec + odometryMessage->header.stamp.nanosec * 0.000000001 << " heading: " << y << std::endl;
 
 		// Fourth, finally publish the odometry message
 		this->odometryPublisher->publish(odometryMessage);
