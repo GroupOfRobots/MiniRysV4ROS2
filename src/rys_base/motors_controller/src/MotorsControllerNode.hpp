@@ -39,6 +39,7 @@ class MotorsControllerNode : public rclcpp::Node {
 
 		builtin_interfaces::msg::Time previousOdometryTime;
 		KDL::Frame currentOdometryFrame;
+		unsigned int odoSeq;
 
 		MotorsController * motorsController;
 

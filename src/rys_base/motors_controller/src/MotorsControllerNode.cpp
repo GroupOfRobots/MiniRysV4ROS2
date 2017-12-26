@@ -37,6 +37,7 @@ MotorsControllerNode::MotorsControllerNode(
 	this->steeringPrecision = 1;
 
 	this->currentOdometryFrame = KDL::Frame(KDL::Rotation::RotZ(M_PI/2));
+	this->odoSeq = 0;
 
 	std::cout << "[MOTORS] Initializing motors controller...\n";
 	this->motorsController = new MotorsController();
@@ -334,7 +335,7 @@ void MotorsControllerNode::runLoop() {
 		this->currentOdometryFrame = this->currentOdometryFrame * odometryFrame;
 		double r, p, y;
 		this->currentOdometryFrame.M.GetRPY(r, p, y);
-		std::cout << "time: " << odometryMessage->header.stamp.sec + odometryMessage->header.stamp.nanosec * 0.000000001 << " heading: " << y << std::endl;
+		std::cout << "s: " << this->odoSeq++ << " h: " << y << std::endl;
 
 		// Fourth, finally publish the odometry message
 		this->odometryPublisher->publish(odometryMessage);
