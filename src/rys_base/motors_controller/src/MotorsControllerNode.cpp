@@ -16,11 +16,9 @@ MotorsControllerNode::MotorsControllerNode(
 	const std::string & nodeName,
 	std::chrono::milliseconds rate,
 	float wheelRadius,
-	float baseWidth
-) : rclcpp::Node(nodeName, robotName, true), wheelRadius(wheelRadius), baseWidth(baseWidth) {
-	// this->wheelRadius = wheelRadius;
-	// this->baseWidth = baseWidth;
-
+	float baseWidth,
+	unsigned int odometryRate
+) : rclcpp::Node(nodeName, robotName, true), wheelRadius(wheelRadius), baseWidth(baseWidth), odometryRate(odometryRate) {
 	this->enabled = false;
 	this->balancing = false;
 	this->enableTimeout = 5000ms;
@@ -36,7 +34,9 @@ MotorsControllerNode::MotorsControllerNode(
 	this->throttle = 0;
 	this->steeringPrecision = 1;
 
-	this->currentOdometryFrame = KDL::Frame(KDL::Rotation::RotZ(M_PI/2));
+	this->odometryPublishCounter = 0;
+	this->odometryFrame = KDL::Frame();
+	this->odometryTwist = KDL::Twist();
 	this->odoSeq = 0;
 
 	std::cout << "[MOTORS] Initializing motors controller...\n";
@@ -278,66 +278,87 @@ void MotorsControllerNode::runLoop() {
 		}
 
 		// Odometry
-		// First, create an odometry message and fill whatever we can
-		auto odometryMessage = std::make_shared<nav_msgs::msg::Odometry>();
-		odometryMessage->header.stamp = this->now();
-		odometryMessage->header.frame_id = "odom";
-		odometryMessage->child_frame_id = "base_link";
-		// Actual covariance is unknown
-		for (unsigned int i = 0; i < odometryMessage->pose.covariance.size(); ++i) {
-			odometryMessage->pose.covariance[i] = 0.0;
-		}
-		for (unsigned int i = 0; i < odometryMessage->twist.covariance.size(); ++i) {
-			odometryMessage->twist.covariance[i] = 0.0;
-		}
-		// Differential drive robots CANNOT move in Z direction nor rotate along X and Y axes (at least odometry-wise)
-		odometryMessage->twist.twist.linear.z = 0;
-		odometryMessage->twist.twist.angular.x = 0;
-		odometryMessage->twist.twist.angular.y = 0;
+		// First, create update frame and twist and apply them onto saved ones
+		KDL::Frame updateFrame;
+		KDL::Twist updateTwist;
 
-		// Second, calculate the difference frame by forward kinematics - trivial for equal speeds (front/back movement), slightly more complicated for different speeds
-		KDL::Frame odometryFrame;
+		// Second, calculate the difference frame by forward kinematics
 		if (leftSpeed == rightSpeed) {
-			// Only linear movement
-			odometryFrame = KDL::Frame(KDL::Vector(leftSpeed * loopTime, 0, 0));
-			odometryMessage->twist.twist.linear.x = leftSpeed;
-			odometryMessage->twist.twist.linear.y = 0;
-			odometryMessage->twist.twist.angular.z = 0;
+			// Equal speeds <=> only linear movement
+			updateFrame = KDL::Frame(KDL::Vector(leftSpeed * loopTime, 0, 0));
+			updateTwist.vel.x(leftSpeed);
 		} else {
+			// Full forward kinematics for differential robot
 			float linearVelocity = (rightSpeed + leftSpeed) / 2;
 			float angularVelocity = (rightSpeed - leftSpeed) / baseWidth;
 			float rotationPointDistance = linearVelocity / angularVelocity;
 			float rotationAngle = angularVelocity * loopTime;
+
 			// Mobile robots traditionally are Y-forward-oriented
 			float deltaX = rotationPointDistance * std::sin(rotationAngle);
 			float deltaY = rotationPointDistance * (1.0 - std::cos(rotationAngle));
-			// Those are for X-forward-oriented operation
+
+			// Those are for X-forward-oriented (kept here for reference)
 			// float deltaX = rotationPointDistance * (std::cos(rotationAngle) - 1.0);
 			// float deltaY = rotationPointDistance * std::sin(rotationAngle);
-			odometryFrame = KDL::Frame(KDL::Rotation::RotZ(rotationAngle), KDL::Vector(deltaX, deltaY, 0));
 
-			odometryMessage->twist.twist.linear.x = linearVelocity * std::cos(rotationAngle);
-			odometryMessage->twist.twist.linear.y = linearVelocity * std::sin(rotationAngle);
-			odometryMessage->twist.twist.angular.z = angularVelocity;
+			updateFrame = KDL::Frame(KDL::Rotation::RotZ(rotationAngle), KDL::Vector(deltaX, deltaY, 0));
+			updateTwist.vel.x(linearVelocity * std::cos(rotationAngle));
+			updateTwist.vel.y(linearVelocity * std::sin(rotationAngle));
+			updateTwist.rot.z(angularVelocity);
 		}
 
-		// Third, update the odometry frame and put it into the message
-		odometryMessage->pose.pose.position.x = odometryFrame.p.x();
-		odometryMessage->pose.pose.position.y = odometryFrame.p.y();
-		odometryMessage->pose.pose.position.z = odometryFrame.p.z();
-		double rotX, rotY, rotZ, rotW;
-		odometryFrame.M.GetQuaternion(rotX, rotY, rotZ, rotW);
-		odometryMessage->pose.pose.orientation.x = rotX;
-		odometryMessage->pose.pose.orientation.y = rotY;
-		odometryMessage->pose.pose.orientation.z = rotZ;
-		odometryMessage->pose.pose.orientation.w = rotW;
+		// Third, update odometry frame and twist
+		this->odometryFrame = this->odometryFrame * updateFrame;
+		this->odometryTwist = this->odometryTwist + updateTwist;
 
-		this->currentOdometryFrame = this->currentOdometryFrame * odometryFrame;
-		double r, p, y;
-		this->currentOdometryFrame.M.GetRPY(r, p, y);
-		std::cout << "s: " << this->odoSeq++ << " h: " << y << std::endl;
+		// Fourth, publish odometry data (if needed)
+		odometryPublishCounter++;
+		if (odometryPublishCounter >= odometryRate) {
+			// Create an odometry message
+			auto odometryMessage = std::make_shared<nav_msgs::msg::Odometry>();
 
-		// Fourth, finally publish the odometry message
-		this->odometryPublisher->publish(odometryMessage);
+			// Fill out the header
+			odometryMessage->header.stamp = this->now();
+			odometryMessage->header.frame_id = "odom";
+			odometryMessage->child_frame_id = "base_link";
+
+			// Actual covariance is unknown - fill with zeros
+			for (unsigned int i = 0; i < odometryMessage->pose.covariance.size(); ++i) {
+				odometryMessage->pose.covariance[i] = 0.0;
+			}
+			for (unsigned int i = 0; i < odometryMessage->twist.covariance.size(); ++i) {
+				odometryMessage->twist.covariance[i] = 0.0;
+			}
+
+			// Third, update the odometry frame and put it into the message
+			odometryMessage->pose.pose.position.x = this->odometryFrame.p.x();
+			odometryMessage->pose.pose.position.y = this->odometryFrame.p.y();
+			odometryMessage->pose.pose.position.z = this->odometryFrame.p.z();
+			double rotX, rotY, rotZ, rotW;
+			this->odometryFrame.M.GetQuaternion(rotX, rotY, rotZ, rotW);
+			odometryMessage->pose.pose.orientation.x = rotX;
+			odometryMessage->pose.pose.orientation.y = rotY;
+			odometryMessage->pose.pose.orientation.z = rotZ;
+			odometryMessage->pose.pose.orientation.w = rotW;
+
+			odometryMessage->twist.twist.linear.x = this->odometryTwist.vel.x();
+			odometryMessage->twist.twist.linear.y = this->odometryTwist.vel.y();
+			odometryMessage->twist.twist.linear.z = this->odometryTwist.vel.z();
+			odometryMessage->twist.twist.angular.x = this->odometryTwist.rot.x();
+			odometryMessage->twist.twist.angular.y = this->odometryTwist.rot.y();
+			odometryMessage->twist.twist.angular.z = this->odometryTwist.rot.z();
+
+			// Publish the odometry message
+			this->odometryPublisher->publish(odometryMessage);
+
+			// Cleanup
+			odometryPublishCounter = 0;
+			this->odometryFrame = KDL::Frame();
+			this->odometryTwist = KDL::Twist();
+
+			// Debug log
+			std::cout << "s: " << this->odoSeq++ << std::endl;
+		}
 	}
 }

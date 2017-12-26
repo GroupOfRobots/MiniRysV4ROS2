@@ -37,8 +37,10 @@ class MotorsControllerNode : public rclcpp::Node {
 		float throttle;
 		unsigned char steeringPrecision;
 
-		builtin_interfaces::msg::Time previousOdometryTime;
-		KDL::Frame currentOdometryFrame;
+		const unsigned int odometryRate;
+		unsigned int odometryPublishCounter;
+		KDL::Frame odometryFrame;
+		KDL::Twist odometryTwist;
 		unsigned int odoSeq;
 
 		MotorsController * motorsController;
@@ -71,7 +73,8 @@ class MotorsControllerNode : public rclcpp::Node {
 			const std::string & nodeName,
 			std::chrono::milliseconds rate,
 			float wheelRadius,
-			float baseWidth
+			float baseWidth,
+			unsigned int odometryRate = 5
 		);
 		~MotorsControllerNode();
 };
