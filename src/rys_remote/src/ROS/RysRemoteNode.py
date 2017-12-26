@@ -1,4 +1,5 @@
 import rclpy
+from rclpy.node import Node
 import time
 from rys_interfaces import msg as RysMsgs
 from rys_interfaces import srv as RysSrvs
@@ -6,7 +7,7 @@ from std_msgs import msg as StdMsgs
 from nav_msgs import msg as NavigationMsgs
 from sensor_msgs import msg as SensorMsgs
 
-class RysRemoteNode(rclpy.Node):
+class RysRemoteNode(Node):
 	"""docstring for RysRemoteNode"""
 
 	def __init__(self, robotName, nodeName, callbacks, messageRates):
