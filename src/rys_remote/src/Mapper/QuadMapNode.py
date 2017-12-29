@@ -37,6 +37,7 @@ class QuadMapNode(object):
 		Scan is a line with y=ax+b equation spanning from x0 to x1 (where x1 is occupancy point!)
 		If scan ends within this cell, it's an "cell occupied" one; if it only goes "through", it's a "cell free" one.
 		'''
+
 		# TODO: edge cases of a == 0 or a == Inf
 		# TODO 2: proof-read
 
@@ -61,10 +62,8 @@ class QuadMapNode(object):
 			return
 
 		# Second, decide whether it's a hit or miss scan and increase proper counters
-		self.scanCount = self.scanCount + 1
 		# If the scan 'ends' within this cell - it's a hit;
 		if x1 >= self.xMin and x1 < self.xMax and y1 >= self.yMin and y1 < self.yMax:
-
 			# Pass the scan into the subcells (if needed)
 			if self.size > self.minSize:
 				# If sub-cells were not initialized, do it now
@@ -78,7 +77,21 @@ class QuadMapNode(object):
 				for cell in self.subCells:
 					cell.addScan(a, b, x0, x1)
 			else:
+				# Add decay to already existing scans...
+				self.scanCount = self.scanCount * 0.9
+				self.occupiedScanCount = self.occupiedScanCount * 0.9
+				# ... and add a new scan
 				self.occupiedScanCount = self.occupiedScanCount + 1
+		elif self.subCells is not None:
+			# Else (it 'ends' outside - it's a miss), pass empty scan to sub-cells if they exist
+			for cell in self.subCells:
+				cell.addScan(a, b, x0, x1)
+		else:
+			# The scan is totally outside.
+			pass
+
+		# Also, increase scan count of this cell
+		self.scanCount = self.scanCount + 1
 
 	def isKnown(self, x = None, y = None):
 		if self.scanCount == 0:
@@ -125,14 +138,16 @@ class QuadMapNode(object):
 
 	def getOccupancyMap(self):
 		'''Build and return simplified occupancy map as a list of (x, y) tuples'''
+
 		if self.subCells is None:
 			if self.isFree():
 				return list()
 			else:
-				return list((self.x, self.y))
+				return [(self.x, self.y, self.scanCount, self.occupiedScanCount)]
 
 		occupied = list()
 		for cell in self.subCells:
-			occupied.extend(cell.getOccupancyMap())
+			subCellList = cell.getOccupancyMap()
+			occupied.extend(subCellList)
 
 		return occupied
