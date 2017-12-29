@@ -39,7 +39,7 @@ class RysRemoteNode(Node):
 		qosProfileSensors = rclpy.qos.qos_profile_sensor_data
 		qosProfileOdometry = rclpy.qos.QoSProfile(
 			history = rclpy.qos.QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-			depth = 20,
+			depth = 200,
 			reliability = rclpy.qos.QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
 			durability = rclpy.qos.QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
 		)
