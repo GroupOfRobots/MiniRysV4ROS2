@@ -357,8 +357,8 @@ void MotorsControllerNode::runLoop() {
 			this->odometryFrame = KDL::Frame();
 			this->odometryTwist = KDL::Twist();
 
-			// Debug log
-			std::cout << "s: " << this->odoSeq++ << std::endl;
+			// Debug log, enable if odometry frames are suspected to be lost
+			// std::cout << "s: " << this->odoSeq++ << std::endl;
 		}
 	}
 }
