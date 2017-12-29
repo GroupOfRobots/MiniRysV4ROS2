@@ -62,8 +62,10 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.clearMapButton.clicked.connect(mapper.clearMap)
 		self.mapper = mapper
 
+		# self.heightChanged.connect(self.updateScenes)
+		# self.widthChanged.connect(self.updateScenes)
 		self.adjustSize()
-		self.repaintSteering()
+		# self.repaintSteering()
 
 	''' UI event handlers '''
 
@@ -201,7 +203,11 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.rotationXValueLabel.setText('Rotation: %f' % rotationX)
 
 	def rangesChangedHandler(self, message):
-		front, back, top, left, right = message
+		front = message.front
+		back = message.back
+		top = message.top
+		left = message.left
+		right = message.right
 		if (front >= 0):
 			self.ui.rangeFrontBar.setEnabled(True)
 			maxValue = self.ui.rangeFrontBar.maximum()
@@ -269,9 +275,14 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.mapPositions = positions
 		self.mapPositionAngle = positionAngle
 		self.mapObstacles = obstacles
+		# print('obstacles', obstacles)
 		self.repaintMap()
 
 	''' Other methods '''
+
+	def resizeEvent(self, event):
+		self.repaintSteering()
+		self.repaintMap()
 
 	def repaintSteering(self):
 		height = self.ui.steeringGraphicsView.size().height()
@@ -342,11 +353,11 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		# Draw obstacles
 		if self.obstaclesEnabled and len(self.mapObstacles):
 			brush = QtGui.QBrush(QtGui.QColor(200, 0, 0), QtCore.Qt.SolidPattern)
-			# dotSize = 1.0
-			dotSize = sceneSize / (self.mapper.mapSize / self.mapper.cellSize)
+			dotSize = 1.0
 			pen = QtGui.QPen(brush, dotSize)
+			obstacleSize = sceneSize / (self.mapper.mapSize / self.mapper.cellSize)
 
 			for obstacle in self.mapObstacles:
 				x = (0.5 + obstacle[0] / mapSize) * sceneSize + xOffset
-				y = (0.5 + obstacle[1] / mapSize) * sceneSize + yOffset
-				self.mapScene.addRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
+				y = (0.5 - obstacle[1] / mapSize) * sceneSize + yOffset
+				self.mapScene.addRect(x - obstacleSize / 2, y - obstacleSize / 2, obstacleSize, obstacleSize, pen, brush)
