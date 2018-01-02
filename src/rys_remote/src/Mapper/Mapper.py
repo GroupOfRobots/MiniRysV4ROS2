@@ -9,18 +9,21 @@ class Mapper(QThread):
 	'''list of positions: (x, y), angle of current position: w, list of detected obstacles: (x, y)'''
 	mapGenerated = pyqtSignal(list, float, list)
 
-	startPosition = PyKDL.Frame(PyKDL.Rotation.RotZ(math.pi / 2))
+	# startPosition = PyKDL.Frame(PyKDL.Rotation.RotZ(math.pi / 2))
+	startPosition = PyKDL.Frame()
+	headingAdjustmentFrame = PyKDL.Frame(PyKDL.Rotation.RotZ(math.pi / 2))
 
-	def __init__(self, parent, rosBridge, cellSize = 0.04, mapSize = 2.56, sensorThreshold = 0.04):
+	def __init__(self, parent, rosBridge, cellSize = 0.04, mapSize = 2.56, sensorMinThreshold = 0.04, sensorMaxThreshold = 1.2):
 		super().__init__(parent)
 
 		self.updated = True
 
 		self.cellSize = cellSize
 		self.mapSize = mapSize
-		self.sensorThreshold = sensorThreshold
+		self.sensorMinThreshold = sensorMinThreshold
+		self.sensorMaxThreshold = sensorMaxThreshold
 
-		self.map = QuadMapNode(mapSize, cellSize)
+		self.map = QuadMapNode(self.mapSize, self.cellSize)
 
 		self.timer = QTimer(self)
 		self.timer.timeout.connect(self.timerCallback)
@@ -58,6 +61,7 @@ class Mapper(QThread):
 
 		# Debug print, enable if odometry frames are suspected to be lost
 		# print('s: %d h: %f' % (self.odoSeq, self.robotPosition.M.GetRPY()[2]))
+		# print('s: %d' % self.odoSeq)
 		self.odoSeq = self.odoSeq + 1
 
 		# Save the frame and time to the path
@@ -71,9 +75,9 @@ class Mapper(QThread):
 		# Left
 		# First, decide whether to interpret the reading at all
 		leftSensorRange = message.left * 0.001
-		if leftSensorRange > self.sensorThreshold:
+		if leftSensorRange > self.sensorThreshold and leftSensorRange < self.sensorMaxThreshold:
 			# Then, apply current odometry transform to the frame of left sensor
-			leftSensorPosition = self.leftRangeSensorFrame * self.robotPosition
+			leftSensorPosition = self.leftRangeSensorFrame * self.robotPosition * Mapper.headingAdjustmentFrame
 			# Then, calculate linear function parameters
 			leftSensorX0 = leftSensorPosition.p.x()
 			leftSensorY0 = leftSensorPosition.p.y()
@@ -87,8 +91,8 @@ class Mapper(QThread):
 
 		# Right, same thing
 		rightSensorRange = message.right * 0.001
-		if rightSensorRange > self.sensorThreshold:
-			rightSensorPosition = self.rightRangeSensorFrame * self.robotPosition
+		if rightSensorRange > self.sensorThreshold and rightSensorRange < self.sensorMaxThreshold:
+			rightSensorPosition = self.rightRangeSensorFrame * self.robotPosition * Mapper.headingAdjustmentFrame
 			rightSensorX0 = rightSensorPosition.p.x()
 			rightSensorY0 = rightSensorPosition.p.y()
 			rightSensorAngle = rightSensorPosition.M.GetRPY()[2]
@@ -99,8 +103,8 @@ class Mapper(QThread):
 
 		# Top
 		topSensorRange = message.top * 0.001
-		if topSensorRange > self.sensorThreshold:
-			topSensorPosition = self.topRangeSensorFrame * self.robotPosition
+		if topSensorRange > self.sensorMinThreshold and topSensorRange < self.sensorMaxThreshold:
+			topSensorPosition = self.topRangeSensorFrame * self.robotPosition * Mapper.headingAdjustmentFrame
 			topSensorX0 = topSensorPosition.p.x()
 			topSensorY0 = topSensorPosition.p.y()
 			topSensorAngle = topSensorPosition.M.GetRPY()[2]
@@ -120,14 +124,15 @@ class Mapper(QThread):
 		# First, odometry position list
 		positions = list()
 		for frameTuple in self.path:
+			# frameTuple[0] is time, [1] is a Frame
 			x = frameTuple[1].p.x()
 			y = frameTuple[1].p.y()
 			positions.append((x, y))
 
-		# Second, current heading
-		# Get yaw from last element of the path
-		# positionAngle = self.path[len(self.path) - 1][1].M.GetRPY()[2]
-		positionAngle = self.robotPosition.M.GetRPY()[2]
+		# Second, current heading - yaw from current position plus 90deg (aim towards Y)
+		positionAngle = self.robotPosition.M.GetRPY()[2] + math.pi / 2
+		if positionAngle > math.pi:
+			positionAngle -= 2 * math.pi
 
 		# Third, obstacle list
 		obstacles = self.map.getOccupancyMap()
@@ -138,6 +143,7 @@ class Mapper(QThread):
 	def clearMap(self):
 		self.robotPosition = PyKDL.Frame(Mapper.startPosition)
 		self.path = [(0, PyKDL.Frame(self.robotPosition))]
+		self.map = QuadMapNode(self.mapSize, self.cellSize)
 		self.updated = True
 
 	def run(self):

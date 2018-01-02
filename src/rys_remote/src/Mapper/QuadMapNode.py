@@ -78,8 +78,8 @@ class QuadMapNode(object):
 					cell.addScan(a, b, x0, x1)
 			else:
 				# Add decay to already existing scans...
-				self.scanCount = self.scanCount * 0.9
-				self.occupiedScanCount = self.occupiedScanCount * 0.9
+				self.scanCount = self.scanCount * 0.98
+				self.occupiedScanCount = self.occupiedScanCount * 0.98
 				# ... and add a new scan
 				self.occupiedScanCount = self.occupiedScanCount + 1
 		elif self.subCells is not None:
@@ -143,7 +143,7 @@ class QuadMapNode(object):
 			if self.isFree():
 				return list()
 			else:
-				return [(self.x, self.y, self.scanCount, self.occupiedScanCount)]
+				return [(self.x, self.y, self.occupiedScanCount / self.scanCount)]
 
 		occupied = list()
 		for cell in self.subCells:

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>797</width>
-    <height>626</height>
+    <width>713</width>
+    <height>686</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -916,7 +916,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>X: 0.000</string>
+                <string>X: 0.0000</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
@@ -938,7 +938,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>Y: 0.000</string>
+                <string>Y: 0.0000</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
@@ -1121,26 +1121,6 @@
                </item>
               </layout>
              </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QVBoxLayout" name="verticalLayout_5">
-             <item>
-              <widget class="QCheckBox" name="balancingEnabledCheckBox">
-               <property name="minimumSize">
-                <size>
-                 <width>0</width>
-                 <height>25</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Balancing</string>
-               </property>
-               <property name="checked">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
              <item>
               <layout class="QHBoxLayout" name="multiplierHorizontalLayout">
                <item>
@@ -1167,11 +1147,14 @@
                    <height>25</height>
                   </size>
                  </property>
+                 <property name="minimum">
+                  <double>-1.000000000000000</double>
+                 </property>
                  <property name="maximum">
                   <double>1.000000000000000</double>
                  </property>
                  <property name="singleStep">
-                  <double>0.010000000000000</double>
+                  <double>0.100000000000000</double>
                  </property>
                  <property name="value">
                   <double>1.000000000000000</double>
@@ -1179,6 +1162,40 @@
                 </widget>
                </item>
               </layout>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="reverseThrottleCheckBox">
+               <property name="text">
+                <string>Reverse Throttle</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="Line" name="line_3">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_5">
+             <item>
+              <widget class="QCheckBox" name="balancingEnabledCheckBox">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>25</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Balancing</string>
+               </property>
+               <property name="checked">
+                <bool>false</bool>
+               </property>
+              </widget>
              </item>
              <item>
               <layout class="QHBoxLayout" name="precisionHorizontalLayout">

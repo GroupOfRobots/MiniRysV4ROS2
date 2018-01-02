@@ -31,10 +31,12 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.ui.setupUi(self)
 
 		self.gamepadScene = QtWidgets.QGraphicsScene(self)
+		self.ui.steeringGraphicsView.scale(1, -1)
 		self.ui.steeringGraphicsView.setScene(self.gamepadScene)
 		self.ui.steeringGraphicsView.fitInView(self.gamepadScene.sceneRect(), QtCore.Qt.KeepAspectRatio)
 
 		self.mapScene = QtWidgets.QGraphicsScene(self)
+		self.ui.mapGraphicsView.scale(1, -1)
 		self.ui.mapGraphicsView.setScene(self.mapScene)
 		self.ui.mapGraphicsView.fitInView(self.mapScene.sceneRect(), QtCore.Qt.KeepAspectRatio)
 
@@ -129,16 +131,17 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		value = gamepadAxisEvent.value
 
 		multiplier = self.ui.multiplierDoubleSpinBox.value()
+		throttleMultiplier = -1 if self.ui.reverseThrottleCheckBox.isChecked() else 1
 
 		update = False
 		if gamepadID is self.gamepadID:
 			if axis is self.throttleAxis:
-				self.throttle = value * multiplier
-				self.ui.gamepadXLabel.setText('X: %1.4f' % value)
+				self.throttle = value * multiplier * throttleMultiplier
+				self.ui.gamepadXLabel.setText('X: %1.4f' % self.throttle)
 				update = True
 			elif axis is self.rotationAxis:
 				self.rotation = value * multiplier
-				self.ui.gamepadYLabel.setText('Y: %1.4f' % value)
+				self.ui.gamepadYLabel.setText('Y: %1.4f' % self.rotation)
 				update = True
 
 		if update:
@@ -328,10 +331,8 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 				# x and y are in <-mapSize/2; mapSize/2> range
 				# First, scale them to <0; 1>, then multiply by map scene size
 				x = (0.5 + position[0] / mapSize) * sceneSize + xOffset
-				# Y axis is reverted in QGraphicsScene (top is 0, bottom is height)
 				y = (0.5 + position[1] / mapSize) * sceneSize + yOffset
 				self.mapScene.addRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
-				# self.mapScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
 
 		# Draw robot's position
 		if self.positionEnabled and len(self.mapPositions):
@@ -343,21 +344,20 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			position = self.mapPositions[len(self.mapPositions) - 1]
 			x = (0.5 + position[0] / mapSize) * sceneSize + xOffset
 			y = (0.5 + position[1] / mapSize) * sceneSize + yOffset
-			x2 = x + length * math.cos(-self.mapPositionAngle)
-			# As with path, mirror y
-			y2 = y + length * math.sin(-self.mapPositionAngle)
+			x2 = x + length * math.cos(self.mapPositionAngle)
+			y2 = y + length * math.sin(self.mapPositionAngle)
 			self.mapScene.addLine(x, y, x2, y2, pen)
 			dotSize = 4.0
 			self.mapScene.addEllipse(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, pen, brush)
 
 		# Draw obstacles
 		if self.obstaclesEnabled and len(self.mapObstacles):
-			brush = QtGui.QBrush(QtGui.QColor(200, 0, 0), QtCore.Qt.SolidPattern)
 			dotSize = 1.0
-			pen = QtGui.QPen(brush, dotSize)
 			obstacleSize = sceneSize / (self.mapper.mapSize / self.mapper.cellSize)
 
 			for obstacle in self.mapObstacles:
+				brush = QtGui.QBrush(QtGui.QColor(255, obstacle[2] * 255, obstacle[2] * 255), QtCore.Qt.SolidPattern)
+				pen = QtGui.QPen(brush, dotSize)
 				x = (0.5 + obstacle[0] / mapSize) * sceneSize + xOffset
-				y = (0.5 - obstacle[1] / mapSize) * sceneSize + yOffset
+				y = (0.5 + obstacle[1] / mapSize) * sceneSize + yOffset
 				self.mapScene.addRect(x - obstacleSize / 2, y - obstacleSize / 2, obstacleSize, obstacleSize, pen, brush)
