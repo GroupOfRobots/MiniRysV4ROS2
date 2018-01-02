@@ -66,7 +66,7 @@ MotorsControllerNode::MotorsControllerNode(
 
 	const rmw_qos_profile_t odometryQosProfile = {
 		RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-		200,
+		20,
 		RMW_QOS_POLICY_RELIABILITY_RELIABLE,
 		RMW_QOS_POLICY_DURABILITY_VOLATILE,
 		false
