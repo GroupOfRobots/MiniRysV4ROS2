@@ -284,9 +284,9 @@ void MotorsControllerNode::runLoop() {
 
 		// Second, calculate the difference frame by forward kinematics
 		if (leftSpeed == rightSpeed) {
-			// Equal speeds <=> only linear movement
-			updateFrame = KDL::Frame(KDL::Vector(leftSpeed * loopTime, 0, 0));
-			updateTwist.vel.x(leftSpeed);
+			// Equal speeds <=> only linear movement (along Y axis for Y-forward-oriented mode)
+			updateFrame = KDL::Frame(KDL::Vector(0, leftSpeed * loopTime, 0));
+			updateTwist.vel.y(leftSpeed);
 		} else {
 			// Full forward kinematics for differential robot
 			float linearVelocity = (rightSpeed + leftSpeed) / 2;
@@ -303,8 +303,9 @@ void MotorsControllerNode::runLoop() {
 			// float deltaY = rotationPointDistance * std::sin(rotationAngle);
 
 			updateFrame = KDL::Frame(KDL::Rotation::RotZ(rotationAngle), KDL::Vector(deltaX, deltaY, 0));
-			updateTwist.vel.x(linearVelocity * std::cos(rotationAngle));
-			updateTwist.vel.y(linearVelocity * std::sin(rotationAngle));
+			// For X-forward-oriented x and y would be swapped here
+			updateTwist.vel.x(linearVelocity * std::sin(rotationAngle));
+			updateTwist.vel.y(linearVelocity * std::cos(rotationAngle));
 			updateTwist.rot.z(angularVelocity);
 		}
 
