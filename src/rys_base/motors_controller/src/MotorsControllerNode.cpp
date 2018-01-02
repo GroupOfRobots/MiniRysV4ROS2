@@ -48,7 +48,7 @@ MotorsControllerNode::MotorsControllerNode(
 		throw(error);
 	}
 
-	this->motorsController->setInvertSpeed(false, true);
+	this->motorsController->setInvertSpeed(true, false);
 	this->motorsController->setMotorsSwapped(true);
 	this->motorsController->setBalancing(false);
 	this->motorsController->setLQREnabled(false);
@@ -296,8 +296,8 @@ void MotorsControllerNode::runLoop() {
 			float rotationAngle = angularVelocity * loopTime;
 
 			// Mobile robots traditionally are Y-forward-oriented
-			float deltaX = rotationPointDistance * std::sin(rotationAngle);
-			float deltaY = rotationPointDistance * (1.0 - std::cos(rotationAngle));
+			float deltaX = rotationPointDistance * (1.0 - std::cos(rotationAngle));
+			float deltaY = rotationPointDistance * std::sin(rotationAngle);
 
 			// Those are for X-forward-oriented (kept here for reference)
 			// float deltaX = rotationPointDistance * (std::cos(rotationAngle) - 1.0);
