@@ -48,7 +48,8 @@ MotorsControllerNode::MotorsControllerNode(
 		throw(error);
 	}
 
-	this->motorsController->setInverting(false, true);
+	this->motorsController->setInvertSpeed(false, true);
+	this->motorsController->setMotorsSwapped(true);
 	this->motorsController->setBalancing(false);
 	this->motorsController->setLQREnabled(false);
 	this->motorsController->setSpeedFilterFactor(1);

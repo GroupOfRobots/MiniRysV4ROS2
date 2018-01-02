@@ -67,8 +67,9 @@ class MotorsController {
 		bool motorsEnabled;
 		float motorSpeedLeft;
 		float motorSpeedRight;
-		bool invertLeft;
-		bool invertRight;
+		bool invertLeftSpeed;
+		bool invertRightSpeed;
+		bool motorsSwapped;
 		std::ofstream motorPruFile;
 		std::mutex fileAccessMutex;
 
@@ -77,7 +78,8 @@ class MotorsController {
 		MotorsController();
 		~MotorsController();
 		void init();
-		void setInverting(const bool invertLeft, const bool invertRight);
+		void setInvertSpeed(const bool left, const bool right);
+		void setMotorsSwapped(const bool motorsSwapped);
 		void setBalancing(bool value);
 		void setLQREnabled(bool value);
 		void setSpeedFilterFactor(float factor);
