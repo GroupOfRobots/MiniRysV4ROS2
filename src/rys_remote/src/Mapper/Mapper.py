@@ -37,11 +37,11 @@ class Mapper(QThread):
 		# All sensors 'aim' down their their Y axis
 		# [Assuming laying down mode]
 		# top sensor is offset by ~10cm on Y axis from base frame
-		self.topRangeSensorFrame = PyKDL.Frame(PyKDL.Vector(0, 0.086, 0))
+		self.topRangeSensorFrame = PyKDL.Frame(PyKDL.Vector(0.001, 0.088, 0))
 		# right sensor is offset by half frame width in X and slightly above wheel radius in Y, also rotated
-		self.rightRangeSensorFrame = PyKDL.Frame(PyKDL.Rotation.RotZ(-math.pi / 2), PyKDL.Vector(0.059, 0.067, 0))
+		self.rightRangeSensorFrame = PyKDL.Frame(PyKDL.Rotation.RotZ(-math.pi / 2), PyKDL.Vector(0.0587, 0.070, 0))
 		# left sensor symmetrical to right sensor
-		self.leftRangeSensorFrame = PyKDL.Frame(PyKDL.Rotation.RotZ(math.pi / 2), PyKDL.Vector(-0.059, 0.067, 0))
+		self.leftRangeSensorFrame = PyKDL.Frame(PyKDL.Rotation.RotZ(math.pi / 2), PyKDL.Vector(-0.0587, 0.070, 0))
 
 		rosBridge.odometryChanged.connect(self.odometryHandler)
 		rosBridge.rangesChanged.connect(self.rangeReadingsHandler)
@@ -75,9 +75,9 @@ class Mapper(QThread):
 		# Left
 		# First, decide whether to interpret the reading at all
 		leftSensorRange = message.left * 0.001
-		if leftSensorRange > self.sensorThreshold and leftSensorRange < self.sensorMaxThreshold:
+		if leftSensorRange > self.sensorMinThreshold and leftSensorRange < self.sensorMaxThreshold:
 			# Then, apply current odometry transform to the frame of left sensor
-			leftSensorPosition = self.leftRangeSensorFrame * self.robotPosition * Mapper.headingAdjustmentFrame
+			leftSensorPosition = self.robotPosition * self.leftRangeSensorFrame * Mapper.headingAdjustmentFrame
 			# Then, calculate linear function parameters
 			leftSensorX0 = leftSensorPosition.p.x()
 			leftSensorY0 = leftSensorPosition.p.y()
@@ -91,8 +91,8 @@ class Mapper(QThread):
 
 		# Right, same thing
 		rightSensorRange = message.right * 0.001
-		if rightSensorRange > self.sensorThreshold and rightSensorRange < self.sensorMaxThreshold:
-			rightSensorPosition = self.rightRangeSensorFrame * self.robotPosition * Mapper.headingAdjustmentFrame
+		if rightSensorRange > self.sensorMinThreshold and rightSensorRange < self.sensorMaxThreshold:
+			rightSensorPosition = self.robotPosition * self.rightRangeSensorFrame * Mapper.headingAdjustmentFrame
 			rightSensorX0 = rightSensorPosition.p.x()
 			rightSensorY0 = rightSensorPosition.p.y()
 			rightSensorAngle = rightSensorPosition.M.GetRPY()[2]
@@ -104,7 +104,7 @@ class Mapper(QThread):
 		# Top
 		topSensorRange = message.top * 0.001
 		if topSensorRange > self.sensorMinThreshold and topSensorRange < self.sensorMaxThreshold:
-			topSensorPosition = self.topRangeSensorFrame * self.robotPosition * Mapper.headingAdjustmentFrame
+			topSensorPosition = self.robotPosition * self.topRangeSensorFrame * Mapper.headingAdjustmentFrame
 			topSensorX0 = topSensorPosition.p.x()
 			topSensorY0 = topSensorPosition.p.y()
 			topSensorAngle = topSensorPosition.M.GetRPY()[2]

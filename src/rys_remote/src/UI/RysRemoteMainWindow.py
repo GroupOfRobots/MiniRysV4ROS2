@@ -321,6 +321,9 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		self.mapScene.addLine(xOffset - 0.5, yOffset - 0.5, xOffset - 0.5, yOffset + sceneSize - 0.5, pen)
 		self.mapScene.addLine(xOffset + sceneSize - 0.5, yOffset - 0.5, xOffset + sceneSize - 0.5, yOffset + sceneSize - 0.5, pen)
 		self.mapScene.addLine(xOffset - 0.5, yOffset + sceneSize - 0.5, xOffset + sceneSize - 0.5, yOffset + sceneSize - 0.5, pen)
+		# Center lines (axis)
+		self.mapScene.addLine(xOffset - 0.5, yOffset + sceneSize / 2 - 0.5, xOffset + sceneSize - 0.5, yOffset + sceneSize / 2 - 0.5, pen)
+		self.mapScene.addLine(xOffset + sceneSize / 2 - 0.5, yOffset - 0.5, xOffset + sceneSize / 2 - 0.5, yOffset + sceneSize - 0.5, pen)
 
 		# Draw path
 		if self.pathEnabled and len(self.mapPositions):
@@ -356,8 +359,8 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			obstacleSize = sceneSize / (self.mapper.mapSize / self.mapper.cellSize)
 
 			for obstacle in self.mapObstacles:
-				brush = QtGui.QBrush(QtGui.QColor(255, obstacle[2] * 255, obstacle[2] * 255), QtCore.Qt.SolidPattern)
+				brush = QtGui.QBrush(QtGui.QColor(255, (1 - obstacle[2]) * 255, (1 - obstacle[2]) * 255), QtCore.Qt.SolidPattern)
 				pen = QtGui.QPen(brush, dotSize)
-				x = (0.5 + obstacle[0] / mapSize) * sceneSize + xOffset
-				y = (0.5 + obstacle[1] / mapSize) * sceneSize + yOffset
-				self.mapScene.addRect(x - obstacleSize / 2, y - obstacleSize / 2, obstacleSize, obstacleSize, pen, brush)
+				x = (0.5 + obstacle[0] / mapSize) * sceneSize + xOffset - obstacleSize
+				y = (0.5 + obstacle[1] / mapSize) * sceneSize + yOffset - obstacleSize
+				self.mapScene.addRect(x, y, obstacleSize, obstacleSize, pen, brush)
