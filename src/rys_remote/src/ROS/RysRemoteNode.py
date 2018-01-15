@@ -23,7 +23,6 @@ class RysRemoteNode(Node):
 		self.publisherEnableMotors = self.create_publisher(StdMsgs.Bool, '/' + robotName + '/control/enable_motors')
 		self.publisherEnableBalancing = self.create_publisher(StdMsgs.Bool, '/' + robotName + '/control/enable_balancing')
 		self.publisherSteering = self.create_publisher(RysMsgs.Steering, '/' + robotName + '/control/steering')
-		self.publisherIMUCalibrate = self.create_publisher(StdMsgs.Empty, '/' + robotName + '/control/imu/calibrate')
 
 		# Create ROS service clients
 		self.clientSetRegulatorSettings = self.create_client(RysSrvs.SetRegulatorSettings, '/' + robotName + '/control/regulator_settings/set')
@@ -124,7 +123,3 @@ class RysRemoteNode(Node):
 		self.clientGetRegulatorSettings.response = None
 
 		return (setResponse, getResponse)
-
-	def calibrateImu(self):
-		message = StdMsgs.Empty()
-		self.publisherIMUCalibrate.publish(message)

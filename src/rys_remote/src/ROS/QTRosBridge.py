@@ -51,9 +51,6 @@ class QTRosBridge(QThread):
 	def setSteering(self, throttle, rotation, precision):
 		self.node.setSteering(throttle, rotation, precision)
 
-	def calibrateImu(self):
-		self.node.calibrateImu()
-
 	def stopExecution(self):
 		self.exitFlag = True
 
