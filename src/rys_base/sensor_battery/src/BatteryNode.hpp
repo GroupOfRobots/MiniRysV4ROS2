@@ -12,6 +12,7 @@ class BatteryNode : public rclcpp::Node {
 		float coefficients[3];
 		std::string filenames[3];
 		float lowLevel;
+		bool isCritical;
 
 		rclcpp::TimerBase::SharedPtr timer;
 		rclcpp::Publisher<rys_interfaces::msg::BatteryStatus>::SharedPtr publisher;

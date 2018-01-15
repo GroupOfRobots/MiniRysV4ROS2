@@ -17,6 +17,7 @@ BatteryNode::BatteryNode(
 		this->coefficients[i] = coefficients[i];
 		this->filenames[i] = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumbers[i]) + std::string("_raw");
 	}
+	this->isCritical = false;
 	this->lowLevel = lowLevel;
 
 	this->publisher = this->create_publisher<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", rmw_qos_profile_default);
@@ -48,10 +49,10 @@ void BatteryNode::publishData() {
 	message->voltage_cell3 = voltages[2] - voltages[1];
 
 	if (message->voltage_cell1 < this->lowLevel || message->voltage_cell2 < this->lowLevel || message->voltage_cell3 < this->lowLevel) {
-		message->voltage_low = true;
-	} else {
-		message->voltage_low = false;
+		this->isCritical = true;
 	}
+
+	message->voltage_low = this->isCritical;
 
 	this->publisher->publish(message);
 }
