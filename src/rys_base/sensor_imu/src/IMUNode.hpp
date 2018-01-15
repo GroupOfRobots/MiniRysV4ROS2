@@ -21,7 +21,6 @@ class IMUNode : public rclcpp::Node {
 		rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuInfrequentPublisher;
 
 		void timerCallback();
-		void imuCalibrateCallback(const std_msgs::msg::Empty::SharedPtr message);
 	public:
 		IMUNode(
 			const std::string & robotName,
