@@ -9,9 +9,11 @@
 
 class TemperatureNode : public rclcpp::Node {
 	private:
-		float coefficient;
 		std::string filename;
+		float coefficient;
 		float criticalLevel;
+		float hysteresis;
+		bool isCritical;
 
 		rclcpp::TimerBase::SharedPtr timer;
 		rclcpp::Publisher<rys_interfaces::msg::TemperatureStatus>::SharedPtr publisher;
@@ -24,7 +26,8 @@ class TemperatureNode : public rclcpp::Node {
 			std::chrono::milliseconds rate,
 			const uint8_t inputNumber,
 			const float coefficient,
-			const float criticalLevel = 70.0f
+			const float criticalLevel = 60.0f,
+			const float hysteresis = 10.0f
 		);
 		~TemperatureNode();
 };

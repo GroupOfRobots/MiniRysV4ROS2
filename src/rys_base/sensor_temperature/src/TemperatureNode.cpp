@@ -14,11 +14,13 @@ TemperatureNode::TemperatureNode(
 	std::chrono::milliseconds rate,
 	const uint8_t inputNumber,
 	const float coefficient,
-	const float criticalLevel
+	const float criticalLevel,
+	const float hysteresis
 ) : rclcpp::Node(nodeName, robotName, true) {
+	this->filename = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumber) + std::string("_raw");
 	this->coefficient = coefficient;
 	this->criticalLevel = criticalLevel;
-	this->filename = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumber) + std::string("_raw");
+	this->hysteresis = hysteresis;
 
 	this->publisher = this->create_publisher<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&TemperatureNode::publishData, this));
@@ -52,10 +54,12 @@ void TemperatureNode::publishData() {
 	message->temperature = (voltageSum / readings) * 100;
 
 	if (message->temperature > this->criticalLevel) {
-		message->temperature_critical = true;
-	} else {
-		message->temperature_critical = false;
+		this->isCritical = true;
+	} else if ((message->temperature + hysteresis) < this->criticalLevel) {
+		this->isCritical = false;
 	}
+
+	message->temperature_critical = this->isCritical;
 
 	this->publisher->publish(message);
 }
