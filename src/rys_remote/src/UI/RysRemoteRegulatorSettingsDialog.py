@@ -13,13 +13,6 @@ class RysRemoteRegulatorSettingsDialog(QtWidgets.QDialog):
 	def __init__(self, parent, rosBridge):
 		super(RysRemoteRegulatorSettingsDialog, self).__init__(parent)
 
-		self.enabled = False
-		self.throttle = 0
-		self.rotation = 0
-		self.gamepadID = -1
-		self.throttleAxis = -1
-		self.rotationAxis = -1
-
 		self.ui = Ui_RegulatorSettingsDialog()
 		self.ui.setupUi(self)
 

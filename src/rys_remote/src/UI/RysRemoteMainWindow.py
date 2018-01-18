@@ -53,6 +53,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		gamepadBridge.gamepadAxisChanged.connect(self.gamepadAxisChangedHandler)
 		gamepadBridge.gamepadButtonChanged.connect(self.gamepadButtonChangedHandler)
 		gamepadBridge.gamepadListUpdated.connect(self.gamepadListUpdatedHandler)
+		self.gamepadBridge = gamepadBridge
 
 		rosBridge.batteryChanged.connect(self.batteryChangedHandler)
 		rosBridge.imuChanged.connect(self.imuChangedHandler)

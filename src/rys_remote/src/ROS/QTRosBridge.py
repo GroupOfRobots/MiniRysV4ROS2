@@ -18,12 +18,8 @@ class QTRosBridge(QThread):
 
 	def __init__(self, parent, robotName, nodeName, enableMotorsMessageRate = 0.5, steeringMessageRate = 10):
 		super().__init__(parent)
-		self.enabled = False
-		self.balancingEnabled = False
 		self.exitFlag = False
-
 		self.previousRoll = 0.0
-		self.previousRotationX = 0.0
 
 		rclpy.init(args = sys.argv)
 
