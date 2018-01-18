@@ -12,10 +12,6 @@ class IMU {
 		uint16_t packetSize;
 		// FIFO storage buffer
 		uint8_t fifoBuffer[64];
-		// Calibration offsets
-		float yawOffset;
-		float pitchOffset;
-		float rollOffset;
 
 		int fetchData(uint8_t * buffer);
 	public:
@@ -27,7 +23,6 @@ class IMU {
 
 		IMU();
 		~IMU();
-		void initialize();
 		int getData(ImuData * data);
 		/**
 		* Set offsets to MPU6050 readings. Uses set*GyroOffset() and set*AccelOffset().

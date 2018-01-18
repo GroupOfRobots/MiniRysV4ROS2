@@ -13,13 +13,11 @@ IMUNode::IMUNode(
 ) : rclcpp::Node(nodeName, robotName, true), infrequentPublishRate(infrequentPublishRate), infrequentPublishCount(0) {
 	std::cout << "[IMU] Initializing IMU...\n";
 	this->imu = new IMU();
-	this->imu->initialize();
-	// this->imu->setOffsets(imuCalibrationOffsets);
 	std::cout << "[IMU] IMU initialized\n";
 
 	this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", rmw_qos_profile_sensor_data);
 	this->imuInfrequentPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imuInfrequent", rmw_qos_profile_sensor_data);
-	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::timerCallback, this));
+	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::publishData, this));
 	std::cout << "[IMU] Node ready\n";
 }
 
@@ -27,7 +25,7 @@ IMUNode::~IMUNode() {
 	delete this->imu;
 }
 
-void IMUNode::timerCallback() {
+void IMUNode::publishData() {
 	auto message = std::make_shared<sensor_msgs::msg::Imu>();
 
 	message->header.stamp = this->now();

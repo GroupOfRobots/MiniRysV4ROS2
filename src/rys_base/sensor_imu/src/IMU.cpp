@@ -12,16 +12,6 @@ IMU::IMU() {
 		this->fifoBuffer[i] = 0;
 	}
 
-	this->yawOffset = 0;
-	this->pitchOffset = 0;
-	this->rollOffset = 0;
-}
-
-IMU::~IMU() {
-	delete this->mpu;
-}
-
-void IMU::initialize() {
 	// initialize device
 	this->mpu->initialize();
 
@@ -49,6 +39,10 @@ void IMU::initialize() {
 		// (if it's going to break, usually the code will be 1)
 		throw(std::runtime_error(std::string("DMP Initialization failed: ") + std::to_string(devStatus)));
 	}
+}
+
+IMU::~IMU() {
+	delete this->mpu;
 }
 
 int IMU::fetchData(uint8_t * buffer) {

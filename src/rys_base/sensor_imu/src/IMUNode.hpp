@@ -20,7 +20,7 @@ class IMUNode : public rclcpp::Node {
 		rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuPublisher;
 		rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuInfrequentPublisher;
 
-		void timerCallback();
+		void publishData();
 	public:
 		IMUNode(
 			const std::string & robotName,
