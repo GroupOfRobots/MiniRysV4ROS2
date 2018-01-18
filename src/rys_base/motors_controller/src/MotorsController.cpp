@@ -3,36 +3,41 @@
 #include <stdexcept>
 
 MotorsController::MotorsController() {
-	balancing = true;
-	lqrEnabled = true;
+	this->balancing = true;
+	this->lqrEnabled = true;
 
-	speedFilterFactor = 1.0f;
-	speedFiltered = 0.0f;
-	angleFilterFactor = 1.0f;
-	angleFiltered = 0.0f;
+	this->speedFilterFactor = 1.0f;
+	this->speedFiltered = 0.0f;
+	this->angleFilterFactor = 1.0f;
+	this->angleFiltered = 0.0f;
 
-	pidSpeedRegulatorEnabled = true;
-	pidSpeedKp = 1;
-	pidSpeedKi = 0;
-	pidSpeedKd = 0;
-	pidSpeedIntegral = 0;
-	pidSpeedError = 0;
-	pidAngleKp = 1;
-	pidAngleKi = 0;
-	pidAngleKd = 0;
-	pidAngleIntegral = 0;
-	pidAngleError = 0;
+	this->pidSpeedRegulatorEnabled = true;
+	this->pidSpeedKp = 1;
+	this->pidSpeedKi = 0;
+	this->pidSpeedKd = 0;
+	this->pidSpeedIntegral = 0;
+	this->pidSpeedError = 0;
+	this->pidAngleKp = 1;
+	this->pidAngleKi = 0;
+	this->pidAngleKd = 0;
+	this->pidAngleIntegral = 0;
+	this->pidAngleError = 0;
 
-	lqrLinearVelocityK = 0;
-	lqrAngularVelocityK = 0;
-	lqrAngleK = 0;
+	this->lqrLinearVelocityK = 0;
+	this->lqrAngularVelocityK = 0;
+	this->lqrAngleK = 0;
 
-	motorsEnabled = false;
-	motorSpeedLeft = 0;
-	motorSpeedRight = 0;
-	invertLeftSpeed = false;
-	invertRightSpeed = false;
-	motorsSwapped = false;
+	this->motorsEnabled = false;
+	this->motorSpeedLeft = 0;
+	this->motorSpeedRight = 0;
+	this->invertLeftSpeed = false;
+	this->invertRightSpeed = false;
+	this->motorsSwapped = false;
+
+	this->timePoint = std::chrono::high_resolution_clock::now();
+	this->timePointPrevious = std::chrono::high_resolution_clock::now();
+
+	this->disableMotors();
 }
 
 MotorsController::~MotorsController() {
@@ -46,13 +51,6 @@ void clipValue(float & value, float max) {
 	} else if (value < -max) {
 		value = -max;
 	}
-}
-
-void MotorsController::init() {
-	this->timePoint = std::chrono::high_resolution_clock::now();
-	this->timePointPrevious = std::chrono::high_resolution_clock::now();
-
-	this->disableMotors();
 }
 
 void MotorsController::setInvertSpeed(const bool left, const bool right) {

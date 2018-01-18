@@ -19,6 +19,8 @@ MotorsControllerNode::MotorsControllerNode(
 	float baseWidth,
 	unsigned int odometryRate
 ) : rclcpp::Node(nodeName, robotName, true), wheelRadius(wheelRadius), baseWidth(baseWidth), odometryRate(odometryRate) {
+	this->batteryCritical = false;
+	this->temperatureCritical = false;
 	this->enabled = false;
 	this->balancing = false;
 	this->enableTimeout = 5000ms;
@@ -30,8 +32,8 @@ MotorsControllerNode::MotorsControllerNode(
 	this->rollPrevious = 0;
 	this->rotationX = 0;
 
-	this->rotation = 0;
-	this->throttle = 0;
+	this->steeringRotation = 0;
+	this->steeringThrottle = 0;
 	this->steeringPrecision = 1;
 
 	this->odometryPublishCounter = 0;
@@ -41,12 +43,6 @@ MotorsControllerNode::MotorsControllerNode(
 
 	std::cout << "[MOTORS] Initializing motors controller...\n";
 	this->motorsController = new MotorsController();
-	try {
-		this->motorsController->init();
-	} catch (const std::exception & error) {
-		std::cout << "[MOTORS] Error initializing controller: " << error.what() << std::endl;
-		throw(error);
-	}
 
 	this->motorsController->setInvertSpeed(true, false);
 	this->motorsController->setMotorsSwapped(true);
@@ -62,6 +58,8 @@ MotorsControllerNode::MotorsControllerNode(
 	this->motorsEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_motors", std::bind(&MotorsControllerNode::enableMessageCallback, this, _1));
 	this->balancingEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_balancing", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
 	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
+	this->batterySubscriber = this->create_subscription<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", std::bind(&MotorsControllerNode::batteryMessageCallback, this, _1));
+	this->temperatureSubscriber = this->create_subscription<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", std::bind(&MotorsControllerNode::temperatureMessageCallback, this, _1));
 	this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
 
 	const rmw_qos_profile_t odometryQosProfile = {
@@ -110,6 +108,14 @@ void MotorsControllerNode::enableMessageCallback(const std_msgs::msg::Bool::Shar
 	}
 	this->enabled = message->data;
 	this->previous = std::chrono::high_resolution_clock::now();
+}
+
+void MotorsControllerNode::batteryMessageCallback(const rys_interfaces::msg::BatteryStatus::SharedPtr message) {
+	this->batteryCritical = message->voltage_low;
+}
+
+void MotorsControllerNode::temperatureMessageCallback(const rys_interfaces::msg::TemperatureStatus::SharedPtr message) {
+	this->temperatureCritical = message->temperature_critical;
 }
 
 void MotorsControllerNode::imuMessageCallback(const sensor_msgs::msg::Imu::SharedPtr message) {
@@ -178,8 +184,8 @@ void MotorsControllerNode::setBalancingMode(const std_msgs::msg::Bool::SharedPtr
 }
 
 void MotorsControllerNode::setSteering(const rys_interfaces::msg::Steering::SharedPtr message) {
-	this->throttle = message->throttle;
-	this->rotation = message->rotation;
+	this->steeringThrottle = message->throttle;
+	this->steeringRotation = message->rotation;
 	this->steeringPrecision = message->precision;
 }
 
@@ -232,6 +238,12 @@ void MotorsControllerNode::runLoop() {
 		return;
 	}
 
+	// Check battery/temperature
+	if (this->batteryCritical || this->temperatureCritical) {
+		this->motorsController->disableMotors();
+		return;
+	}
+
 	// Check enable timer
 	if (this->enableTimerEnd < this->timeNow) {
 		this->enabled = false;
@@ -263,7 +275,7 @@ void MotorsControllerNode::runLoop() {
 		float linearSpeed = (leftSpeed + rightSpeed) / 2;
 		float finalLeftSpeed = 0;
 		float finalRightSpeed = 0;
-		this->motorsController->calculateSpeeds(this->roll, this->rotationX, linearSpeed, this->throttle, this->rotation, finalLeftSpeed, finalRightSpeed, loopTime);
+		this->motorsController->calculateSpeeds(this->roll, this->rotationX, linearSpeed, this->steeringThrottle, this->steeringRotation, finalLeftSpeed, finalRightSpeed, loopTime);
 
 		// Save current speeds in units suitable for odometry (m/s)
 		leftSpeed = this->motorsController->getMotorSpeedLeft() * this->wheelRadius * 2.0 * M_PI;

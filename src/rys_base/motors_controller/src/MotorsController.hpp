@@ -74,10 +74,13 @@ class MotorsController {
 		std::mutex fileAccessMutex;
 
 		void writePRUDataFrame(const MotorsController::DataFrame & frame);
+
+		void calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
+		void calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 	public:
 		MotorsController();
 		~MotorsController();
-		void init();
+
 		void setInvertSpeed(const bool left, const bool right);
 		void setMotorsSwapped(const bool motorsSwapped);
 		void setBalancing(bool value);
@@ -91,14 +94,11 @@ class MotorsController {
 		float getSpeedFilterFactor();
 		float getAngleFilterFactor();
 		bool getLQREnabled();
-		float getPIDAngularVelocityFactor();
 		bool getPIDSpeedRegulatorEnabled();
 		void getPIDParameters(float & speedKp, float & speedKi, float & speedKd, float & angleKp, float & angleKi, float & angleKd);
 		void getLQRParameters(float & linearVelocityK, float & angularVelocityK, float & angleK);
 
 		void calculateSpeeds(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
-		void calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
-		void calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);
 
 		void enableMotors();
 		void disableMotors();
