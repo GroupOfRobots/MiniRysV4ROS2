@@ -18,7 +18,7 @@ class RangesNode : public rclcpp::Node {
 		rclcpp::Publisher<rys_interfaces::msg::Ranges>::SharedPtr publisher;
 
 		int readSensor(int sensorIndex);
-		void sensorsReadAndPublishData();
+		void publishData();
 	public:
 		RangesNode(
 			const std::string & robotName,

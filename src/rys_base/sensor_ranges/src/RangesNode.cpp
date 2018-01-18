@@ -27,7 +27,7 @@ RangesNode::RangesNode(
 	// Initialize the sensors
 	for (int i = 0; rclcpp::ok() && i < 5; ++i) {
 		try {
-			this->sensors[i]->init();
+			this->sensors[i]->initialize();
 			this->sensors[i]->setTimeout(200);
 			this->sensors[i]->setMeasurementTimingBudget(20000);
 			this->sensors[i]->setAddress(addresses[i]);
@@ -50,7 +50,7 @@ RangesNode::RangesNode(
 	}
 
 	this->publisher = this->create_publisher<rys_interfaces::msg::Ranges>("/" + robotName + "/sensor/ranges", rmw_qos_profile_sensor_data);
-	this->timer = this->create_wall_timer(loopDuration, std::bind(&RangesNode::sensorsReadAndPublishData, this));
+	this->timer = this->create_wall_timer(loopDuration, std::bind(&RangesNode::publishData, this));
 	std::cout << "[RANGES] Node ready\n";
 }
 
@@ -87,7 +87,7 @@ int RangesNode::readSensor(int sensorIndex) {
 	return value;
 }
 
-void RangesNode::sensorsReadAndPublishData() {
+void RangesNode::publishData() {
 	auto message = std::make_shared<rys_interfaces::msg::Ranges>();
 
 	message->header.stamp = this->now();
