@@ -40,14 +40,14 @@ int main(int argc, char * argv[]) {
 
 	auto motorsNode = std::make_shared<MotorsControllerNode>(robotName, "motors_controller", 10ms, wheelRadius, baseWidth);
 	auto batteryNode = std::make_shared<BatteryNode>(robotName, "sensor_battery", 1000ms, batteryInputNumbers, batteryCoefficients);
-	auto dwmNode = std::make_shared<DWMNode>(robotName, "sensor_dwm1000", 1000ms);
+	// auto dwmNode = std::make_shared<DWMNode>(robotName, "sensor_dwm1000", 1000ms);
 	auto imuNode = std::make_shared<IMUNode>(robotName, "sensor_imu", 10ms, 3000ms, imuOffsets);
 	auto temperatureNode = std::make_shared<TemperatureNode>(robotName, "sensor_temperature", 2000ms, temperatureInputNumber, temperatureCoefficient);
 	auto rangesNode = std::make_shared<RangesNode>(robotName, "sensor_ranges", 20ms, vl53l0xPins, vl53l0xAddresses);
 
 	executor.add_node(motorsNode);
 	executor.add_node(batteryNode);
-	executor.add_node(dwmNode);
+	// executor.add_node(dwmNode);
 	executor.add_node(imuNode);
 	executor.add_node(temperatureNode);
 	executor.add_node(rangesNode);
