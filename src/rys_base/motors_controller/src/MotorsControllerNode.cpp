@@ -242,6 +242,8 @@ void MotorsControllerNode::runLoop() {
 	if (this->batteryCritical || this->temperatureCritical) {
 		this->motorsController->disableMotors();
 		return;
+	} else {
+		this->motorsController->enableMotors();
 	}
 
 	// Check enable timer
@@ -249,10 +251,6 @@ void MotorsControllerNode::runLoop() {
 		this->enabled = false;
 		this->motorsController->disableMotors();
 		return;
-	}
-
-	if (!this->motorsController->getMotorsEnabled()) {
-		this->motorsController->enableMotors();
 	}
 
 	// Detect current position, use 2 consecutive reads
