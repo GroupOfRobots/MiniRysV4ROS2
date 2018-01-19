@@ -256,6 +256,10 @@ void MotorsControllerNode::runLoop() {
 		return;
 	}
 
+	if (!this->motorsController->getMotorsEnabled()) {
+		this->motorsController->enableMotors();
+	}
+
 	// Detect current position, use 2 consecutive reads
 	bool layingDown = (this->roll > 40.0 && this->rollPrevious > 40.0) || (this->roll < -40.0 && this->rollPrevious < -40.0);
 	if (this->balancing && layingDown) {
