@@ -61,5 +61,11 @@ void TemperatureNode::publishData() {
 
 	message->temperature_critical = this->isCritical;
 
+	std::cout << "TS; ";
+	std::cout << "time = " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() << "; ";
+	std::cout << "temp = " << message->temperature << "; ";
+	std::cout << "tcrit = " << (this->isCritical ? 1 : 0) << "; ";
+	std::cout << std::endl;
+
 	this->publisher->publish(message);
 }

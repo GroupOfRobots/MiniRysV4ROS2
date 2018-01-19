@@ -54,5 +54,13 @@ void BatteryNode::publishData() {
 
 	message->voltage_low = this->isCritical;
 
+	std::cout << "BS; ";
+	std::cout << "time = " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() << "; ";
+	std::cout << "v1 = " << message->voltage_cell1 << "; ";
+	std::cout << "v2 = " << message->voltage_cell2 << "; ";
+	std::cout << "v3 = " << message->voltage_cell3 << "; ";
+	std::cout << "vcrit = " << (this->isCritical ? 1 : 0) << "; ";
+	std::cout << std::endl;
+
 	this->publisher->publish(message);
 }

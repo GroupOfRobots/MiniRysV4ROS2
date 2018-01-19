@@ -102,6 +102,7 @@ class MotorsController {
 
 		void enableMotors();
 		void disableMotors();
+		bool getMotorsEnabled();
 
 		/**
 		* Clip, limit, process and pass speeds to the PRU.

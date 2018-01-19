@@ -234,6 +234,11 @@ void MotorsControllerNode::runLoop() {
 	float loopTime = loopTimeSpan.count();
 	this->previous = this->timeNow;
 
+	std::cout << "MC; ";
+	std::cout << "time = " << std::chrono::duration_cast<std::chrono::milliseconds>(this->timeNow.time_since_epoch()).count() << "; ";
+	std::cout << "enabled = " << (this->motorsController->getMotorsEnabled() ? 1 : 0) << "; ";
+	std::cout << std::endl;
+
 	if (!this->enabled) {
 		return;
 	}
