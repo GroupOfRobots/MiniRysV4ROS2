@@ -246,6 +246,10 @@ void MotorsController::disableMotors() {
 	this->writePRUDataFrame(dataFrame);
 }
 
+bool MotorsController::getMotorsEnabled() {
+	return this->motorsEnabled;
+}
+
 void MotorsController::setMotorSpeeds(float speedLeft, float speedRight, int microstep, bool ignoreAcceleration) {
 	// Validate microstep value
 	if (microstep != 1 && (microstep == 0 || microstep % 2 || microstep > 32)) {
