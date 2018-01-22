@@ -100,7 +100,7 @@ void RangesNode::publishData() {
 	message->left = this->readSensor(3);
 	message->right = this->readSensor(4);
 
-	std::cout << "RAN; front = " << message->front << ";\n";
+	std::cout << "RANGE; top = " << message->top << ";\n";
 
 	this->publisher->publish(message);
 }
