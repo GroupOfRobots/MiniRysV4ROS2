@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <memory>
+#include <cmath>
 
 IMUNode::IMUNode(
 	const std::string & robotName,
@@ -59,6 +60,18 @@ void IMUNode::publishData() {
 		message->angular_velocity_covariance[i] = 0;
 		message->linear_acceleration_covariance[i] = 0;
 	}
+
+	double qx = data.orientationQuaternion[1];
+	double qy = data.orientationQuaternion[2];
+	double qz = data.orientationQuaternion[3];
+	double qw = data.orientationQuaternion[0];
+	double roll = std::atan2(2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx * qx + qy * qy));
+
+	std::cout << "IMU; roll = " << roll << ";";
+	std::cout << "wx = " << message->angular_velocity.x << ";";
+	std::cout << "wy = " << message->angular_velocity.y << ";";
+	std::cout << "wz = " << message->angular_velocity.z << ";";
+	std::cout << std::endl;
 
 	this->imuPublisher->publish(message);
 
