@@ -10,6 +10,8 @@ class GamepadBridge(QThread):
 	Inherits from QThread and shall be used as one.
 	"""
 
+	DEADZONE = 0.01
+
 	gamepadAxisChanged = pyqtSignal(GamepadAxisEvent)
 	gamepadButtonChanged = pyqtSignal(GamepadButtonEvent)
 	gamepadListUpdated = pyqtSignal(list)
@@ -57,11 +59,12 @@ class GamepadBridge(QThread):
 			# pygame.JOYHATMOTION
 			for event in pygame.event.get(pygame.JOYAXISMOTION):
 				axisID = "%d_%d" % (event.joy, event.axis)
-				if axisID in self.axisValues and self.axisValues[axisID] == event.value:
+				value = event.value if abs(event.value) >= GamepadBridge.DEADZONE else 0.0
+				if axisID in self.axisValues and self.axisValues[axisID] == value:
 					continue
-				self.axisValues[axisID] = event.value
+				self.axisValues[axisID] = value
 
-				gamepadEvent = GamepadAxisEvent(event.joy, event.axis, event.value)
+				gamepadEvent = GamepadAxisEvent(event.joy, event.axis, value)
 				self.gamepadAxisChanged.emit(gamepadEvent)
 
 			for event in pygame.event.get((pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP)):
