@@ -4,8 +4,8 @@
 
 #include "rys_motors_controller/MotorsControllerNode.hpp"
 #include "rys_sensor_battery/BatteryNode.hpp"
-#include "rys_sensor_dwm1000/DWMNode.hpp"
-#include "rys_sensor_imu/IMUNode.hpp"
+// #include "rys_sensor_dwm1000/DWMNode.hpp"
+// #include "rys_sensor_imu/IMUNode.hpp"
 #include "rys_sensor_temperature/TemperatureNode.hpp"
 #include "rys_sensor_ranges/RangesNode.hpp"
 
@@ -19,9 +19,9 @@ int main(int argc, char * argv[]) {
 	std::string robotName("rys");
 
 	double wheelRadius = 0.056;
-	double baseWidth = 0.135;
+	double baseWidth = 0.140;
 
-	int imuOffsets[6] = {831, 1493, 1086, -155, -24, 19};
+	// int imuOffsets[6] = {831, 1493, 1086, -155, -24, 19};
 
 	const uint8_t batteryInputNumbers[3] = { 3, 1, 6 };
 	const float batteryCoefficients[3] = { 734.4895, 340.7509, 214.1773 };
@@ -38,17 +38,25 @@ int main(int argc, char * argv[]) {
 		VL53L0X_ADDRESS_DEFAULT + 12
 	};
 
+	for (int i = 2; i <= argc; i+=2) {
+		if (!std::strcmp(argv[i-1], "-r")){
+			wheelRadius = atof(argv[i]);
+		} else if (!std::strcmp(argv[i-1], "-w")){
+			baseWidth = atof(argv[i]);
+		}
+	}
+
 	auto motorsNode = std::make_shared<MotorsControllerNode>(robotName, "motors_controller", 10ms, wheelRadius, baseWidth);
 	auto batteryNode = std::make_shared<BatteryNode>(robotName, "sensor_battery", 1000ms, batteryInputNumbers, batteryCoefficients);
 	// auto dwmNode = std::make_shared<DWMNode>(robotName, "sensor_dwm1000", 1000ms);
-	auto imuNode = std::make_shared<IMUNode>(robotName, "sensor_imu", 10ms, 3000ms, imuOffsets);
+	// auto imuNode = std::make_shared<IMUNode>(robotName, "sensor_imu", 10ms, 3000ms, imuOffsets);
 	auto temperatureNode = std::make_shared<TemperatureNode>(robotName, "sensor_temperature", 2000ms, temperatureInputNumber, temperatureCoefficient);
 	auto rangesNode = std::make_shared<RangesNode>(robotName, "sensor_ranges", 20ms, vl53l0xPins, vl53l0xAddresses);
 
 	executor.add_node(motorsNode);
 	executor.add_node(batteryNode);
 	// executor.add_node(dwmNode);
-	executor.add_node(imuNode);
+	// executor.add_node(imuNode);
 	executor.add_node(temperatureNode);
 	executor.add_node(rangesNode);
 	executor.spin();
