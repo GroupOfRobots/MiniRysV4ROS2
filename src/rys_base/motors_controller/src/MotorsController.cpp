@@ -275,6 +275,12 @@ void MotorsController::setMotorSpeeds(float speedLeft, float speedRight, int mic
 		speedRight = -speedRight;
 	}
 
+	if (this->motorsSwapped) {
+		float tmp = speedLeft;
+		speedLeft = speedRight;
+		speedRight = tmp;
+	}
+
 	// Set whether the motors are to be enabled
 	dataFrame.enabled = this->motorsEnabled;
 
@@ -303,12 +309,6 @@ void MotorsController::setMotorSpeeds(float speedLeft, float speedRight, int mic
 		} else {
 			this->motorSpeedRight = speedRight;
 		}
-	}
-
-	if (this->motorsSwapped) {
-		float tmp = this->motorSpeedLeft;
-		this->motorSpeedLeft = this->motorSpeedRight;
-		this->motorSpeedRight = tmp;
 	}
 
 	// Write directions
