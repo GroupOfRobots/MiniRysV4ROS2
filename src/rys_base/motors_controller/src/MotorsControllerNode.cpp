@@ -194,7 +194,7 @@ void MotorsControllerNode::standUp() {
 	// Direction multiplier
 	int multiplier = (this->roll > 1.0 ? 1 : -1);
 
-	this->motorsRunTimed(0.0f, 0.0f, 1, 1000)
+	this->motorsRunTimed(0.0f, 0.0f, 1, 1000);
 
 	rclcpp::WallRate standUpLoopRate(20);
 	for(int i=0; i<12; i++)
