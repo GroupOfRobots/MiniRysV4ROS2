@@ -88,7 +88,7 @@ MotorsControllerNode::~MotorsControllerNode() {
 void MotorsControllerNode::motorsRunTimed(const float leftSpeed, const float rightSpeed, const int microstep, const int milliseconds) {
 	auto end = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(milliseconds);
 	while (rclcpp::ok() && std::chrono::high_resolution_clock::now() < end) {
-		this->motorsController->setMotorSpeeds(leftSpeed, rightSpeed, microstep);
+		this->motorsController->setMotorSpeeds(leftSpeed, rightSpeed, microstep, true);
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 }
@@ -126,6 +126,7 @@ void MotorsControllerNode::imuMessageCallback(const sensor_msgs::msg::Imu::Share
 
 	this->rollPrevious = roll;
 	this->roll = atan2(2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx * qx + qy * qy));
+	std::cout << "roll: " << this-> roll <<std::endl;
 }
 
 void MotorsControllerNode::setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> requestHeader, const std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Request> request, std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Response> response) {
@@ -191,41 +192,57 @@ void MotorsControllerNode::setSteering(const rys_interfaces::msg::Steering::Shar
 
 void MotorsControllerNode::standUp() {
 	// Direction multiplier
-	int multiplier = (this->roll > 40 ? 1 : -1);
+	int multiplier = (this->roll > 1.0 ? 1 : -1);
 
-	// Disable motors, wait 1s
-	this->motorsRunTimed(0.0f, 0.0f, 1, 100);
-	this->motorsController->disableMotors();
-	this->motorsRunTimed(0.0f, 0.0f, 1, 1000);
-	if (!rclcpp::ok() || !this->enabled) {
-		return;
-	}
+	this->motorsRunTimed(0.0f, 0.0f, 1, 1000)
 
-	// Enable motors
-	this->motorsController->enableMotors();
-	this->motorsRunTimed(0.0f, 0.0f, 1, 100);
-	if (!rclcpp::ok() || !this->enabled) {
-		return;
-	}
-
-	// Drive backwards half-speed for 0.5s
-	this->motorsRunTimed(multiplier * 0.8f, multiplier * 0.8f, 1, 500);
-	if (!rclcpp::ok() || !this->enabled) {
-		return;
-	}
-
-	// Drive forward full-speed, wait until we've passed '0' point
-	this->motorsRunTimed(-multiplier * 1.0f, -multiplier * 1.0f, 1, 100);
-
-	rclcpp::WallRate standUpLoopRate(100);
-	while (rclcpp::ok() && this->enabled) {
-		// Passing '0' point depends on from which side we're standing up
-		if ((multiplier * this->roll) <= 0) {
-			std::cout << "[MOTORS] Stood up(?), angle: " << this->roll << std::endl;
-			break;
-		}
+	rclcpp::WallRate standUpLoopRate(20);
+	for(int i=0; i<12; i++)
+	{
+		motorsController->setMotorSpeeds(multiplier*1.0, multiplier*1.0, 32, false);
+		std::cout << motorsController->getMotorSpeedLeft() << ';' << motorsController->getMotorSpeedRight() << std::endl;
 		standUpLoopRate.sleep();
 	}
+	for(int i=0; i<15 && (multiplier * this->roll) >= 0; i++)
+	{
+		motorsController->setMotorSpeeds(multiplier*(-1.0), multiplier*(-1.0), 32, false);
+		std::cout << motorsController->getMotorSpeedLeft() << ';' << motorsController->getMotorSpeedRight() << std::endl;
+		standUpLoopRate.sleep();
+	}
+
+	// // Disable motors, wait 1s
+	// this->motorsRunTimed(0.0f, 0.0f, 1, 100);
+	// this->motorsController->disableMotors();
+	// this->motorsRunTimed(0.0f, 0.0f, 1, 1000);
+	// if (!rclcpp::ok() || !this->enabled) {
+	// 	return;
+	// }
+
+	// // Enable motors
+	// this->motorsController->enableMotors();
+	// this->motorsRunTimed(0.0f, 0.0f, 1, 100);
+	// if (!rclcpp::ok() || !this->enabled) {
+	// 	return;
+	// }
+
+	// // Drive backwards half-speed for 0.5s
+	// this->motorsRunTimed(multiplier * 0.8f, multiplier * 0.8f, 1, 500);
+	// if (!rclcpp::ok() || !this->enabled) {
+	// 	return;
+	// }
+
+	// // Drive forward full-speed, wait until we've passed '0' point
+	// this->motorsRunTimed(-multiplier * 1.0f, -multiplier * 1.0f, 1, 100);
+
+	// rclcpp::WallRate standUpLoopRate(100);
+	// while (rclcpp::ok() && this->enabled) {
+	// 	// Passing '0' point depends on from which side we're standing up
+	// 	if ((multiplier * this->roll) <= 0) {
+	// 		std::cout << "[MOTORS] Stood up(?), angle: " << this->roll << std::endl;
+	// 		break;
+	// 	}
+	// 	standUpLoopRate.sleep();
+	// }
 }
 
 void MotorsControllerNode::runLoop() {
@@ -254,7 +271,7 @@ void MotorsControllerNode::runLoop() {
 	}
 
 	// Detect current position, use 2 consecutive reads
-	bool layingDown = (this->roll > 40.0 && this->rollPrevious > 40.0) || (this->roll < -40.0 && this->rollPrevious < -40.0);
+	bool layingDown = (this->roll > 1.0 && this->rollPrevious > 1.0) || (this->roll < -1.0 && this->rollPrevious < -1.0);
 	if (this->balancing && layingDown) {
 		// Laying down and wanting to balance, stand up!
 		std::cout << "[MOTORS] Laying down, trying to stand up\n";
@@ -270,6 +287,7 @@ void MotorsControllerNode::runLoop() {
 			throw(error);
 		}
 	} else {
+		return;
 		// Standing up or not balancing - use controller
 		// Calculate target speeds for motors
 		float leftSpeed = this->motorsController->getMotorSpeedLeftRaw();
@@ -292,89 +310,89 @@ void MotorsControllerNode::runLoop() {
 			throw(error);
 		}
 
-		// Odometry
-		// First, create update frame and twist and apply them onto saved ones
-		KDL::Frame updateFrame;
-		KDL::Twist updateTwist;
+		// // Odometry
+		// // First, create update frame and twist and apply them onto saved ones
+		// KDL::Frame updateFrame;
+		// KDL::Twist updateTwist;
 
-		// Second, calculate the difference frame by forward kinematics
-		if (leftSpeed == rightSpeed) {
-			// Equal speeds <=> only linear movement (along Y axis for Y-forward-oriented mode)
-			updateFrame = KDL::Frame(KDL::Vector(0, leftSpeed * loopTime, 0));
-			updateTwist.vel.y(leftSpeed);
-		} else {
-			// Full forward kinematics for differential robot
-			float linearVelocity = (rightSpeed + leftSpeed) / 2;
-			float angularVelocity = (rightSpeed - leftSpeed) / baseWidth;
-			float rotationPointDistance = linearVelocity / angularVelocity;
-			float rotationAngle = angularVelocity * loopTime;
+		// // Second, calculate the difference frame by forward kinematics
+		// if (leftSpeed == rightSpeed) {
+		// 	// Equal speeds <=> only linear movement (along Y axis for Y-forward-oriented mode)
+		// 	updateFrame = KDL::Frame(KDL::Vector(0, leftSpeed * loopTime, 0));
+		// 	updateTwist.vel.y(leftSpeed);
+		// } else {
+		// 	// Full forward kinematics for differential robot
+		// 	float linearVelocity = (rightSpeed + leftSpeed) / 2;
+		// 	float angularVelocity = (rightSpeed - leftSpeed) / baseWidth;
+		// 	float rotationPointDistance = linearVelocity / angularVelocity;
+		// 	float rotationAngle = angularVelocity * loopTime;
 
-			// Mobile robots traditionally are Y-forward-oriented
-			float deltaX = rotationPointDistance * (1.0 - std::cos(rotationAngle));
-			float deltaY = rotationPointDistance * std::sin(rotationAngle);
+		// 	// Mobile robots traditionally are Y-forward-oriented
+		// 	float deltaX = rotationPointDistance * (1.0 - std::cos(rotationAngle));
+		// 	float deltaY = rotationPointDistance * std::sin(rotationAngle);
 
-			// Those are for X-forward-oriented (kept here for reference)
-			// float deltaX = rotationPointDistance * (std::cos(rotationAngle) - 1.0);
-			// float deltaY = rotationPointDistance * std::sin(rotationAngle);
+		// 	// Those are for X-forward-oriented (kept here for reference)
+		// 	// float deltaX = rotationPointDistance * (std::cos(rotationAngle) - 1.0);
+		// 	// float deltaY = rotationPointDistance * std::sin(rotationAngle);
 
-			updateFrame = KDL::Frame(KDL::Rotation::RotZ(rotationAngle), KDL::Vector(deltaX, deltaY, 0));
-			// For X-forward-oriented x and y would be swapped here
-			updateTwist.vel.x(linearVelocity * std::sin(rotationAngle));
-			updateTwist.vel.y(linearVelocity * std::cos(rotationAngle));
-			updateTwist.rot.z(angularVelocity);
-		}
+		// 	updateFrame = KDL::Frame(KDL::Rotation::RotZ(rotationAngle), KDL::Vector(deltaX, deltaY, 0));
+		// 	// For X-forward-oriented x and y would be swapped here
+		// 	updateTwist.vel.x(linearVelocity * std::sin(rotationAngle));
+		// 	updateTwist.vel.y(linearVelocity * std::cos(rotationAngle));
+		// 	updateTwist.rot.z(angularVelocity);
+		// }
 
-		// Third, update odometry frame and twist
-		this->odometryFrame = this->odometryFrame * updateFrame;
-		this->odometryTwist = this->odometryTwist + updateTwist;
+		// // Third, update odometry frame and twist
+		// this->odometryFrame = this->odometryFrame * updateFrame;
+		// this->odometryTwist = this->odometryTwist + updateTwist;
 
-		// Fourth, publish odometry data (if needed)
-		odometryPublishCounter++;
-		if (odometryPublishCounter >= odometryRate) {
-			// Create an odometry message
-			auto odometryMessage = std::make_shared<nav_msgs::msg::Odometry>();
+		// // Fourth, publish odometry data (if needed)
+		// odometryPublishCounter++;
+		// if (odometryPublishCounter >= odometryRate) {
+		// 	// Create an odometry message
+		// 	auto odometryMessage = std::make_shared<nav_msgs::msg::Odometry>();
 
-			// Fill out the header
-			odometryMessage->header.stamp = this->now();
-			odometryMessage->header.frame_id = "odom";
-			odometryMessage->child_frame_id = "base_link";
+		// 	// Fill out the header
+		// 	odometryMessage->header.stamp = this->now();
+		// 	odometryMessage->header.frame_id = "odom";
+		// 	odometryMessage->child_frame_id = "base_link";
 
-			// Actual covariance is unknown - fill with zeros
-			for (unsigned int i = 0; i < odometryMessage->pose.covariance.size(); ++i) {
-				odometryMessage->pose.covariance[i] = 0.0;
-			}
-			for (unsigned int i = 0; i < odometryMessage->twist.covariance.size(); ++i) {
-				odometryMessage->twist.covariance[i] = 0.0;
-			}
+		// 	// Actual covariance is unknown - fill with zeros
+		// 	for (unsigned int i = 0; i < odometryMessage->pose.covariance.size(); ++i) {
+		// 		odometryMessage->pose.covariance[i] = 0.0;
+		// 	}
+		// 	for (unsigned int i = 0; i < odometryMessage->twist.covariance.size(); ++i) {
+		// 		odometryMessage->twist.covariance[i] = 0.0;
+		// 	}
 
-			// Third, update the odometry frame and put it into the message
-			odometryMessage->pose.pose.position.x = this->odometryFrame.p.x();
-			odometryMessage->pose.pose.position.y = this->odometryFrame.p.y();
-			odometryMessage->pose.pose.position.z = this->odometryFrame.p.z();
-			double rotX, rotY, rotZ, rotW;
-			this->odometryFrame.M.GetQuaternion(rotX, rotY, rotZ, rotW);
-			odometryMessage->pose.pose.orientation.x = rotX;
-			odometryMessage->pose.pose.orientation.y = rotY;
-			odometryMessage->pose.pose.orientation.z = rotZ;
-			odometryMessage->pose.pose.orientation.w = rotW;
+		// 	// Third, update the odometry frame and put it into the message
+		// 	odometryMessage->pose.pose.position.x = this->odometryFrame.p.x();
+		// 	odometryMessage->pose.pose.position.y = this->odometryFrame.p.y();
+		// 	odometryMessage->pose.pose.position.z = this->odometryFrame.p.z();
+		// 	double rotX, rotY, rotZ, rotW;
+		// 	this->odometryFrame.M.GetQuaternion(rotX, rotY, rotZ, rotW);
+		// 	odometryMessage->pose.pose.orientation.x = rotX;
+		// 	odometryMessage->pose.pose.orientation.y = rotY;
+		// 	odometryMessage->pose.pose.orientation.z = rotZ;
+		// 	odometryMessage->pose.pose.orientation.w = rotW;
 
-			odometryMessage->twist.twist.linear.x = this->odometryTwist.vel.x();
-			odometryMessage->twist.twist.linear.y = this->odometryTwist.vel.y();
-			odometryMessage->twist.twist.linear.z = this->odometryTwist.vel.z();
-			odometryMessage->twist.twist.angular.x = this->odometryTwist.rot.x();
-			odometryMessage->twist.twist.angular.y = this->odometryTwist.rot.y();
-			odometryMessage->twist.twist.angular.z = this->odometryTwist.rot.z();
+		// 	odometryMessage->twist.twist.linear.x = this->odometryTwist.vel.x();
+		// 	odometryMessage->twist.twist.linear.y = this->odometryTwist.vel.y();
+		// 	odometryMessage->twist.twist.linear.z = this->odometryTwist.vel.z();
+		// 	odometryMessage->twist.twist.angular.x = this->odometryTwist.rot.x();
+		// 	odometryMessage->twist.twist.angular.y = this->odometryTwist.rot.y();
+		// 	odometryMessage->twist.twist.angular.z = this->odometryTwist.rot.z();
 
-			// Publish the odometry message
-			this->odometryPublisher->publish(odometryMessage);
+		// 	// Publish the odometry message
+		// 	this->odometryPublisher->publish(odometryMessage);
 
-			// Cleanup
-			odometryPublishCounter = 0;
-			this->odometryFrame = KDL::Frame();
-			this->odometryTwist = KDL::Twist();
+		// 	// Cleanup
+		// 	odometryPublishCounter = 0;
+		// 	this->odometryFrame = KDL::Frame();
+		// 	this->odometryTwist = KDL::Twist();
 
-			// Debug log, enable if odometry frames are suspected to be lost
-			// std::cout << "s: " << this->odoSeq++ << std::endl;
-		}
+		// 	// Debug log, enable if odometry frames are suspected to be lost
+		// 	// std::cout << "s: " << this->odoSeq++ << std::endl;
+		// }
 	}
 }
