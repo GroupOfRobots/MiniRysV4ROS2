@@ -23,6 +23,7 @@ class MotorsControllerNode : public rclcpp::Node {
 	private:
 		const float wheelRadius;
 		const float baseWidth;
+		const std::chrono::milliseconds rate;
 
 		bool batteryCritical;
 		bool temperatureCritical;
@@ -37,6 +38,11 @@ class MotorsControllerNode : public rclcpp::Node {
 		float roll;
 		float rollPrevious;
 		float rotationX;
+
+		bool standingUp;
+		bool standUpPhase;
+		std::chrono::milliseconds standUpTimer;
+		int standUpMultiplier;
 
 		float steeringRotation;
 		float steeringThrottle;
@@ -63,7 +69,7 @@ class MotorsControllerNode : public rclcpp::Node {
 		rclcpp::Service<rys_interfaces::srv::SetRegulatorSettings>::SharedPtr setRegulatorSettingsServer;
 		rclcpp::Service<rys_interfaces::srv::GetRegulatorSettings>::SharedPtr getRegulatorSettingsServer;
 
-		void motorsRunTimed(const float leftSpeed, const float rightSpeed, const int microstep, const int milliseconds);
+		// void motorsRunTimed(const float leftSpeed, const float rightSpeed, const int microstep, const int milliseconds);
 		void standUp();
 
 		void enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message);

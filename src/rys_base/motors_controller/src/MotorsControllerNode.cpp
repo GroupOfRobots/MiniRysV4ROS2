@@ -18,11 +18,11 @@ MotorsControllerNode::MotorsControllerNode(
 	float wheelRadius,
 	float baseWidth,
 	unsigned int odometryRate
-) : rclcpp::Node(nodeName, robotName, true), wheelRadius(wheelRadius), baseWidth(baseWidth), odometryRate(odometryRate) {
+) : rclcpp::Node(nodeName, robotName, true), wheelRadius(wheelRadius), baseWidth(baseWidth), rate(rate), odometryRate(odometryRate) {
 	this->batteryCritical = false;
 	this->temperatureCritical = false;
-	this->enabled = false;
-	this->balancing = false;
+	this->enabled = true;
+	this->balancing = true;
 	this->enableTimeout = 5000ms;
 	this->enableTimerEnd = std::chrono::high_resolution_clock::now();
 	this->previous = std::chrono::high_resolution_clock::now();
@@ -31,6 +31,11 @@ MotorsControllerNode::MotorsControllerNode(
 	this->roll = 0;
 	this->rollPrevious = 0;
 	this->rotationX = 0;
+
+	this->standUpPhase = false;
+	this->standUpTimer = std::chrono::milliseconds(0);
+	this->standUpMultiplier = 0;
+	this->standingUp = false;
 
 	this->steeringRotation = 0;
 	this->steeringThrottle = 0;
@@ -46,12 +51,13 @@ MotorsControllerNode::MotorsControllerNode(
 
 	this->motorsController->setInvertSpeed(true, false);
 	this->motorsController->setMotorsSwapped(true);
-	this->motorsController->setBalancing(false);
+	this->motorsController->setBalancing(true);
 	this->motorsController->setLQREnabled(false);
 	this->motorsController->setSpeedFilterFactor(1);
 	this->motorsController->setAngleFilterFactor(1);
 	this->motorsController->setPIDParameters(0.03, 0.0001, 0.008, 50, 0.05, 20);
 	this->motorsController->setLQRParameters(-0.0316,-42.3121,-392.3354);
+	this->motorsController->setPIDSpeedRegulatorEnabled(false);
 
 	std::cout << "[MOTORS] Motors controller initialized\n";
 
@@ -85,13 +91,16 @@ MotorsControllerNode::~MotorsControllerNode() {
 	delete this->motorsController;
 }
 
-void MotorsControllerNode::motorsRunTimed(const float leftSpeed, const float rightSpeed, const int microstep, const int milliseconds) {
-	auto end = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(milliseconds);
-	while (rclcpp::ok() && std::chrono::high_resolution_clock::now() < end) {
-		this->motorsController->setMotorSpeeds(leftSpeed, rightSpeed, microstep, true);
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-}
+// void MotorsControllerNode::motorsRunTimed(const float leftSpeed, const float rightSpeed, const int microstep, const int milliseconds) {
+// 	auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(milliseconds);
+// 	// rclcpp::WallRate loopRate(std::chrono::nanoseconds(1000000000));
+// 	while (rclcpp::ok() && std::chrono::steady_clock::now() < end) {
+// 	this->motorsController->setMotorSpeeds(leftSpeed, rightSpeed, microstep, true);
+// 		// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+// 		rclcpp::sleep_for(std::chrono::nanoseconds(1000000));
+// 	}
+// 	// loopRate.sleep();
+// }
 
 void MotorsControllerNode::enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
 	if (message->data) {
@@ -126,7 +135,7 @@ void MotorsControllerNode::imuMessageCallback(const sensor_msgs::msg::Imu::Share
 
 	this->rollPrevious = roll;
 	this->roll = atan2(2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx * qx + qy * qy));
-	std::cout << "roll: " << this-> roll <<std::endl;
+	std::cout << "[MOTORS::imuCallback] received roll: \t" << this-> roll <<std::endl;
 }
 
 void MotorsControllerNode::setRegulatorSettingsCallback(const std::shared_ptr<rmw_request_id_t> requestHeader, const std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Request> request, std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Response> response) {
@@ -191,70 +200,98 @@ void MotorsControllerNode::setSteering(const rys_interfaces::msg::Steering::Shar
 }
 
 void MotorsControllerNode::standUp() {
-	// Direction multiplier
-	int multiplier = (this->roll > 1.0 ? 1 : -1);
-
-	this->motorsRunTimed(0.0f, 0.0f, 1, 1000);
-
-	rclcpp::WallRate standUpLoopRate(20);
-	for(int i=0; i<12; i++)
-	{
-		motorsController->setMotorSpeeds(multiplier*1.0, multiplier*1.0, 32, false);
-		std::cout << motorsController->getMotorSpeedLeft() << ';' << motorsController->getMotorSpeedRight() << std::endl;
-		standUpLoopRate.sleep();
+	std::cout << "[MOTORS::standUp] StandUpPhase: " << this->standUpPhase << std::endl;
+	// first phase of standing up, stopping and accelerating backwards
+	if (!standUpPhase){
+		// stop for one second
+		if (this->standUpTimer < std::chrono::milliseconds(1000)){
+			this->motorsController->setMotorSpeeds(0, 0, 32, true);
+		//accelerate backwards until full speed
+		} else { 
+			if (this->motorsController->getMotorSpeedLeftRaw() == this->standUpMultiplier*1.0 &&
+				this->motorsController->getMotorSpeedRightRaw() == this->standUpMultiplier*1.0){
+				this->standUpPhase = true;
+			} else{
+				this->motorsController->setMotorSpeeds(this->standUpMultiplier*1.0, this->standUpMultiplier*1.0, 32, false);
+			}
+		}
+	// second phase, accelerate forward till standing up
+	} else{ 
+		if ((this->standUpMultiplier * this->roll) <= 0){
+			std::cout << "[MOTORS::standUp] Standing up completed." << std::endl;
+			this->standingUp = false;
+		// failed attempt if not standing after 2 seconds
+		} else if(this->standUpTimer >= std::chrono::milliseconds(2000) && this->standUpMultiplier*this->roll > 1.0){
+			std::cout << "[MOTORS::standUp] Standing up failed, retrying." << std::endl;
+			this->standUpPhase = false;
+		} else{
+			this->motorsController->setMotorSpeeds(this->standUpMultiplier*(-1.0), this->standUpMultiplier*(-1.0), 32, false);
+		}
 	}
-	for(int i=0; i<15 && (multiplier * this->roll) >= 0; i++)
-	{
-		motorsController->setMotorSpeeds(multiplier*(-1.0), multiplier*(-1.0), 32, false);
-		std::cout << motorsController->getMotorSpeedLeft() << ';' << motorsController->getMotorSpeedRight() << std::endl;
-		standUpLoopRate.sleep();
-	}
-
-	// // Disable motors, wait 1s
-	// this->motorsRunTimed(0.0f, 0.0f, 1, 100);
-	// this->motorsController->disableMotors();
-	// this->motorsRunTimed(0.0f, 0.0f, 1, 1000);
-	// if (!rclcpp::ok() || !this->enabled) {
-	// 	return;
-	// }
-
-	// // Enable motors
-	// this->motorsController->enableMotors();
-	// this->motorsRunTimed(0.0f, 0.0f, 1, 100);
-	// if (!rclcpp::ok() || !this->enabled) {
-	// 	return;
-	// }
-
-	// // Drive backwards half-speed for 0.5s
-	// this->motorsRunTimed(multiplier * 0.8f, multiplier * 0.8f, 1, 500);
-	// if (!rclcpp::ok() || !this->enabled) {
-	// 	return;
-	// }
-
-	// // Drive forward full-speed, wait until we've passed '0' point
-	// this->motorsRunTimed(-multiplier * 1.0f, -multiplier * 1.0f, 1, 100);
-
-	// rclcpp::WallRate standUpLoopRate(100);
-	// while (rclcpp::ok() && this->enabled) {
-	// 	// Passing '0' point depends on from which side we're standing up
-	// 	if ((multiplier * this->roll) <= 0) {
-	// 		std::cout << "[MOTORS] Stood up(?), angle: " << this->roll << std::endl;
-	// 		break;
-	// 	}
-	// 	standUpLoopRate.sleep();
-	// }
+	this->standUpTimer += this->rate;
 }
 
 void MotorsControllerNode::runLoop() {
+	std::cout << "[MOTORS::runLoop] runLoop() begin" << std::endl;
+	if (!this->enabled) {
+		std::cout << "[MOTORS::runLoop] enabled flag is False!" << std::endl;
+		return;
+	}
+
+	// Check battery/temperature
+	if (this->batteryCritical || this->temperatureCritical) {
+		this->motorsController->disableMotors();
+		std::cout << "[MOTORS::runLoop] Battery or temperature critical!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+		return;
+	} else {
+		std::cout << "MOTORS::runLoop] Battery and temperatue OK" << std::endl;
+		this->motorsController->enableMotors();
+	}
+
+	this->previous = this->timeNow;
+	this->timeNow = std::chrono::high_resolution_clock::now();
+	auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->timeNow - this->previous);
+	float loopTime = loopTimeSpan.count();
+	std::cout << "Looptime:" << loopTime << std::endl;
+
+	bool layingDown = (this->roll > 1.0 && this->rollPrevious > 1.0) || (this->roll < -1.0 && this->rollPrevious < -1.0);
+	std::cout << "[MOTORS::runLoop] Robot is laying down:" << layingDown << std::endl;
+	if (this->balancing && layingDown && !standingUp) {
+		this->standingUp = true;
+		this->standUpPhase = false;
+		this->standUpTimer = std::chrono::milliseconds(0);
+		this->standUpMultiplier = (this->roll > 1.0 ? 1 : -1);
+	}
+
+	if (!this->balancing){
+		this->standingUp = false;
+	}
+
+	if (this->standingUp){
+		standUp();
+	} else {
+		float leftSpeed = this->motorsController->getMotorSpeedLeftRaw();
+		float rightSpeed = this->motorsController->getMotorSpeedRightRaw();
+		float linearSpeed = (leftSpeed + rightSpeed) / 2;
+		float finalLeftSpeed = 0;
+		float finalRightSpeed = 0;
+		this->motorsController->calculateSpeeds(this->roll, this->rotationX, linearSpeed, this->steeringThrottle, this->steeringRotation, finalLeftSpeed, finalRightSpeed, loopTime);		
+		try {
+			this->motorsController->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, 32, false);
+		} catch (const std::exception & error) {
+			std::cout << "[MOTORS] Error setting motors speed: " << error.what() << std::endl;
+			throw(error);
+		}
+	}
+
+	std::cout << "[MOTORS::runLoop] speeds: " << this->motorsController->getMotorSpeedLeft() << " : " << this->motorsController->getMotorSpeedRight() << std::endl;
+	std::cout << "[MOTORS::runLoop] runLoop() end" << std::endl;
+	return;
+	/* old
 	this->timeNow = std::chrono::high_resolution_clock::now();
 	auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->timeNow - this->previous);
 	float loopTime = loopTimeSpan.count();
 	this->previous = this->timeNow;
-
-	if (!this->enabled) {
-		return;
-	}
-
 	// Check battery/temperature
 	if (this->batteryCritical || this->temperatureCritical) {
 		this->motorsController->disableMotors();
@@ -262,22 +299,20 @@ void MotorsControllerNode::runLoop() {
 	} else {
 		this->motorsController->enableMotors();
 	}
-
 	// Check enable timer
-	if (this->enableTimerEnd < this->timeNow) {
-		this->enabled = false;
-		this->motorsController->disableMotors();
-		return;
-	}
-
+	//if (this->enableTimerEnd < this->timeNow) {
+	//	this->enabled = false;
+	//	this->motorsController->disableMotors();
+	//	return;
+	//}
 	// Detect current position, use 2 consecutive reads
 	bool layingDown = (this->roll > 1.0 && this->rollPrevious > 1.0) || (this->roll < -1.0 && this->rollPrevious < -1.0);
 	if (this->balancing && layingDown) {
 		// Laying down and wanting to balance, stand up!
 		std::cout << "[MOTORS] Laying down, trying to stand up\n";
-
 		try {
 			standUp();
+			std::cout << "Stand up finished!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
 
 			// Zero-out regulators: PID's errors and integrals, loop timer etc
 			this->motorsController->zeroRegulators();
@@ -288,6 +323,7 @@ void MotorsControllerNode::runLoop() {
 		}
 	} else {
 		return;
+		std::cout << "Standing" << std::endl;
 		// Standing up or not balancing - use controller
 		// Calculate target speeds for motors
 		float leftSpeed = this->motorsController->getMotorSpeedLeftRaw();
@@ -395,4 +431,5 @@ void MotorsControllerNode::runLoop() {
 		// 	// std::cout << "s: " << this->odoSeq++ << std::endl;
 		// }
 	}
+	*/
 }
