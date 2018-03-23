@@ -15,7 +15,16 @@ IMUNode::IMUNode(
 	this->imu = new IMU();
 	std::cout << "[IMU] IMU initialized\n";
 
-	this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", rmw_qos_profile_sensor_data);
+	const rmw_qos_profile_t imuQosProfile = {
+		RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+		100,
+		RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
+		RMW_QOS_POLICY_DURABILITY_VOLATILE,
+		false
+	};
+
+	// this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", rmw_qos_profile_sensor_data);
+	this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", imuQosProfile);
 	this->imuInfrequentPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imuInfrequent", rmw_qos_profile_sensor_data);
 	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::publishData, this));
 	std::cout << "[IMU] Node ready\n";

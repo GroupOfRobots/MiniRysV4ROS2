@@ -61,12 +61,21 @@ MotorsControllerNode::MotorsControllerNode(
 
 	std::cout << "[MOTORS] Motors controller initialized\n";
 
+	const rmw_qos_profile_t imuQosProfile = {
+		RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+		100,
+		RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
+		RMW_QOS_POLICY_DURABILITY_VOLATILE,
+		false
+	};
+
 	this->motorsEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_motors", std::bind(&MotorsControllerNode::enableMessageCallback, this, _1));
 	this->balancingEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_balancing", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
 	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
 	this->batterySubscriber = this->create_subscription<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", std::bind(&MotorsControllerNode::batteryMessageCallback, this, _1));
 	this->temperatureSubscriber = this->create_subscription<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", std::bind(&MotorsControllerNode::temperatureMessageCallback, this, _1));
-	this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
+	// this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
+	this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), imuQosProfile);
 
 	const rmw_qos_profile_t odometryQosProfile = {
 		RMW_QOS_POLICY_HISTORY_KEEP_LAST,
@@ -207,7 +216,7 @@ void MotorsControllerNode::standUp() {
 		if (this->standUpTimer < std::chrono::milliseconds(1000)){
 			this->motorsController->setMotorSpeeds(0, 0, 32, true);
 		//accelerate backwards until full speed
-		} else { 
+		} else {
 			if (this->motorsController->getMotorSpeedLeftRaw() == this->standUpMultiplier*1.0 &&
 				this->motorsController->getMotorSpeedRightRaw() == this->standUpMultiplier*1.0){
 				this->standUpPhase = true;
@@ -216,7 +225,7 @@ void MotorsControllerNode::standUp() {
 			}
 		}
 	// second phase, accelerate forward till standing up
-	} else{ 
+	} else{
 		if ((this->standUpMultiplier * this->roll) <= 0){
 			std::cout << "[MOTORS::standUp] Standing up completed." << std::endl;
 			this->standingUp = false;
@@ -275,7 +284,7 @@ void MotorsControllerNode::runLoop() {
 		float linearSpeed = (leftSpeed + rightSpeed) / 2;
 		float finalLeftSpeed = 0;
 		float finalRightSpeed = 0;
-		this->motorsController->calculateSpeeds(this->roll, this->rotationX, linearSpeed, this->steeringThrottle, this->steeringRotation, finalLeftSpeed, finalRightSpeed, loopTime);		
+		this->motorsController->calculateSpeeds(this->roll, this->rotationX, linearSpeed, this->steeringThrottle, this->steeringRotation, finalLeftSpeed, finalRightSpeed, loopTime);
 		try {
 			this->motorsController->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, 32, false);
 		} catch (const std::exception & error) {
