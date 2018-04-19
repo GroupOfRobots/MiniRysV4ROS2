@@ -25,7 +25,7 @@ int main(int argc, char * argv[]) {
 
 	std::cout << "[MOTORS] wheelRadius = " << wheelRadius << "; baseWidth = " << baseWidth << ";\n";
 
-	auto node = std::make_shared<MotorsControllerNode>("rys", "motors_controller", 10ms, wheelRadius, baseWidth, 0, temporaryValue);
+	auto node = std::make_shared<MotorsControllerNode>("rys", "motors_controller", true, 10ms, wheelRadius, baseWidth, 0, temporaryValue);
 	rclcpp::spin(node);
 	rclcpp::shutdown();
 

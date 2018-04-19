@@ -11,7 +11,7 @@ int main(int argc, char * argv[]) {
 	const uint8_t inputNumber = 5;
 	const float coefficient = 564.7637;
 
-	auto node = std::make_shared<TemperatureNode>("rys", "sensor_temperature", 2000ms, inputNumber, coefficient);
+	auto node = std::make_shared<TemperatureNode>("rys", "sensor_temperature", true, 2000ms, inputNumber, coefficient);
 	rclcpp::spin(node);
 	rclcpp::shutdown();
 

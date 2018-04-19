@@ -28,7 +28,7 @@ int main(int argc, char * argv[]) {
 		VL53L0X_ADDRESS_DEFAULT + 12
 	};
 
-	auto node = std::make_shared<RangesNode>("rys", "sensor_ranges", 20ms, pins, addresses);
+	auto node = std::make_shared<RangesNode>("rys", "sensor_ranges", true, 20ms, pins, addresses);
 	rclcpp::spin(node);
 	rclcpp::shutdown();
 
