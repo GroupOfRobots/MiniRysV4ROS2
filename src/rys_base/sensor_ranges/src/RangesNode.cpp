@@ -5,10 +5,11 @@
 RangesNode::RangesNode(
 	const std::string & robotName,
 	const std::string & nodeName,
+	const bool useIPC,
 	const std::chrono::milliseconds loopDuration,
 	const uint8_t pins[5],
 	const uint8_t addresses[5]
-) : rclcpp::Node(nodeName, robotName, true) {
+) : rclcpp::Node(nodeName, robotName, useIPC) {
 	// Create sensor objects
 	for (int i = 0; i < 5; ++i) {
 		this->sensors[i] = new VL53L0X(pins[i]);

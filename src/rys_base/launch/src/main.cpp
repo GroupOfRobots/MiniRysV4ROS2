@@ -34,6 +34,7 @@ int main(int argc, char * argv[]) {
 	rclcpp::executors::SingleThreadedExecutor executor;
 
 	std::string robotName("rys");
+	bool useIPC = false;
 
 	double wheelRadius = 0.056;
 	double baseWidth = 0.140;
@@ -63,12 +64,12 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	auto batteryNode = std::make_shared<BatteryNode>(robotName, "sensor_battery", 1000ms, batteryInputNumbers, batteryCoefficients);
-	// auto dwmNode = std::make_shared<DWMNode>(robotName, "sensor_dwm1000", 1000ms);
-	auto imuNode = std::make_shared<IMUNode>(robotName, "sensor_imu", 20ms, 3000ms, imuOffsets);
-	auto temperatureNode = std::make_shared<TemperatureNode>(robotName, "sensor_temperature", 2000ms, temperatureInputNumber, temperatureCoefficient);
-	// auto rangesNode = std::make_shared<RangesNode>(robotName, "sensor_ranges", 20ms, vl53l0xPins, vl53l0xAddresses);
-	auto motorsNode = std::make_shared<MotorsControllerNode>(robotName, "motors_controller", 10ms, wheelRadius, baseWidth);
+	auto batteryNode = std::make_shared<BatteryNode>(robotName, "sensor_battery", useIPC, 1000ms, batteryInputNumbers, batteryCoefficients);
+	// auto dwmNode = std::make_shared<DWMNode>(robotName, "sensor_dwm1000", useIPC, 1000ms);
+	auto imuNode = std::make_shared<IMUNode>(robotName, "sensor_imu", useIPC, 20ms, 3000ms, imuOffsets);
+	auto temperatureNode = std::make_shared<TemperatureNode>(robotName, "sensor_temperature", useIPC, 2000ms, temperatureInputNumber, temperatureCoefficient);
+	// auto rangesNode = std::make_shared<RangesNode>(robotName, "sensor_ranges", useIPC, 20ms, vl53l0xPins, vl53l0xAddresses);
+	auto motorsNode = std::make_shared<MotorsControllerNode>(robotName, "motors_controller", useIPC, 10ms, wheelRadius, baseWidth);
 
 	setRTPriority();
 	// return 0;

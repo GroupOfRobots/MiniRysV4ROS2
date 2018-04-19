@@ -31,12 +31,13 @@ void setRTPriority() {
 MotorsControllerNode::MotorsControllerNode(
 	const std::string & robotName,
 	const std::string & nodeName,
+	const bool useIPC,
 	std::chrono::milliseconds rate,
 	float wheelRadius,
 	float baseWidth,
 	unsigned int odometryRate,
 	float temporaryValue
-) : rclcpp::Node(nodeName, robotName, true), wheelRadius(wheelRadius), baseWidth(baseWidth), rate(rate), odometryRate(odometryRate) {
+) : rclcpp::Node(nodeName, robotName, useIPC), wheelRadius(wheelRadius), baseWidth(baseWidth), rate(rate), odometryRate(odometryRate) {
 	this->batteryCritical = false;
 	this->temperatureCritical = false;
 	this->enabled = true;
@@ -329,7 +330,7 @@ void MotorsControllerNode::runLoop() {
 	if (this->standingUp){
 		standUp();
 	}
-	
+
 	if (!this->standingUp){
 		// std::cout << "Balancing..." << std::endl;
 		float leftSpeed = this->motorsController->getMotorSpeedLeftRaw();

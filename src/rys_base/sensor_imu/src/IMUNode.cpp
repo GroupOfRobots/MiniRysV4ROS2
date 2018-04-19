@@ -23,11 +23,12 @@ void setRTPriority() {
 IMUNode::IMUNode(
 	const std::string & robotName,
 	const std::string & nodeName,
+	const bool useIPC,
 	const std::chrono::milliseconds loopDuration,
 	const std::chrono::milliseconds calibrationDuration,
 	const int imuCalibrationOffsets[6],
 	const int infrequentPublishRate
-) : rclcpp::Node(nodeName, robotName, true), infrequentPublishRate(infrequentPublishRate), infrequentPublishCount(0) {
+) : rclcpp::Node(nodeName, robotName, useIPC), infrequentPublishRate(infrequentPublishRate), infrequentPublishCount(0) {
 	std::cout << "[IMU] Initializing IMU...\n";
 	this->imu = new IMU();
 	std::cout << "[IMU] IMU initialized\n";

@@ -28,12 +28,13 @@ void setRTPriority() {
 TemperatureNode::TemperatureNode(
 	const std::string & robotName,
 	const std::string & nodeName,
+	const bool useIPC,
 	std::chrono::milliseconds rate,
 	const uint8_t inputNumber,
 	const float coefficient,
 	const float criticalLevel,
 	const float hysteresis
-) : rclcpp::Node(nodeName, robotName, true) {
+) : rclcpp::Node(nodeName, robotName, useIPC) {
 	this->filename = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumber) + std::string("_raw");
 	this->coefficient = coefficient;
 	this->criticalLevel = criticalLevel;

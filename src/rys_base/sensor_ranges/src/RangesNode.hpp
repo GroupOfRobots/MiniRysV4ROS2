@@ -23,6 +23,7 @@ class RangesNode : public rclcpp::Node {
 		RangesNode(
 			const std::string & robotName,
 			const std::string & nodeName,
+			const bool useIPC,
 			const std::chrono::milliseconds loopDuration,
 			const uint8_t pins[5],
 			const uint8_t addresses[5]

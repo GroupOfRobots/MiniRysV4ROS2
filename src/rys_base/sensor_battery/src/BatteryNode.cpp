@@ -25,11 +25,12 @@ void setRTPriority() {
 BatteryNode::BatteryNode(
 	const std::string & robotName,
 	const std::string & nodeName,
+	const bool useIPC,
 	std::chrono::milliseconds rate,
 	const uint8_t inputNumbers[3],
 	const float coefficients[3],
 	const float lowLevel
-) : rclcpp::Node(nodeName, robotName, true) {
+) : rclcpp::Node(nodeName, robotName, useIPC) {
 	for (int i = 0; i < 3; ++i) {
 		this->coefficients[i] = coefficients[i];
 		this->filenames[i] = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumbers[i]) + std::string("_raw");

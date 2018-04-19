@@ -92,6 +92,7 @@ class MotorsControllerNode : public rclcpp::Node {
 		MotorsControllerNode(
 			const std::string & robotName,
 			const std::string & nodeName,
+			const bool useIPC,
 			std::chrono::milliseconds rate,
 			float wheelRadius,
 			float baseWidth,

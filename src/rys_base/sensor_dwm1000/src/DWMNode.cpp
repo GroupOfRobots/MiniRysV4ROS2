@@ -7,8 +7,9 @@
 DWMNode::DWMNode(
 	const std::string & robotName,
 	const std::string & nodeName,
+	const bool useIPC,
 	std::chrono::milliseconds rate
-) : rclcpp::Node(nodeName, robotName, false) {
+) : rclcpp::Node(nodeName, robotName, useIPC) {
 	std::cout << "[DWM1000] NOT enabling the sensor\n";
 	// this->dwm = new DWM(115, 20);
 	// this->dwm->initialize(true);

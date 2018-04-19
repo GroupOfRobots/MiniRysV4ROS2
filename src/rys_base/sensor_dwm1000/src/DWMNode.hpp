@@ -21,6 +21,7 @@ class DWMNode : public rclcpp::Node {
 		DWMNode(
 			const std::string & robotName,
 			const std::string & nodeName,
+			const bool useIPC,
 			std::chrono::milliseconds rate
 		);
 		~DWMNode();

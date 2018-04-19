@@ -23,6 +23,7 @@ class TemperatureNode : public rclcpp::Node {
 		TemperatureNode(
 			const std::string & robotName,
 			const std::string & nodeName,
+			const bool useIPC,
 			std::chrono::milliseconds rate,
 			const uint8_t inputNumber,
 			const float coefficient,

@@ -22,6 +22,7 @@ class BatteryNode : public rclcpp::Node {
 		BatteryNode(
 			const std::string & robotName,
 			const std::string & nodeName,
+			const bool useIPC,
 			std::chrono::milliseconds rate,
 			const uint8_t inputNumbers[3],
 			const float coefficients[3],

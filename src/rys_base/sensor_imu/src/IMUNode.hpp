@@ -25,6 +25,7 @@ class IMUNode : public rclcpp::Node {
 		IMUNode(
 			const std::string & robotName,
 			const std::string & nodeName,
+			const bool useIPC,
 			const std::chrono::milliseconds loopDuration,
 			const std::chrono::milliseconds calibrationDuration,
 			const int imuCalibrationOffsets[6],
