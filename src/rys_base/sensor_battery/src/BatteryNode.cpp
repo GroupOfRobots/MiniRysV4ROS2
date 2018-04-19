@@ -5,6 +5,23 @@
 
 #include "BatteryNode.hpp"
 
+#include <sched.h>
+#include <sys/mman.h>
+
+void setRTPriority() {
+	struct sched_param schedulerParams;
+	schedulerParams.sched_priority = sched_get_priority_max(SCHED_FIFO);
+	std::cout << "[MAIN] Setting RT scheduling, priority " << schedulerParams.sched_priority << std::endl;
+	if (sched_setscheduler(0, SCHED_FIFO, &schedulerParams) == -1) {
+		std::cout << "[MAIN] WARNING: Setting RT scheduling failed: " << std::strerror(errno) << std::endl;
+		return;
+	}
+
+	if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1) {
+		std::cout << "[MAIN] WARNING: Failed to lock memory: " << std::strerror(errno) << std::endl;
+	}
+}
+
 BatteryNode::BatteryNode(
 	const std::string & robotName,
 	const std::string & nodeName,
@@ -23,6 +40,8 @@ BatteryNode::BatteryNode(
 	this->publisher = this->create_publisher<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&BatteryNode::publishData, this));
 	std::cout << "[BATT] Node ready\n";
+
+	setRTPriority();
 }
 
 BatteryNode::~BatteryNode() {}

@@ -38,11 +38,17 @@ class MotorsControllerNode : public rclcpp::Node {
 		float roll;
 		float rollPrevious;
 		float rotationX;
+		bool newImuData;
 
 		bool standingUp;
 		bool standUpPhase;
 		std::chrono::milliseconds standUpTimer;
 		int standUpMultiplier;
+
+		int numOfImuMessages;
+		float timePassed;
+		float frequency;
+		int frequencyTimer;
 
 		float steeringRotation;
 		float steeringThrottle;
@@ -89,7 +95,8 @@ class MotorsControllerNode : public rclcpp::Node {
 			std::chrono::milliseconds rate,
 			float wheelRadius,
 			float baseWidth,
-			unsigned int odometryRate = 5
+			unsigned int odometryRate = 5,
+			float temporaryValue = 0
 		);
 		~MotorsControllerNode();
 };

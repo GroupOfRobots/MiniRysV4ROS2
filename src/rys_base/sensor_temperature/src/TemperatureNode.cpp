@@ -6,7 +6,24 @@
 
 #include "TemperatureNode.hpp"
 
+#include <sched.h>
+#include <sys/mman.h>
+
 using namespace std::chrono_literals;
+
+void setRTPriority() {
+	struct sched_param schedulerParams;
+	schedulerParams.sched_priority = sched_get_priority_max(SCHED_FIFO);
+	std::cout << "[MAIN] Setting RT scheduling, priority " << schedulerParams.sched_priority << std::endl;
+	if (sched_setscheduler(0, SCHED_FIFO, &schedulerParams) == -1) {
+		std::cout << "[MAIN] WARNING: Setting RT scheduling failed: " << std::strerror(errno) << std::endl;
+		return;
+	}
+
+	if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1) {
+		std::cout << "[MAIN] WARNING: Failed to lock memory: " << std::strerror(errno) << std::endl;
+	}
+}
 
 TemperatureNode::TemperatureNode(
 	const std::string & robotName,
@@ -25,6 +42,8 @@ TemperatureNode::TemperatureNode(
 	this->publisher = this->create_publisher<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", rmw_qos_profile_default);
 	this->timer = this->create_wall_timer(rate, std::bind(&TemperatureNode::publishData, this));
 	std::cout << "[TEMP] Node ready\n";
+
+	setRTPriority();
 }
 
 TemperatureNode::~TemperatureNode() {}
