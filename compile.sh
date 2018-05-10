@@ -6,6 +6,7 @@ COMMON_PKGS="rys_interfaces"
 ROBOT_PKGS="rys_motors_controller rys_sensor_imu rys_sensor_ranges rys_sensor_dwm1000 rys_sensor_battery rys_sensor_temperature rys_launch"
 REMOTE_PKGS="rys_remote"
 MOTOR_PKGS="rys_motors_controller"
+TEST_PKGS="rys_test"
 BUILD_CMD="ament build"
 
 # Check whether ament is available
@@ -24,10 +25,13 @@ elif [ $1 = 'remote' ] ; then
 	${BUILD_CMD} ${ARGS} --only-packages ${REMOTE_PKGS} ${COMMON_PKGS}
 elif [ $1 = 'motor' ] ; then
     ${BUILD_CMD} ${ARGS} --only-packages ${MOTOR_PKGS} ${COMMON_PKGS}
+elif [ $1 = 'test' ] ;  then
+    ${BUILD_CMD} ${ARGS} --only-packages ${TEST_PKGS} ${COMMON_PKGS}
 else
-	echo "Invalid argument. Possible values: [none], 'robot', 'remote', 'motor'"
+	echo "Invalid argument. Possible values: [none], 'robot', 'remote', 'motor', 'test'"
 	exit 1
 fi
 endTime=`date +%s.%N`
 runTime=$(echo "${endTime} - ${startTime}" | bc)
 echo -e "\nExecution time: ${runTime}"
+
