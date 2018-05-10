@@ -14,11 +14,15 @@ class TemperatureNode : public rclcpp::Node {
 		float criticalLevel;
 		float hysteresis;
 		bool isCritical;
+		int readings;
+		int currentReadings;
+		float voltageSum;
 
 		rclcpp::TimerBase::SharedPtr timer;
 		rclcpp::Publisher<rys_interfaces::msg::TemperatureStatus>::SharedPtr publisher;
 
-		void publishData();
+		void readData();
+		void publishData(const float temperature);
 	public:
 		TemperatureNode(
 			const std::string & robotName,
@@ -28,7 +32,8 @@ class TemperatureNode : public rclcpp::Node {
 			const uint8_t inputNumber,
 			const float coefficient,
 			const float criticalLevel = 60.0f,
-			const float hysteresis = 10.0f
+			const float hysteresis = 10.0f,
+			const int readings = 5
 		);
 		~TemperatureNode();
 };
