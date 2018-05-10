@@ -16,6 +16,11 @@ class IMUNode : public rclcpp::Node {
 		const int infrequentPublishRate;
 		int infrequentPublishCount;
 
+		std::chrono::time_point<std::chrono::high_resolution_clock> previous;
+		std::chrono::time_point<std::chrono::high_resolution_clock> timeNow;
+		int numOfImuMessages;
+		float frequency;
+
 		rclcpp::TimerBase::SharedPtr timer;
 		rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuPublisher;
 		rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuInfrequentPublisher;

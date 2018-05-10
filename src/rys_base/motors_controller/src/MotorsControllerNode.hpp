@@ -46,9 +46,7 @@ class MotorsControllerNode : public rclcpp::Node {
 		int standUpMultiplier;
 
 		int numOfImuMessages;
-		float timePassed;
 		float frequency;
-		int frequencyTimer;
 
 		float steeringRotation;
 		float steeringThrottle;

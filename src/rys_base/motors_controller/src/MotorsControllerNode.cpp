@@ -14,20 +14,6 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
 
-void setRTPriority() {
-	struct sched_param schedulerParams;
-	schedulerParams.sched_priority = sched_get_priority_max(SCHED_FIFO);
-	std::cout << "[MAIN] Setting RT scheduling, priority " << schedulerParams.sched_priority << std::endl;
-	if (sched_setscheduler(0, SCHED_FIFO, &schedulerParams) == -1) {
-		std::cout << "[MAIN] WARNING: Setting RT scheduling failed: " << std::strerror(errno) << std::endl;
-		return;
-	}
-
-	if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1) {
-		std::cout << "[MAIN] WARNING: Failed to lock memory: " << std::strerror(errno) << std::endl;
-	}
-}
-
 MotorsControllerNode::MotorsControllerNode(
 	const std::string & robotName,
 	const std::string & nodeName,
@@ -66,79 +52,63 @@ MotorsControllerNode::MotorsControllerNode(
 	this->odometryTwist = KDL::Twist();
 	this->odoSeq = 0;
 
-	std::cout << "[MOTORS] Initializing motors controller...\n";/*
-	this->motorsController = new MotorsController();
+	// std::cout << "[MOTORS] Initializing motors controller...\n";
+	// this->motorsController = new MotorsController();
 
-	this->motorsController->setInvertSpeed(true, false);
-	this->motorsController->setMotorsSwapped(true);
-	this->motorsController->setBalancing(true);
-	this->motorsController->setLQREnabled(false);
-	this->motorsController->setSpeedFilterFactor(1);
-	this->motorsController->setAngleFilterFactor(1);
-	// this->motorsController->setPIDParameters(0.03, 0.0001, 0.008, 50, 0.05, 20);
-	this->motorsController->setPIDParameters(0.03, 0.0001, 0.008, temporaryValue, 0.05, 20);
-	this->motorsController->setLQRParameters(-0.0316,-42.3121,-392.3354);
-	this->motorsController->setPIDSpeedRegulatorEnabled(false);
+	// this->motorsController->setInvertSpeed(true, false);
+	// this->motorsController->setMotorsSwapped(true);
+	// this->motorsController->setBalancing(true);
+	// this->motorsController->setLQREnabled(false);
+	// this->motorsController->setSpeedFilterFactor(1);
+	// this->motorsController->setAngleFilterFactor(1);
+	// // this->motorsController->setPIDParameters(0.03, 0.0001, 0.008, 50, 0.05, 20);
+	// this->motorsController->setPIDParameters(0.03, 0.0001, 0.008, temporaryValue, 0.05, 20);
+	// this->motorsController->setLQRParameters(-0.0316,-42.3121,-392.3354);
+	// this->motorsController->setPIDSpeedRegulatorEnabled(false);
 
-	std::cout << "[MOTORS] Motors controller initialized\n";
-*/
-	const rmw_qos_profile_t imuQosProfile = {
-		RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-		100,
-		RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
-		RMW_QOS_POLICY_DURABILITY_VOLATILE,
-		false
-	};
-/*
-	this->motorsEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_motors", std::bind(&MotorsControllerNode::enableMessageCallback, this, _1));
-	this->balancingEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_balancing", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
-	this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
-	this->batterySubscriber = this->create_subscription<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", std::bind(&MotorsControllerNode::batteryMessageCallback, this, _1));
-	this->temperatureSubscriber = this->create_subscription<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", std::bind(&MotorsControllerNode::temperatureMessageCallback, this, _1));
-	*/// this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
-	this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), imuQosProfile);
+	// std::cout << "[MOTORS] Motors controller initialized\n";
+
+	// const rmw_qos_profile_t imuQosProfile = {
+	// 	RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+	// 	100,
+	// 	RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
+	// 	RMW_QOS_POLICY_DURABILITY_VOLATILE,
+	// 	false
+	// };
+
+	// this->motorsEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_motors", std::bind(&MotorsControllerNode::enableMessageCallback, this, _1));
+	// this->balancingEnableSubscriber = this->create_subscription<std_msgs::msg::Bool>("/" + robotName + "/control/enable_balancing", std::bind(&MotorsControllerNode::setBalancingMode, this, _1));
+	// this->steeringSubscriber = this->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", std::bind(&MotorsControllerNode::setSteering, this, _1));
+	// this->batterySubscriber = this->create_subscription<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", std::bind(&MotorsControllerNode::batteryMessageCallback, this, _1));
+	// this->temperatureSubscriber = this->create_subscription<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", std::bind(&MotorsControllerNode::temperatureMessageCallback, this, _1));
+	this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), rmw_qos_profile_sensor_data);
+	// this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1), imuQosProfile);
 	// this->imuSubscriber = this->create_subscription<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", std::bind(&MotorsControllerNode::imuMessageCallback, this, _1));
 
-	const rmw_qos_profile_t odometryQosProfile = {
-		RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-		20,
-		RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-		RMW_QOS_POLICY_DURABILITY_VOLATILE,
-		false
-	};
+	// const rmw_qos_profile_t odometryQosProfile = {
+	// 	RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+	// 	20,
+	// 	RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+	// 	RMW_QOS_POLICY_DURABILITY_VOLATILE,
+	// 	false
+	// };
 
-	/*this->odometryPublisher = this->create_publisher<nav_msgs::msg::Odometry>("/" + robotName + "/control/odometry", odometryQosProfile);
+	// this->odometryPublisher = this->create_publisher<nav_msgs::msg::Odometry>("/" + robotName + "/control/odometry", odometryQosProfile);
 
-	this->setRegulatorSettingsServer = this->create_service<rys_interfaces::srv::SetRegulatorSettings>("/" + robotName + "/control/regulator_settings/set", std::bind(&MotorsControllerNode::setRegulatorSettingsCallback, this, _1, _2, _3));
-	this->getRegulatorSettingsServer = this->create_service<rys_interfaces::srv::GetRegulatorSettings>("/" + robotName + "/control/regulator_settings/get", std::bind(&MotorsControllerNode::getRegulatorSettingsCallback, this, _1, _2, _3));
-
-	this->loopTimer = this->create_wall_timer(rate, std::bind(&MotorsControllerNode::runLoop, this));
-*/
-	std::cout << "[MOTORS] Node ready\n";
+	// this->setRegulatorSettingsServer = this->create_service<rys_interfaces::srv::SetRegulatorSettings>("/" + robotName + "/control/regulator_settings/set", std::bind(&MotorsControllerNode::setRegulatorSettingsCallback, this, _1, _2, _3));
+	// this->getRegulatorSettingsServer = this->create_service<rys_interfaces::srv::GetRegulatorSettings>("/" + robotName + "/control/regulator_settings/get", std::bind(&MotorsControllerNode::getRegulatorSettingsCallback, this, _1, _2, _3));
 
 	this->numOfImuMessages = 0;
-	this->timePassed = 0.0;
 	this->frequency = 0.0;
-	this->frequencyTimer = 0;
 
-	setRTPriority();
+	// this->loopTimer = this->create_wall_timer(rate, std::bind(&MotorsControllerNode::runLoop, this));
+	std::cout << "[MOTORS] Node ready\n";
 }
 
 MotorsControllerNode::~MotorsControllerNode() {
 	std::cout << "[MOTORS] Deinitializing motors controller...\n";
 	delete this->motorsController;
 }
-
-// void MotorsControllerNode::motorsRunTimed(const float leftSpeed, const float rightSpeed, const int microstep, const int milliseconds) {
-// 	auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(milliseconds);
-// 	// rclcpp::WallRate loopRate(std::chrono::nanoseconds(1000000000));
-// 	while (rclcpp::ok() && std::chrono::steady_clock::now() < end) {
-// 	this->motorsController->setMotorSpeeds(leftSpeed, rightSpeed, microstep, true);
-// 		// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-// 		rclcpp::sleep_for(std::chrono::nanoseconds(1000000));
-// 	}
-// 	// loopRate.sleep();
-// }
 
 void MotorsControllerNode::enableMessageCallback(const std_msgs::msg::Bool::SharedPtr message) {
 	if (message->data) {
@@ -174,7 +144,7 @@ void MotorsControllerNode::imuMessageCallback(const sensor_msgs::msg::Imu::Share
 	this->rollPrevious = roll;
 	this->roll = atan2(2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx * qx + qy * qy));
 	// std::cout << "[MOTORS::imuCallback] received roll: \t" << this-> roll <<std::endl;
-	this->newImuData = true;
+	// this->newImuData = true;
 	runLoop();
 }
 
@@ -277,43 +247,48 @@ void MotorsControllerNode::standUp() {
 
 void MotorsControllerNode::runLoop() {
 	// std::cout << "[MOTORS::runLoop] runLoop() begin" << std::endl;
-	if (!this->enabled) {
-		std::cout << "[MOTORS::runLoop] enabled flag is False!" << std::endl;
-		return;
-	}
-/*
-	// Check battery/temperature
-	if (this->batteryCritical || this->temperatureCritical) {
-		this->motorsController->disableMotors();
-		std::cout << "[MOTORS::runLoop] Battery or temperature critical!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-		return;
-	} else {
-		// std::cout << "[MOTORS::runLoop] Battery and temperatue OK" << std::endl;
-		this->motorsController->enableMotors();
-	}
-*/
-	// if (this->newImuData){
-	// 	this->newImuData = false;
-	// } else {
+	// if (!this->enabled) {
+	// 	std::cout << "[MOTORS::runLoop] enabled flag is False!" << std::endl;
 	// 	return;
 	// }
 
-	this->previous = this->timeNow;
-	this->timeNow = std::chrono::high_resolution_clock::now();
-	auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->timeNow - this->previous);
-	float loopTime = loopTimeSpan.count();
-	// std::cout << "[MOTORS::runLoop] Looptime:" << loopTime << std::endl;
-	this->frequencyTimer++;
+	// // Check battery/temperature
+	// if (this->batteryCritical || this->temperatureCritical) {
+	// 	// this->motorsController->disableMotors();
+	// 	if (this->batteryCritical) std::cout << "[MOTORS::runLoop] Battery critical!Battery critical!Battery critical!" << std::endl;
+	// 	else std::cout << "[MOTORS::runLoop] Temperature critical!Temperature critical!Temperature critical!" << std::endl;
+	// 	return;
+	// } else {
+	// 	// std::cout << "[MOTORS::runLoop] Battery and temperatue OK" << std::endl;
+	// 	// this->motorsController->enableMotors();
+	// }
+
+	// if (this->newImuData){
+	// 	this->newImuData = false;
+	// } else {
+	// 	std::cout << "[MOTORS::runLoop] Lacking IMU Data!" << std::endl;
+	// 	// return;
+	// }
+
 	this->numOfImuMessages++;
-	this->timePassed += loopTime;
-	if (this->frequencyTimer > 99) {
-		this->frequencyTimer = 0;
-		this->frequency = this->numOfImuMessages/this->timePassed;
-		// this->numOfImuMessages = 0;
-		// this->timePassed = 0;
-		std::cout <<"[MOTORS::runLoop] Imu message frequency: " << this->frequency << std::endl;
+	if (this->numOfImuMessages > 9999) {
+		this->previous = this->timeNow;
+		this->timeNow = std::chrono::high_resolution_clock::now();
+		auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->timeNow - this->previous);
+		float loopTime = loopTimeSpan.count();
+		this->frequency = this->numOfImuMessages/loopTime;
+		std::cout <<"[MOTORS::runLoop] Receiving frequency: " << this->frequency << std::endl;
+		this->numOfImuMessages = 0;
 	}
+
 	return;
+	
+	// this->previous = this->timeNow;
+	// this->timeNow = std::chrono::high_resolution_clock::now();
+	// auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->timeNow - this->previous);
+	// float loopTime = loopTimeSpan.count();
+	// std::cout << "[MOTORS::runLoop] Looptime:" << loopTime << std::endl;
+
 	bool layingDown = (this->roll > 1.0 && this->rollPrevious > 1.0) || (this->roll < -1.0 && this->rollPrevious < -1.0);
 	// std::cout << "[MOTORS::runLoop] Robot is laying down:" << layingDown << std::endl;
 	if (this->balancing && layingDown && !standingUp) {

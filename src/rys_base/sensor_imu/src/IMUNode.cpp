@@ -6,20 +6,6 @@
 #include <sched.h>
 #include <sys/mman.h>
 
-void setRTPriority() {
-	struct sched_param schedulerParams;
-	schedulerParams.sched_priority = sched_get_priority_max(SCHED_FIFO);
-	std::cout << "[MAIN] Setting RT scheduling, priority " << schedulerParams.sched_priority << std::endl;
-	if (sched_setscheduler(0, SCHED_FIFO, &schedulerParams) == -1) {
-		std::cout << "[MAIN] WARNING: Setting RT scheduling failed: " << std::strerror(errno) << std::endl;
-		return;
-	}
-
-	if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1) {
-		std::cout << "[MAIN] WARNING: Failed to lock memory: " << std::strerror(errno) << std::endl;
-	}
-}
-
 IMUNode::IMUNode(
 	const std::string & robotName,
 	const std::string & nodeName,
@@ -33,6 +19,12 @@ IMUNode::IMUNode(
 	this->imu = new IMU();
 	std::cout << "[IMU] IMU initialized\n";
 
+	this->previous = std::chrono::high_resolution_clock::now();
+	this->timeNow = std::chrono::high_resolution_clock::now();
+	this->numOfImuMessages = 0;
+	this->timePassed = 0;
+	this->frequency = 0;
+
 	const rmw_qos_profile_t imuQosProfile = {
 		RMW_QOS_POLICY_HISTORY_KEEP_LAST,
 		100,
@@ -41,14 +33,12 @@ IMUNode::IMUNode(
 		false
 	};
 
-	// this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", rmw_qos_profile_sensor_data);
-	this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", imuQosProfile);
+	this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", rmw_qos_profile_sensor_data);
+	// this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu", imuQosProfile);
 	// this->imuPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imu");
 	this->imuInfrequentPublisher = this->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imuInfrequent", rmw_qos_profile_sensor_data);
 	this->timer = this->create_wall_timer(loopDuration, std::bind(&IMUNode::publishData, this));
 	std::cout << "[IMU] Node ready\n";
-
-	setRTPriority();
 }
 
 IMUNode::~IMUNode() {
@@ -56,6 +46,17 @@ IMUNode::~IMUNode() {
 }
 
 void IMUNode::publishData() {
+	this->numOfImuMessages++;
+	if (this->numOfImuMessages > 9999) {
+		this->previous = this->timeNow;
+		this->timeNow = std::chrono::high_resolution_clock::now();
+		auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->timeNow - this->previous);
+		float loopTime = loopTimeSpan.count();
+		this->frequency = this->numOfImuMessages/loopTime;
+		std::cout <<"[IMU::publishData] Message frequency: " << this->frequency << std::endl;
+		this->numOfImuMessages = 0;
+	}
+
 	auto message = std::make_shared<sensor_msgs::msg::Imu>();
 
 	message->header.stamp = this->now();
@@ -64,12 +65,8 @@ void IMUNode::publishData() {
 	IMU::ImuData data;
 	int result = -1;
 	while(result < 0){
-		try {
-			result = this->imu->getData(&data);
-		} catch (const std::exception & error) {
-			std::cout << "[IMU] Error getting IMU reading: " << error.what() << std::endl;
-			return;
-		}
+		result = this->imu->getData(&data);
+		// rclcpp::sleep_for(std::chrono::milliseconds(1));
 	}
 
 	message->orientation.x = data.orientationQuaternion[1];
