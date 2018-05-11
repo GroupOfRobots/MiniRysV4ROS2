@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 void setRTPriority() {
 	struct sched_param schedulerParams;
-	schedulerParams.sched_priority = sched_get_priority_max(SCHED_FIFO);
+	schedulerParams.sched_priority = sched_get_priority_max(SCHED_FIFO)-1;
 	std::cout << "[MAIN] Setting RT scheduling, priority " << schedulerParams.sched_priority << std::endl;
 	if (sched_setscheduler(0, SCHED_FIFO, &schedulerParams) == -1) {
 		std::cout << "[MAIN] WARNING: Setting RT scheduling failed: " << std::strerror(errno) << std::endl;
