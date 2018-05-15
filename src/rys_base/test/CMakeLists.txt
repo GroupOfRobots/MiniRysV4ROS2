@@ -16,10 +16,12 @@ find_package(rys_interfaces REQUIRED)
 set(HEADER_FILES
 	src/PublisherNode.hpp
 	src/SubscriberNode.hpp
+	src/FrequencyCounter.hpp
 )
 set(SOURCE_FILES
 	src/PublisherNode.cpp
 	src/SubscriberNode.cpp
+	src/FrequencyCounter.cpp
 )
 set(AMENT_DEPENDENCIES
 	rclcpp
@@ -67,6 +69,16 @@ ament_target_dependencies(submain
 	rys_interfaces
 )
 
+add_executable(freqmain
+	src/freqmain.cpp
+)
+target_link_libraries(freqmain ${PROJECT_NAME}_node)
+ament_target_dependencies(freqmain
+	rclcpp
+	std_msgs
+	rys_interfaces
+)
+
 ## Install targets
 # node class object into lib/
 install(TARGETS
@@ -84,6 +96,7 @@ install(TARGETS
 	main
 	pubmain
 	submain
+	freqmain
 	DESTINATION lib/${PROJECT_NAME}
 )
 
