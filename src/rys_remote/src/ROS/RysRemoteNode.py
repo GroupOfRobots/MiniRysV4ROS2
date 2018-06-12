@@ -28,6 +28,9 @@ class RysRemoteNode(Node):
 		self.clientSetRegulatorSettings = self.create_client(RysSrvs.SetRegulatorSettings, '/' + robotName + '/control/regulator_settings/set')
 		self.clientGetRegulatorSettings = self.create_client(RysSrvs.GetRegulatorSettings, '/' + robotName + '/control/regulator_settings/get')
 
+		self.clientSetRegulatorSettingsResponse = None
+		self.clientGetRegulatorSettingsResponse = None
+
 		# Create ROS subscribers
 		batteryTopicName = '/' + robotName + '/sensor/battery'
 		imuTopicName = '/' + robotName + '/sensor/imuInfrequent'
@@ -109,17 +112,23 @@ class RysRemoteNode(Node):
 		request.lqr_angular_velocity_k = parameters['lqrAngularVelocityK']
 		request.lqr_angle_k = parameters['lqrAngleK']
 
-		self.clientSetRegulatorSettings.call(request)
+		self.clientSetRegulatorSettingsResponse = self.clientSetRegulatorSettings.call(request)
+		# self.clientSetRegulatorSettings.call(request)
 
 	def requestGetRegulatorSettings(self):
 		request = RysSrvs.GetRegulatorSettings.Request()
-		self.clientGetRegulatorSettings.call(request)
+		self.clientGetRegulatorSettingsResponse = self.clientGetRegulatorSettings.call(request)
+		# self.clientGetRegulatorSettings.call(request)
 
 	def getRequestResponses(self):
-		setResponse = self.clientSetRegulatorSettings.response
-		getResponse = self.clientGetRegulatorSettings.response
+		setResponse = self.clientSetRegulatorSettingsResponse
+		getResponse = self.clientGetRegulatorSettingsResponse
+		# setResponse = self.clientSetRegulatorSettings.response
+		# getResponse = self.clientGetRegulatorSettings.response
 
-		self.clientSetRegulatorSettings.response = None
-		self.clientGetRegulatorSettings.response = None
+		self.clientSetRegulatorSettingsResponse = None
+		self.clientGetRegulatorSettingsResponse = None
+		# self.clientSetRegulatorSettings.response = None
+		# self.clientGetRegulatorSettings.response = None
 
 		return (setResponse, getResponse)
