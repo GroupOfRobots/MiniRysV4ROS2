@@ -22,7 +22,7 @@ IMUNode::IMUNode(
 	this->previous = std::chrono::high_resolution_clock::now();
 	this->timeNow = std::chrono::high_resolution_clock::now();
 	this->numOfImuMessages = 0;
-	this->timePassed = 0;
+	// this->timePassed = 0;
 	this->frequency = 0;
 
 	const rmw_qos_profile_t imuQosProfile = {

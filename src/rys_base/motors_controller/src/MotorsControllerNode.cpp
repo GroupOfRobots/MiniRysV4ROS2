@@ -283,11 +283,11 @@ void MotorsControllerNode::runLoop() {
 
 	return;
 	
-	// this->previous = this->timeNow;
-	// this->timeNow = std::chrono::high_resolution_clock::now();
-	// auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->timeNow - this->previous);
-	// float loopTime = loopTimeSpan.count();
-	// std::cout << "[MOTORS::runLoop] Looptime:" << loopTime << std::endl;
+	this->previous = this->timeNow;
+	this->timeNow = std::chrono::high_resolution_clock::now();
+	auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(this->timeNow - this->previous);
+	float loopTime = loopTimeSpan.count();
+	std::cout << "[MOTORS::runLoop] Looptime:" << loopTime << std::endl;
 
 	bool layingDown = (this->roll > 1.0 && this->rollPrevious > 1.0) || (this->roll < -1.0 && this->rollPrevious < -1.0);
 	// std::cout << "[MOTORS::runLoop] Robot is laying down:" << layingDown << std::endl;
