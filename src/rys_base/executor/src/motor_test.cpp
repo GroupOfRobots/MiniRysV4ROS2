@@ -11,8 +11,16 @@
 #include "IMU.hpp"
 #include "helper_3dmath.hpp"
 #include "MotorsController.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rys_interfaces/msg/steering.hpp"
 
 bool destruct = false;
+
+struct SteeringData{
+    float throttle;
+    float rotation;
+    int precision;
+};
 
 void sigintHandler(int signum) {
     if (signum == SIGINT) {
@@ -60,7 +68,7 @@ void IMUreader(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extDa
             dm.unlock();
 
             numOfRuns++;
-            if (numOfRuns > 9999) {
+            if (numOfRuns > 5999) {
                 previous = timeNow;
                 timeNow = std::chrono::high_resolution_clock::now();
                 auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(timeNow - previous);
@@ -196,8 +204,7 @@ void TEMPreader(bool& activate, std::mutex& m, bool& destroy, float& f, std::mut
     std::cout << name << ": I'm dying.." << std::endl;
 }
 
-void motorsController(bool& activate, std::mutex& m, bool& destroy,
-                    IMU::ImuData& imu, std::mutex& imu_m){
+void motorsController(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& imu, std::mutex& imu_m, SteeringData& ster, std::mutex& ster_m){
     std::string name = "motors";
     pthread_setname_np(pthread_self(), name.c_str());
     int numOfRuns = 0;
@@ -211,7 +218,6 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy,
     float roll = 0;
     float previousRoll = 0;
     float rotationX = 0;
-    float rotation = 0;
     bool layingDown = false;
     bool standingUp = false;
     int standUpMultiplier;
@@ -219,12 +225,18 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy,
     std::chrono::milliseconds standUpTimer;
     std::chrono::milliseconds rate = std::chrono::milliseconds(10);
 
+    float rotation = 0;
+    float throttle = 0;
+    int precision = 32;
+
+    float balancing = false;
+
     MotorsController * controller = new MotorsController();
     controller->enableMotors();
     controller->setInvertSpeed(true, false);
     controller->setMotorsSwapped(true);
     controller->setLQREnabled(false);
-    controller->setBalancing(true);
+    controller->setBalancing(balancing);
     controller->setSpeedFilterFactor(1);
     controller->setAngleFilterFactor(1);
     controller->setPIDSpeedRegulatorEnabled(true);
@@ -253,11 +265,11 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy,
             roll = atan2(2.0 * (imu.orientationQuaternion[0] * imu.orientationQuaternion[1] + imu.orientationQuaternion[2] * imu.orientationQuaternion[3]),
                 1.0 - 2.0 * (imu.orientationQuaternion[1] * imu.orientationQuaternion[1] + imu.orientationQuaternion[2] * imu.orientationQuaternion[2]));
             rotationX = imu.angularVelocity[0];
-            std::cout << roll << " : " << rotationX << " : " << imu.angularVelocity[1] << std::endl;
+            // std::cout << roll << " : " << rotationX << " : " << imu.angularVelocity[1] << std::endl;
             imu_m.unlock();
 
             layingDown = (roll > 1.0 && previousRoll > 1.0) || (roll < -1.0 && previousRoll < -1.0);
-            if(layingDown && !standingUp){
+            if(layingDown && !standingUp && balancing){
                 standingUp = true;
                 standUpMultiplier = (roll > 1.0 ? 1 : -1);
                 standUpPhase = false;
@@ -292,19 +304,29 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy,
                 standUpTimer += rate;
             }
 
+            ster_m.lock();
+            throttle = ster.throttle;
+            rotation = ster.rotation;
+            precision = ster.precision;
+            // std::cout << throttle << " : " << rotation << " : " << precision << std::endl;
+            ster_m.unlock();
+
             if (!standingUp) {
                 float leftSpeed = controller->getMotorSpeedLeftRaw();
                 float rightSpeed = controller->getMotorSpeedRightRaw();
                 float linearSpeed = (leftSpeed + rightSpeed) / 2;
                 float finalLeftSpeed = 0;
                 float finalRightSpeed = 0;
-                controller->calculateSpeeds(roll, rotationX, linearSpeed, 0, rotation, finalLeftSpeed, finalRightSpeed, loopTimeRun);
-                std::cout << "L: " << finalLeftSpeed << "\t R: " << finalRightSpeed << std::endl;
-                controller->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, 32, false);
+                controller->calculateSpeeds(roll, rotationX, linearSpeed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTimeRun);
+                // std::cout << "L: " << finalLeftSpeed << "\t R: " << finalRightSpeed << std::endl;
+                if (balancing)
+                    controller->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, 32, false);
+                else
+                    controller->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, precision, true);
             }
             
             numOfRuns++;
-            if (numOfRuns > 9999) {
+            if (numOfRuns > 5999) {
                 previous = timeNow;
                 timeNow = std::chrono::high_resolution_clock::now();
                 auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(timeNow - previous);
@@ -323,8 +345,80 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy,
     std::cout << name << ": I'm dying.." << std::endl;
 }
 
-int main()
-{
+void steeringReceiver(int argc, char** argv, bool& activate, std::mutex& m, bool& destroy, SteeringData& s, std::mutex& sm){
+    std::string name = "SteeringReceiver";
+    pthread_setname_np(pthread_self(), name.c_str());
+    int numOfRuns = 0;
+    float frequency = 0;
+    std::chrono::time_point<std::chrono::high_resolution_clock> previous = std::chrono::high_resolution_clock::now();
+    std::chrono::time_point<std::chrono::high_resolution_clock> timeNow = std::chrono::high_resolution_clock::now();
+
+    float throttle = 0;
+    float rotation = 0;
+    int precision = 32;
+    
+    float newSteering = false;
+    sm.lock();
+    s.throttle = throttle;
+    s.rotation = rotation;
+    s.precision = precision;
+    // std::cout << throttle << rotation << precision << std::endl;
+    sm.unlock();
+
+    std::cout << "Initializing ROS...\n";
+    rclcpp::init(argc, argv);
+    const std::string robotName = "rys";
+    const std::string nodeName = "receiver";
+
+    auto node = rclcpp::Node::make_shared(nodeName, robotName, true);
+    auto steeringCallback = 
+        [&throttle,&rotation,&precision,&newSteering](const rys_interfaces::msg::Steering::SharedPtr message){
+            throttle = message->throttle;
+            rotation = message->rotation;
+            precision = message->precision;
+            newSteering = true;
+        };
+    auto sub = node->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", steeringCallback);
+
+    while(!destroy){
+        m.lock();
+        if(activate){
+            activate = false;
+            m.unlock();
+
+            rclcpp::spin_some(node);
+
+            if(newSteering){
+                sm.lock();
+                s.throttle = throttle;
+                s.rotation = rotation;
+                s.precision = precision;
+                // std::cout << throttle << rotation << precision << std::endl;
+                sm.unlock();
+                newSteering = false;
+            }
+
+            numOfRuns++;
+            if (numOfRuns > 11999) {
+                previous = timeNow;
+                timeNow = std::chrono::high_resolution_clock::now();
+                auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(timeNow - previous);
+                float loopTime = loopTimeSpan.count();
+                frequency = numOfRuns/loopTime;
+                std::cout << name << " Frequency " << frequency << "Hz after " << numOfRuns << " messages." << std::endl;
+                numOfRuns = 0;
+            }
+
+        } else {
+            m.unlock();
+        }
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+    rclcpp::shutdown();
+    std::cout << name << ": I'm dying.." << std::endl;
+}
+
+int main(int argc, char * argv[]){
     setRTPriority();
     std::string name = "main";
     pthread_setname_np(pthread_self(), name.c_str());
@@ -361,10 +455,20 @@ int main()
 
     bool motors_bool = false;
     std::mutex motors_mutex;
+    SteeringData steering_data;
+    std::mutex steering_data_mutex;
     std::thread t4(motorsController, std::ref(motors_bool), std::ref(motors_mutex), std::ref(destruct),
-                    std::ref(imuData), std::ref(imuData_mutex));
+                    std::ref(imuData), std::ref(imuData_mutex),
+                    std::ref(steering_data), std::ref(steering_data_mutex));
 
     exec->addExec(std::ref(motors_mutex), std::ref(motors_bool), std::chrono::milliseconds(10));
+
+    bool steering_bool = false;
+    std::mutex steering_mutex;
+    std::thread t5(steeringReceiver, argc, argv, std::ref(steering_bool), std::ref(steering_mutex), std::ref(destruct),
+                    std::ref(steering_data), std::ref(steering_data_mutex));
+
+    exec->addExec(std::ref(steering_mutex), std::ref(steering_bool), std::chrono::milliseconds(5));
  
     exec->list();
     exec->spin();
@@ -372,5 +476,6 @@ int main()
     t2.join();
     t3.join();
     t4.join();
+    t5.join();
     delete exec;
 }
