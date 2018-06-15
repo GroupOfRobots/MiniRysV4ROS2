@@ -175,6 +175,7 @@ void TEMPreader(bool& activate, std::mutex& m, bool& destroy, float& f, std::mut
             if (currentReadings == 5){
                 fm.lock();
                 f = (voltageSum/5)*100;
+                // std::cout << f << std::endl;
                 if (f > 60){
                     std::cout << name << ": Critical Temperature Warning: " << f << std::endl;
                     fm.unlock();
@@ -229,7 +230,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData
     float throttle = 0;
     int precision = 32;
 
-    float balancing = false;
+    float balancing = true;
 
     MotorsController * controller = new MotorsController();
     controller->enableMotors();
@@ -245,9 +246,14 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData
     // controller->newSetPIDParameters(0.0, 0.0, 0.0, 10.0, 0.0, 0.0);
     // working angle PID
     // controller->newSetPIDParameters(0.0, 0.0, 0.0, 2.0, 20.0, 0);
-    controller->newSetPIDParameters(0.0, 0.0, 0.0, 2.0, 20.0, 0);
+    // poorly working speed over angle PID
+    // controller->newSetPIDParameters(0.05, 0.0, 0.00, 2.0, 20.0, 0);
+    controller->newSetPIDParameters(0.1, 0.05, 0.00001, 2.0, 20.0, 0.01);
 
-    std::this_thread::sleep_for(std::chrono::seconds(20));
+    for (int i = 1;i<21;i++){
+        std::cout << name << ": " << i << std::endl; 
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 
     while(!destroy){
         m.lock();
@@ -322,7 +328,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData
                 if (balancing)
                     controller->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, 32, false);
                 else
-                    controller->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, precision, true);
+                    controller->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, precision, false);
             }
             
             numOfRuns++;
@@ -356,7 +362,7 @@ void steeringReceiver(int argc, char** argv, bool& activate, std::mutex& m, bool
     float throttle = 0;
     float rotation = 0;
     int precision = 32;
-    
+
     float newSteering = false;
     sm.lock();
     s.throttle = throttle;

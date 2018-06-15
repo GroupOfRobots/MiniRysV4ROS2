@@ -1,6 +1,7 @@
 #include "MotorsController.hpp"
 #include <cmath>
 #include <stdexcept>
+#include <iostream>
 
 MotorsController::MotorsController() {
 	this->balancing = true;
@@ -244,20 +245,30 @@ void MotorsController::calculateSpeedsPID(float angle, float rotationX, float sp
 
 void MotorsController::newCalculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
 	float targetAngle = 0.0f;
+	float speedError = 0.0f;
 
+	// if (this->pidSpeedRegulatorEnabled && throttle!=0) {
 	if (this->pidSpeedRegulatorEnabled) {
-		float speedError = throttle - (speed + rotationX/SPEED_TO_DEG);
+		speedError = throttle - (speed + rotationX/SPEED_TO_DEG);
 
 		float speedFactor0 = this->newPIDSpeedKp * (1 + this->newPIDSpeedInvTi * loopTime / 2 + this->newPIDSpeedTd / loopTime);
 		float speedFactor1 = this->newPIDSpeedKp * (this->newPIDSpeedInvTi * loopTime / 2 - 2 * this->newPIDSpeedTd / loopTime - 1);
 		float speedFactor2 = this->newPIDSpeedKp * this->newPIDSpeedTd / loopTime;
 
 		targetAngle = speedFactor0 * speedError + speedFactor1 * this->newPIDSpeedPreviousError1 + speedFactor2 * this->newPIDSpeedPreviousError2 + this->newPIDPreviousTargetAngle;
-
-		this->newPIDSpeedPreviousError2 = this->newPIDSpeedPreviousError1;
-		this->newPIDSpeedPreviousError1 = speedError;
-		this->newPIDPreviousTargetAngle = targetAngle;
+		// if (throttle == 0){
+		// 	targetAngle *= 2;
+		// 	clipValue(targetAngle, 0.3);
+		// } else {
+		// 	clipValue(targetAngle, 0.15);
+		// }
+		clipValue(targetAngle, 0.15);
+		// std::cout << speedError << " : " << targetAngle << std::endl;
+		// std::cout << targetAngle << std::endl;
 	}
+	this->newPIDSpeedPreviousError2 = this->newPIDSpeedPreviousError1;
+	this->newPIDSpeedPreviousError1 = speedError;
+	this->newPIDPreviousTargetAngle = targetAngle;
 
 	float angleError = targetAngle - angle;
 
@@ -267,6 +278,7 @@ void MotorsController::newCalculateSpeedsPID(float angle, float rotationX, float
 
 	float output = angleFactor0 * angleError + angleFactor1 * this->newPIDAnglePreviousError1 + angleFactor2 * this->newPIDAnglePreviousError2 + speed;
 	clipValue(output, 1.0);
+	clipValue(rotation, 0.3);
 
 	speedLeftNew = output + rotation;
 	speedRightNew = output - rotation;
