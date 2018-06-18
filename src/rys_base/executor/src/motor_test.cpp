@@ -13,6 +13,7 @@
 #include "MotorsController.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rys_interfaces/msg/steering.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 
 bool destruct = false;
 
@@ -351,7 +352,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData
     std::cout << name << ": I'm dying.." << std::endl;
 }
 
-void steeringReceiver(int argc, char** argv, bool& activate, std::mutex& m, bool& destroy, SteeringData& s, std::mutex& sm){
+void steeringReceiver(bool& activate, std::mutex& m, bool& destroy, SteeringData& s, std::mutex& sm){
     std::string name = "SteeringReceiver";
     pthread_setname_np(pthread_self(), name.c_str());
     int numOfRuns = 0;
@@ -370,15 +371,12 @@ void steeringReceiver(int argc, char** argv, bool& activate, std::mutex& m, bool
     s.precision = precision;
     // std::cout << throttle << rotation << precision << std::endl;
     sm.unlock();
-
-    std::cout << "Initializing ROS...\n";
-    rclcpp::init(argc, argv);
     const std::string robotName = "rys";
     const std::string nodeName = "receiver";
 
     auto node = rclcpp::Node::make_shared(nodeName, robotName, true);
     auto steeringCallback = 
-        [&throttle,&rotation,&precision,&newSteering](const rys_interfaces::msg::Steering::SharedPtr message){
+        [&](const rys_interfaces::msg::Steering::SharedPtr message){
             throttle = message->throttle;
             rotation = message->rotation;
             precision = message->precision;
@@ -424,11 +422,81 @@ void steeringReceiver(int argc, char** argv, bool& activate, std::mutex& m, bool
     std::cout << name << ": I'm dying.." << std::endl;
 }
 
+void rollSender(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extData, std::mutex& dm){
+    std::string name = "rollSender";
+    pthread_setname_np(pthread_self(), name.c_str());
+    int numOfRuns = 0;
+    float frequency = 0;
+    std::chrono::time_point<std::chrono::high_resolution_clock> previous = std::chrono::high_resolution_clock::now();
+    std::chrono::time_point<std::chrono::high_resolution_clock> timeNow = std::chrono::high_resolution_clock::now();
+
+    const std::string robotName = "rys";
+    const std::string nodeName = "rollSender";
+
+    auto node = rclcpp::Node::make_shared(nodeName, robotName, true);
+    auto pub = node->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imuInfrequent");
+    IMU::ImuData localData;
+    auto message = std::make_shared<sensor_msgs::msg::Imu>();
+
+    while(!destroy){
+        m.lock();
+        if(activate){
+            activate = false;
+            m.unlock();
+
+            dm.lock();
+            localData = extData;
+            dm.unlock();
+
+            // std::cout << localData.orientationQuaternion[1] << std::endl;
+            message->header.stamp = node->now();
+            message->header.frame_id = "MPU6050";
+            message->orientation.x = localData.orientationQuaternion[1];
+            message->orientation.y = localData.orientationQuaternion[2];
+            message->orientation.z = localData.orientationQuaternion[3];
+            message->orientation.w = localData.orientationQuaternion[0];
+            message->angular_velocity.x = localData.angularVelocity[0];
+            message->angular_velocity.y = localData.angularVelocity[1];
+            message->angular_velocity.z = localData.angularVelocity[2];
+            message->linear_acceleration.x = localData.linearAcceleration[0];
+            message->linear_acceleration.y = localData.linearAcceleration[1];
+            message->linear_acceleration.z = localData.linearAcceleration[2];
+            for (int i = 0; i < 9; ++i) {
+                message->orientation_covariance[i] = 0;
+                message->angular_velocity_covariance[i] = 0;
+                message->linear_acceleration_covariance[i] = 0;
+            }
+
+            pub->publish(message);
+
+            numOfRuns++;
+            if (numOfRuns > 2999) {
+                previous = timeNow;
+                timeNow = std::chrono::high_resolution_clock::now();
+                auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(timeNow - previous);
+                float loopTime = loopTimeSpan.count();
+                frequency = numOfRuns/loopTime;
+                std::cout << name << " Frequency " << frequency << "Hz after " << numOfRuns << " messages." << std::endl;
+                numOfRuns = 0;
+            }
+
+        } else {
+            m.unlock();
+        }
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+    rclcpp::shutdown();
+    std::cout << name << ": I'm dying.." << std::endl;
+}
+
 int main(int argc, char * argv[]){
-    setRTPriority();
     std::string name = "main";
     pthread_setname_np(pthread_self(), name.c_str());
     signal(SIGINT, sigintHandler);
+    std::cout << "Initializing ROS...\n";
+    rclcpp::init(argc, argv);
+    std::cout << "ROS initialized.\n";
+    setRTPriority();
 
     MyExecutor *exec = new MyExecutor(std::ref(destruct));
 
@@ -471,10 +539,17 @@ int main(int argc, char * argv[]){
 
     bool steering_bool = false;
     std::mutex steering_mutex;
-    std::thread t5(steeringReceiver, argc, argv, std::ref(steering_bool), std::ref(steering_mutex), std::ref(destruct),
+    std::thread t5(steeringReceiver, std::ref(steering_bool), std::ref(steering_mutex), std::ref(destruct),
                     std::ref(steering_data), std::ref(steering_data_mutex));
 
     exec->addExec(std::ref(steering_mutex), std::ref(steering_bool), std::chrono::milliseconds(5));
+
+    bool roll_sender_bool = false;
+    std::mutex sender_mutex;
+    std::thread t6(rollSender, std::ref(roll_sender_bool), std::ref(sender_mutex), std::ref(destruct),
+                    std::ref(imuData), std::ref(imuData_mutex));
+
+    exec->addExec(std::ref(sender_mutex), std::ref(roll_sender_bool), std::chrono::milliseconds(20));
  
     exec->list();
     exec->spin();
@@ -483,5 +558,6 @@ int main(int argc, char * argv[]){
     t3.join();
     t4.join();
     t5.join();
+    t6.join();
     delete exec;
 }
