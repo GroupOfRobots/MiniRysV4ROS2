@@ -57,6 +57,7 @@ void MyExecutor::spin(){
 	while(!*this->destroy){
 		if (!temp) {
 			temp = this->firstExec;
+	        std::this_thread::sleep_for(std::chrono::microseconds(100));
 		}
 		if (temp->nextActivationTime < std::chrono::high_resolution_clock::now()) {
 			temp->m->lock();
@@ -65,7 +66,6 @@ void MyExecutor::spin(){
 			temp->nextActivationTime = temp->nextActivationTime + temp->delay;
 		}
 		temp = temp->next;
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
 	}
 }
 

@@ -21,6 +21,7 @@ struct SteeringData{
     float throttle;
     float rotation;
     int precision;
+    SteeringData() : throttle(0), rotation(0), precision(1){}
 };
 
 void sigintHandler(int signum) {
@@ -60,7 +61,7 @@ void IMUreader(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extDa
 
             IMU::ImuData data;
             int result = -1;
-            while(result < 0){
+            while(result < 0 && !destroy){
                 result = imu->getData(&data);
             }
 
@@ -256,6 +257,8 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
+    IMU::ImuData localData;
+
     while(!destroy){
         m.lock();
         if(activate){
@@ -269,11 +272,12 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData
 
             previousRoll = roll;
             imu_m.lock();
-            roll = atan2(2.0 * (imu.orientationQuaternion[0] * imu.orientationQuaternion[1] + imu.orientationQuaternion[2] * imu.orientationQuaternion[3]),
-                1.0 - 2.0 * (imu.orientationQuaternion[1] * imu.orientationQuaternion[1] + imu.orientationQuaternion[2] * imu.orientationQuaternion[2]));
-            rotationX = imu.angularVelocity[0];
-            // std::cout << roll << " : " << rotationX << " : " << imu.angularVelocity[1] << std::endl;
+            localData = imu;
             imu_m.unlock();
+            roll = atan2(2.0 * (localData.orientationQuaternion[0] * localData.orientationQuaternion[1] + localData.orientationQuaternion[2] * localData.orientationQuaternion[3]),
+                1.0 - 2.0 * (localData.orientationQuaternion[1] * localData.orientationQuaternion[1] + localData.orientationQuaternion[2] * localData.orientationQuaternion[2]));
+            rotationX = localData.angularVelocity[0];
+            // std::cout << roll << " : " << rotationX << " : " << imu.angularVelocity[1] << std::endl;
 
             layingDown = (roll > 1.0 && previousRoll > 1.0) || (roll < -1.0 && previousRoll < -1.0);
             if(layingDown && !standingUp && balancing){
@@ -353,7 +357,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData
 }
 
 void steeringReceiver(bool& activate, std::mutex& m, bool& destroy, SteeringData& s, std::mutex& sm){
-    std::string name = "SteeringReceiver";
+    std::string name = "SteeringRec";
     pthread_setname_np(pthread_self(), name.c_str());
     int numOfRuns = 0;
     float frequency = 0;
@@ -374,7 +378,7 @@ void steeringReceiver(bool& activate, std::mutex& m, bool& destroy, SteeringData
     const std::string robotName = "rys";
     const std::string nodeName = "receiver";
 
-    auto node = rclcpp::Node::make_shared(nodeName, robotName, true);
+    auto node = rclcpp::Node::make_shared(nodeName, robotName, false);
     auto steeringCallback = 
         [&](const rys_interfaces::msg::Steering::SharedPtr message){
             throttle = message->throttle;
@@ -383,6 +387,8 @@ void steeringReceiver(bool& activate, std::mutex& m, bool& destroy, SteeringData
             newSteering = true;
         };
     auto sub = node->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", steeringCallback);
+    rclcpp::executors::SingleThreadedExecutor ros_executor;
+    ros_executor.add_node(node);
 
     while(!destroy){
         m.lock();
@@ -390,7 +396,7 @@ void steeringReceiver(bool& activate, std::mutex& m, bool& destroy, SteeringData
             activate = false;
             m.unlock();
 
-            rclcpp::spin_some(node);
+            ros_executor.spin_some();
 
             if(newSteering){
                 sm.lock();
@@ -403,7 +409,7 @@ void steeringReceiver(bool& activate, std::mutex& m, bool& destroy, SteeringData
             }
 
             numOfRuns++;
-            if (numOfRuns > 11999) {
+            if (numOfRuns > 5999) {
                 previous = timeNow;
                 timeNow = std::chrono::high_resolution_clock::now();
                 auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(timeNow - previous);
@@ -433,7 +439,7 @@ void rollSender(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
     const std::string robotName = "rys";
     const std::string nodeName = "rollSender";
 
-    auto node = rclcpp::Node::make_shared(nodeName, robotName, true);
+    auto node = rclcpp::Node::make_shared(nodeName, robotName, false);
     auto pub = node->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imuInfrequent");
     IMU::ImuData localData;
     auto message = std::make_shared<sensor_msgs::msg::Imu>();
@@ -470,7 +476,7 @@ void rollSender(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
             pub->publish(message);
 
             numOfRuns++;
-            if (numOfRuns > 2999) {
+            if (numOfRuns > 1199) {
                 previous = timeNow;
                 timeNow = std::chrono::high_resolution_clock::now();
                 auto loopTimeSpan = std::chrono::duration_cast<std::chrono::duration<float>>(timeNow - previous);
@@ -542,14 +548,14 @@ int main(int argc, char * argv[]){
     std::thread t5(steeringReceiver, std::ref(steering_bool), std::ref(steering_mutex), std::ref(destruct),
                     std::ref(steering_data), std::ref(steering_data_mutex));
 
-    exec->addExec(std::ref(steering_mutex), std::ref(steering_bool), std::chrono::milliseconds(5));
+    exec->addExec(std::ref(steering_mutex), std::ref(steering_bool), std::chrono::milliseconds(10));
 
     bool roll_sender_bool = false;
     std::mutex sender_mutex;
     std::thread t6(rollSender, std::ref(roll_sender_bool), std::ref(sender_mutex), std::ref(destruct),
                     std::ref(imuData), std::ref(imuData_mutex));
 
-    exec->addExec(std::ref(sender_mutex), std::ref(roll_sender_bool), std::chrono::milliseconds(20));
+    exec->addExec(std::ref(sender_mutex), std::ref(roll_sender_bool), std::chrono::milliseconds(50));
  
     exec->list();
     exec->spin();
