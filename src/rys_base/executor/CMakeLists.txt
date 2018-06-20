@@ -46,7 +46,7 @@ ament_export_libraries(${PROJECT_NAME}_node)
 FILE(GLOB ${PROJECT_NAME}_headers ${HEADER_FILES})
 
 add_executable(main
-	src/motor_test.cpp
+	src/main.cpp
 )
 target_link_libraries(main ${PROJECT_NAME}_node)
 ament_target_dependencies(main
