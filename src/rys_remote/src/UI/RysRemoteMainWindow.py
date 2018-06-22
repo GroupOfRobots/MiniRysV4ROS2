@@ -204,7 +204,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 	def imuChangedHandler(self, roll, rotationX):
 		self.ui.rollDial.setValue(int(roll))
 		self.ui.rollValueLabel.setText('    Roll: %f' % roll)
-		self.ui.rotationXValueLabel.setText('Rotation: %f' % rotationX)
+		# self.ui.rotationXValueLabel.setText('Rotation: %f' % rotationX)
 
 	def rangesChangedHandler(self, message):
 		front = message.front

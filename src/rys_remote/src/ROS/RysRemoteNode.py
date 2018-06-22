@@ -37,7 +37,7 @@ class RysRemoteNode(Node):
 		rangesTopicName = '/' + robotName + '/sensor/ranges'
 		temperatureTopicName = '/' + robotName + '/sensor/temperature'
 		odometryTopicName = '/' + robotName + '/control/odometry'
-		qosProfileDefault = rclpy.qos.qos_profile_default
+		# qosProfileDefault = rclpy.qos.qos_profile_default
 		qosProfileSensors = rclpy.qos.qos_profile_sensor_data
 		qosProfileOdometry = rclpy.qos.QoSProfile(
 			history = rclpy.qos.QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
@@ -45,10 +45,10 @@ class RysRemoteNode(Node):
 			reliability = rclpy.qos.QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
 			durability = rclpy.qos.QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
 		)
-		self.subscriptionBattery = self.create_subscription(RysMsgs.BatteryStatus, batteryTopicName, callbacks['battery'], qos_profile = qosProfileDefault)
+		self.subscriptionBattery = self.create_subscription(RysMsgs.BatteryStatus, batteryTopicName, callbacks['battery'], qos_profile = qosProfileSensors)
 		self.subscriptionImu = self.create_subscription(SensorMsgs.Imu, imuTopicName, callbacks['imu'], qos_profile = qosProfileSensors)
 		self.subscriptionRanges = self.create_subscription(RysMsgs.Ranges, rangesTopicName, callbacks['ranges'], qos_profile = qosProfileSensors)
-		self.subscriptionTemperature = self.create_subscription(RysMsgs.TemperatureStatus, temperatureTopicName, callbacks['temperature'], qos_profile = qosProfileDefault)
+		self.subscriptionTemperature = self.create_subscription(RysMsgs.TemperatureStatus, temperatureTopicName, callbacks['temperature'], qos_profile = qosProfileSensors)
 		self.subscriptionOdometry = self.create_subscription(NavigationMsgs.Odometry, odometryTopicName, callbacks['odometry'], qos_profile = qosProfileOdometry)
 
 		self.enableTimer = self.create_timer(1.0 / messageRates['enableMotors'], self.enableTimerCallback)
