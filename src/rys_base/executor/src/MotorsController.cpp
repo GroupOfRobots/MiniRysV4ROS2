@@ -249,7 +249,7 @@ void MotorsController::newCalculateSpeedsPID(float angle, float rotationX, float
 
 	// if (this->pidSpeedRegulatorEnabled && throttle!=0) {
 	if (this->pidSpeedRegulatorEnabled) {
-		speedError = throttle - (speed + rotationX/SPEED_TO_DEG);
+		speedError = throttle - (speed - rotationX/SPEED_TO_DEG);
 
 		float speedFactor0 = this->newPIDSpeedKp * (1 + this->newPIDSpeedInvTi * loopTime / 2 + this->newPIDSpeedTd / loopTime);
 		float speedFactor1 = this->newPIDSpeedKp * (this->newPIDSpeedInvTi * loopTime / 2 - 2 * this->newPIDSpeedTd / loopTime - 1);
