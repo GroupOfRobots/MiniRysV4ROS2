@@ -13,6 +13,8 @@
 #include "MotorsController.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rys_interfaces/msg/steering.hpp"
+#include "rys_interfaces/msg/temperature_status.hpp"
+#include "rys_interfaces/msg/battery_status.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 
 bool destruct = false;
@@ -21,7 +23,7 @@ struct SteeringData{
     float throttle;
     float rotation;
     int precision;
-    SteeringData() : throttle(0), rotation(0), precision(1){}
+    SteeringData() : throttle(0), rotation(0), precision(32){}
 };
 
 void sigintHandler(int signum) {
@@ -105,6 +107,7 @@ void BATreader(bool& activate, std::mutex& m, bool& destroy, VectorFloat& v, std
     std::ifstream file;
     float voltages[3];
     int rawValue = 0;
+    VectorFloat localVoltage(0, 0, 0);
 
     while(!destroy){
         m.lock();
@@ -119,15 +122,15 @@ void BATreader(bool& activate, std::mutex& m, bool& destroy, VectorFloat& v, std
                 voltages[i] = static_cast<float>(rawValue) / coefficients[i];
             }
 
+            localVoltage = VectorFloat(voltages[0], voltages[1]-voltages[0], voltages[2]-voltages[1]);
             vm.lock();
-            v = VectorFloat(voltages[0], voltages[1]-voltages[0], voltages[2]-voltages[1]);
-            if (v.x < 3.3 || v.y < 3.3 || v.z < 3.3){
-                std::cout << name << ": Low Voltage Warning: " << v.x << " " << v.y << " " << v.z << std::endl;
-                vm.unlock();
+            v = localVoltage;
+            vm.unlock();
+            if (localVoltage.x < 3.3 || localVoltage.y < 3.3 || localVoltage.z < 3.3){
+                std::cout << name << ": Low Voltage Warning: " << localVoltage.x << " " << localVoltage.y << " " << localVoltage.z << std::endl;
                 destroy = true;
                 continue;
             }
-            vm.unlock();
 
             numOfRuns++;
             if (numOfRuns > 599) {
@@ -160,6 +163,7 @@ void TEMPreader(bool& activate, std::mutex& m, bool& destroy, float& f, std::mut
     std::string filename = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumber) + std::string("_raw");
     std::ifstream file;
     float voltageSum = 0;
+    float voltage = 0;
     int rawValue = 0;
     int currentReadings = 0;
 
@@ -175,15 +179,15 @@ void TEMPreader(bool& activate, std::mutex& m, bool& destroy, float& f, std::mut
             voltageSum += static_cast<float>(rawValue) / coefficient;
             currentReadings++;
             if (currentReadings == 5){
-                fm.lock();
-                f = (voltageSum/5)*100;
+                voltage = (voltageSum/5)*100;
                 // std::cout << f << std::endl;
-                if (f > 60){
-                    std::cout << name << ": Critical Temperature Warning: " << f << std::endl;
-                    fm.unlock();
+                if (voltage > 60){
+                    std::cout << name << ": Critical Temperature Warning: " << voltage << std::endl;
                     destroy = true;
                     continue;
                 }
+                fm.lock();
+                f = voltage;
                 fm.unlock();
                 currentReadings = 0;
                 voltageSum = 0;
@@ -207,7 +211,7 @@ void TEMPreader(bool& activate, std::mutex& m, bool& destroy, float& f, std::mut
     std::cout << name << ": I'm dying.." << std::endl;
 }
 
-void motorsController(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& imu, std::mutex& imu_m, SteeringData& ster, std::mutex& ster_m){
+void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDparams[6], IMU::ImuData& imu, std::mutex& imu_m, SteeringData& ster, std::mutex& ster_m){
     std::string name = "motors";
     pthread_setname_np(pthread_self(), name.c_str());
     int numOfRuns = 0;
@@ -250,9 +254,11 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData
     // controller->newSetPIDParameters(0.0, 0.0, 0.0, 2.0, 20.0, 0);
     // poorly working speed over angle PID
     // controller->newSetPIDParameters(0.05, 0.0, 0.00, 2.0, 20.0, 0);
-    controller->newSetPIDParameters(0.1, 0.05, 0.00001, 2.0, 20.0, 0.01);
+    // sth maybe working
+    // controller->newSetPIDParameters(0.1, 0.05, 0.00001, 2.0, 20.0, 0.01);
+    controller->newSetPIDParameters(PIDparams[0], PIDparams[1], PIDparams[2], PIDparams[3], PIDparams[4], PIDparams[5]);
 
-    for (int i = 1;i<21;i++){
+    for (int i = 1; i<21 && !destroy; i++){
         std::cout << name << ": " << i << std::endl; 
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
@@ -508,7 +514,7 @@ void rollSender(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
     std::cout << name << ": I'm dying.." << std::endl;
 }
 
-void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extData, std::mutex& dm, SteeringData& s, std::mutex& sm){
+void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extData, std::mutex& dm, SteeringData& s, std::mutex& sm, float& temperature, std::mutex& tm, VectorFloat& battery, std::mutex& bm){
     std::string name = "remoteComm";
     pthread_setname_np(pthread_self(), name.c_str());
     int numOfRuns = 0;
@@ -547,6 +553,9 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
         };
     auto sub = node->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", steeringCallback, qos);
     auto pub = node->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imuInfrequent", qos);
+    auto pubTemp = node->create_publisher<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", qos);
+    auto pubBat = node->create_publisher<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", qos);
+
     IMU::ImuData localData;
     auto message = std::make_shared<sensor_msgs::msg::Imu>();
     message->header.frame_id = "MPU6050";
@@ -555,6 +564,16 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
         message->angular_velocity_covariance[i] = 0;
         message->linear_acceleration_covariance[i] = 0;
     }
+
+    float localTemperature = 0;
+    auto messageTemp = std::make_shared<rys_interfaces::msg::TemperatureStatus>();
+    messageTemp->header.frame_id = "LM35";
+    messageTemp->temperature_critical = false;
+
+    VectorFloat localBattery(0, 0, 0);
+    auto messageBat = std::make_shared<rys_interfaces::msg::BatteryStatus>();
+    messageBat->header.frame_id = "ADC";
+    messageBat->voltage_low = false;
 
     while(!destroy){
         m.lock();
@@ -566,7 +585,6 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
             localData = extData;
             dm.unlock();
 
-            // std::cout << localData.orientationQuaternion[1] << std::endl;
             message->header.stamp = node->now();
             message->orientation.x = localData.orientationQuaternion[1];
             message->orientation.y = localData.orientationQuaternion[2];
@@ -581,6 +599,26 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
 
             pub->publish(message);
 
+            tm.lock();
+            localTemperature = temperature;
+            tm.unlock();
+
+            messageTemp->header.stamp = node->now();
+            messageTemp->temperature = localTemperature;
+
+            pubTemp->publish(messageTemp);
+
+            bm.lock();
+            localBattery = battery;
+            bm.unlock();
+
+            messageBat->header.stamp = node->now();
+            messageBat->voltage_cell1 = localBattery.x;
+            messageBat->voltage_cell2 = localBattery.y;
+            messageBat->voltage_cell3 = localBattery.z;
+
+            pubBat->publish(messageBat);
+
             rclcpp::spin_some(node);
 
             if(newSteering){
@@ -588,7 +626,6 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
                 s.throttle = throttle;
                 s.rotation = rotation;
                 s.precision = precision;
-                // std::cout << throttle << rotation << precision << std::endl;
                 sm.unlock();
                 newSteering = false;
             }
@@ -611,7 +648,6 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
     }
     rclcpp::shutdown();
     std::cout << name << ": I'm dying.." << std::endl;
-
 }
 
 int main(int argc, char * argv[]){
@@ -625,7 +661,7 @@ int main(int argc, char * argv[]){
 
     MyExecutor *exec = new MyExecutor(std::ref(destruct));
 
-    VectorFloat batteryStatus;
+    VectorFloat batteryStatus(0, 0, 0);
     std::mutex b_mutex;
     bool BATreader_bool = false;
     std::mutex BATreader_mutex;
@@ -634,7 +670,7 @@ int main(int argc, char * argv[]){
 
     exec->addExec(std::ref(BATreader_mutex), std::ref(BATreader_bool), std::chrono::milliseconds(1000));
 
-    float temperature;
+    float temperature = 0;
     std::mutex t_mutex;
     bool TEMPreader_bool = false;
     std::mutex TEMPreader_mutex;
@@ -652,11 +688,23 @@ int main(int argc, char * argv[]){
 
     exec->addExec(std::ref(IMUreader_mutex), std::ref(IMUreader_bool), std::chrono::milliseconds(10));
 
+    float PIDparams[6] = {0.05, 0.05, 0.0001, 2.0, 10.0, 0};
+    if (argc == 8){
+        if (!std::strcmp(argv[1], "-p")) {
+            std::cout << "Reading custom PID parameters..." << std::endl;
+            PIDparams[0] = atof(argv[2]);
+            PIDparams[1] = atof(argv[3]);
+            PIDparams[2] = atof(argv[4]);
+            PIDparams[3] = atof(argv[5]);
+            PIDparams[4] = atof(argv[6]);
+            PIDparams[5] = atof(argv[7]);
+        }
+    }
     bool motors_bool = false;
     std::mutex motors_mutex;
     SteeringData steering_data;
     std::mutex steering_data_mutex;
-    std::thread t4(motorsController, std::ref(motors_bool), std::ref(motors_mutex), std::ref(destruct),
+    std::thread t4(motorsController, std::ref(motors_bool), std::ref(motors_mutex), std::ref(destruct), PIDparams,
                     std::ref(imuData), std::ref(imuData_mutex),
                     std::ref(steering_data), std::ref(steering_data_mutex));
 
@@ -680,7 +728,9 @@ int main(int argc, char * argv[]){
     std::mutex remoteComm_mutex;
     std::thread t7(remoteComm, std::ref(remoteComm_bool), std::ref(remoteComm_mutex), std::ref(destruct),
                     std::ref(imuData), std::ref(imuData_mutex),
-                    std::ref(steering_data), std::ref(steering_data_mutex));
+                    std::ref(steering_data), std::ref(steering_data_mutex),
+                    std::ref(temperature), std::ref(t_mutex),
+                    std::ref(batteryStatus), std::ref(b_mutex));
 
     exec->addExec(std::ref(remoteComm_mutex), std::ref(remoteComm_bool), std::chrono::milliseconds(50));
 
