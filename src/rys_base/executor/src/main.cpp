@@ -249,14 +249,14 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDpar
     controller->setPIDSpeedRegulatorEnabled(true);
     // Ku = 10, T = 60ms = 0.06s ===> K = 0.6*10 = 6, InvTi = 2/0.06 = 33.(3), Td  = 0.06/8 = 0.0075
     // initial
-    // controller->newSetPIDParameters(0.0, 0.0, 0.0, 10.0, 0.0, 0.0);
+    // controller->setPIDParameters(0.0, 0.0, 0.0, 10.0, 0.0, 0.0);
     // working angle PID
-    // controller->newSetPIDParameters(0.0, 0.0, 0.0, 2.0, 20.0, 0);
+    // controller->setPIDParameters(0.0, 0.0, 0.0, 2.0, 20.0, 0);
     // poorly working speed over angle PID
-    // controller->newSetPIDParameters(0.05, 0.0, 0.00, 2.0, 20.0, 0);
+    // controller->setPIDParameters(0.05, 0.0, 0.00, 2.0, 20.0, 0);
     // sth maybe working
-    // controller->newSetPIDParameters(0.1, 0.05, 0.00001, 2.0, 20.0, 0.01);
-    controller->newSetPIDParameters(PIDparams[0], PIDparams[1], PIDparams[2], PIDparams[3], PIDparams[4], PIDparams[5]);
+    // controller->setPIDParameters(0.1, 0.05, 0.00001, 2.0, 20.0, 0.01);
+    controller->setPIDParameters(PIDparams[0], PIDparams[1], PIDparams[2], PIDparams[3], PIDparams[4], PIDparams[5]);
 
     for (int i = 1; i<21 && !destroy; i++){
         std::cout << name << ": " << i << std::endl; 
@@ -309,7 +309,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDpar
                     if((standUpMultiplier * roll) <= 0){
                         standingUp = false;
                         controller->setMotorSpeeds(0, 0, 32, true);
-                        controller->newZeroPIDRegulator();
+                        controller->zeroPIDRegulator();
                     } else if(standUpTimer >= std::chrono::milliseconds(2000) && standUpMultiplier * roll > 1.0) {
                         standUpPhase = false;
                         standUpTimer = std::chrono::milliseconds(0);
@@ -325,8 +325,8 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDpar
             throttle = ster.throttle;
             rotation = ster.rotation;
             precision = ster.precision;
-            // std::cout << throttle << " : " << rotation << " : " << precision << std::endl;
             ster_m.unlock();
+            // std::cout << throttle << std::endl;
 
             if (!standingUp) {
                 float leftSpeed = controller->getMotorSpeedLeftRaw();

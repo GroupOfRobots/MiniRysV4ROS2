@@ -13,28 +13,17 @@ MotorsController::MotorsController() {
 	this->angleFiltered = 0.0f;
 
 	this->pidSpeedRegulatorEnabled = true;
-	this->pidSpeedKp = 1;
-	this->pidSpeedKi = 0;
-	this->pidSpeedKd = 0;
-	this->pidSpeedIntegral = 0;
-	this->pidSpeedError = 0;
-	this->pidAngleKp = 1;
-	this->pidAngleKi = 0;
-	this->pidAngleKd = 0;
-	this->pidAngleIntegral = 0;
-	this->pidAngleError = 0;
-
-	this->newPIDSpeedKp = 0;
-	this->newPIDSpeedInvTi = 0;
-	this->newPIDSpeedTd = 0;
-	this->newPIDSpeedPreviousError1 = 0;
-	this->newPIDSpeedPreviousError2 = 0;
-	this->newPIDAngleKp = 0;
-	this->newPIDAngleInvTi = 0;
-	this->newPIDAngleTd = 0;
-	this->newPIDAnglePreviousError1 = 0;
-	this->newPIDAnglePreviousError2 = 0;
-	this->newPIDPreviousTargetAngle = 0;
+	this->pidSpeedKp = 0;
+	this->pidSpeedInvTi = 0;
+	this->pidSpeedTd = 0;
+	this->pidSpeedPreviousError1 = 0;
+	this->pidSpeedPreviousError2 = 0;
+	this->pidAngleKp = 0;
+	this->pidAngleInvTi = 0;
+	this->pidAngleTd = 0;
+	this->pidAnglePreviousError1 = 0;
+	this->pidAnglePreviousError2 = 0;
+	this->pidPreviousTargetAngle = 0;
 
 	this->lqrLinearVelocityK = 0;
 	this->lqrAngularVelocityK = 0;
@@ -95,22 +84,13 @@ void MotorsController::setPIDSpeedRegulatorEnabled(bool enabled) {
 	this->pidSpeedRegulatorEnabled = enabled;
 }
 
-void MotorsController::setPIDParameters(float speedKp, float speedKi, float speedKd, float angleKp, float angleKi, float angleKd) {
+void MotorsController::setPIDParameters(float speedKp, float speedInvTi, float speedTd, float angleKp, float angleInvTi, float angleTd) {
 	this->pidSpeedKp = speedKp;
-	this->pidSpeedKi = speedKi;
-	this->pidSpeedKd = speedKd;
+	this->pidSpeedInvTi = speedInvTi;
+	this->pidSpeedTd = speedTd;
 	this->pidAngleKp = angleKp;
-	this->pidAngleKi = angleKi;
-	this->pidAngleKd = angleKd;
-}
-
-void MotorsController::newSetPIDParameters(float speedKp, float speedInvTi, float speedTd, float angleKp, float angleInvTi, float angleTd) {
-	this->newPIDSpeedKp = speedKp;
-	this->newPIDSpeedInvTi = speedInvTi;
-	this->newPIDSpeedTd = speedTd;
-	this->newPIDAngleKp = angleKp;
-	this->newPIDAngleInvTi = angleInvTi;
-	this->newPIDAngleTd = angleTd;
+	this->pidAngleInvTi = angleInvTi;
+	this->pidAngleTd = angleTd;
 }
 
 void MotorsController::setLQRParameters(float linearVelocityK, float angularVelocityK, float angleK) {
@@ -119,18 +99,11 @@ void MotorsController::setLQRParameters(float linearVelocityK, float angularVelo
 	this->lqrAngleK = angleK;
 }
 
-void MotorsController::zeroRegulators() {
-	this->pidAngleIntegral = 0;
-	this->pidAngleError = 0;
-	this->pidSpeedIntegral = 0;
-	this->pidSpeedError = 0;
-}
-
-void MotorsController::newZeroPIDRegulator(){
-	this->newPIDSpeedPreviousError1 = 0;
-	this->newPIDSpeedPreviousError2 = 0;
-	this->newPIDAnglePreviousError1 = 0;
-	this->newPIDAnglePreviousError2 = 0;
+void MotorsController::zeroPIDRegulator(){
+	this->pidSpeedPreviousError1 = 0;
+	this->pidSpeedPreviousError2 = 0;
+	this->pidAnglePreviousError1 = 0;
+	this->pidAnglePreviousError2 = 0;
 }
 
 float MotorsController::getSpeedFilterFactor() {
@@ -149,13 +122,13 @@ bool MotorsController::getPIDSpeedRegulatorEnabled() {
 	return this->pidSpeedRegulatorEnabled;
 }
 
-void MotorsController::getPIDParameters(float & speedKp, float & speedKi, float & speedKd, float & angleKp, float & angleKi, float & angleKd) {
+void MotorsController::getPIDParameters(float & speedKp, float & speedInvTi, float & speedTd, float & angleKp, float & angleInvTi, float & angleTd) {
 	speedKp = this->pidSpeedKp;
-	speedKi = this->pidSpeedKi;
-	speedKd = this->pidSpeedKd;
+	speedInvTi = this->pidSpeedInvTi;
+	speedTd = this->pidSpeedTd;
 	angleKp = this->pidAngleKp;
-	angleKi = this->pidAngleKi;
-	angleKd = this->pidAngleKd;
+	angleInvTi = this->pidAngleInvTi;
+	angleTd = this->pidAngleTd;
 }
 
 void MotorsController::getLQRParameters(float & linearVelocityK, float & angularVelocityK, float & angleK) {
@@ -182,68 +155,11 @@ void MotorsController::calculateSpeeds(float angle, float rotationX, float speed
 	if (this->lqrEnabled) {
 		this->calculateSpeedsLQR(this->angleFiltered, rotationX, this->speedFiltered, throttle, rotation, speedLeftNew, speedRightNew, loopTime);
 	} else {
-		// this->calculateSpeedsPID(this->angleFiltered, rotationX, this->speedFiltered, throttle, rotation, speedLeftNew, speedRightNew, loopTime);
-		this->newCalculateSpeedsPID(this->angleFiltered, rotationX, this->speedFiltered, throttle, rotation, speedLeftNew, speedRightNew, loopTime);
+		this->calculateSpeedsPID(this->angleFiltered, rotationX, this->speedFiltered, throttle, rotation, speedLeftNew, speedRightNew, loopTime);
 	}
 }
 
 void MotorsController::calculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
-	// To regulate angle we need to reverse it's sign, because the more positive it is the more speed (acceleration) we should output
-	// angle = -angle;
-	rotationX = -rotationX;
-
-	// Calculate target angle - first initialize it to 0
-	float targetAngle = 0.0f;
-	// If speed regulator (first PID layer) is enabled
-	if (this->pidSpeedRegulatorEnabled) {
-		// Estimate robot's linear velocity based on angle change and speed
-		// (Motors' angular velocity = -robot's angular velocity + robot's linear velocity * const)
-		// What's left is motor's angular velocity responsible for robot's linear velocity
-		float linearVelocity = speed - rotationX / SPEED_TO_DEG;
-
-		// First control layer: speed control PID
-		// setpoint: user throttle
-		// current value: robot's linear speed
-		// output: target robot angle to get the desired speed
-
-		float speedError = throttle - linearVelocity;
-		this->pidSpeedIntegral += speedError * loopTime;
-		// Integral anti-windup
-		if (this->pidSpeedIntegral > ANGLE_MAX || this->pidSpeedIntegral < -ANGLE_MAX) {
-			this->pidSpeedIntegral = 0.0f;
-		}
-
-		float speedDerivative = (speedError - this->pidSpeedError) / loopTime;
-		this->pidSpeedError = speedError;
-
-		float targetAngle = pidSpeedKp * speedError + pidSpeedKi * this->pidSpeedIntegral + pidSpeedKd * speedDerivative;
-		clipValue(targetAngle, ANGLE_MAX);
-	}
-
-	// Second control layer: angle control PID
-	// setpoint: robot target angle (from SPEED CONTROL)
-	// current value: robot angle (filtered)
-	// output: motor speed
-
-	float angleError = targetAngle - angle;
-	this->pidAngleIntegral += angleError * loopTime;
-	// Integral anti-windup, 1 is max output value
-	if (this->pidAngleIntegral > 1.0f || this->pidAngleIntegral < -1.0f) {
-		this->pidAngleIntegral = 0.0f;
-	}
-
-	float angleDerivative = (angleError - this->pidAngleError) / loopTime;
-	this->pidAngleError = angleError;
-
-	float output = pidAngleKp * angleError + pidAngleKi * this->pidAngleIntegral + pidAngleKd * angleDerivative;
-	clipValue(output, 1.0f);
-
-	// The rotation part from the user is injected directly into the output
-	speedLeftNew = speed + output + rotation;
-	speedRightNew = speed + output - rotation;
-}
-
-void MotorsController::newCalculateSpeedsPID(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
 	float targetAngle = 0.0f;
 	float speedError = 0.0f;
 
@@ -251,32 +167,26 @@ void MotorsController::newCalculateSpeedsPID(float angle, float rotationX, float
 	if (this->pidSpeedRegulatorEnabled) {
 		speedError = throttle - (speed - rotationX/SPEED_TO_DEG);
 
-		float speedFactor0 = this->newPIDSpeedKp * (1 + this->newPIDSpeedInvTi * loopTime / 2 + this->newPIDSpeedTd / loopTime);
-		float speedFactor1 = this->newPIDSpeedKp * (this->newPIDSpeedInvTi * loopTime / 2 - 2 * this->newPIDSpeedTd / loopTime - 1);
-		float speedFactor2 = this->newPIDSpeedKp * this->newPIDSpeedTd / loopTime;
+		float speedFactor0 = this->pidSpeedKp * (1 + this->pidSpeedInvTi * loopTime / 2 + this->pidSpeedTd / loopTime);
+		float speedFactor1 = this->pidSpeedKp * (this->pidSpeedInvTi * loopTime / 2 - 2 * this->pidSpeedTd / loopTime - 1);
+		float speedFactor2 = this->pidSpeedKp * this->pidSpeedTd / loopTime;
 
-		targetAngle = speedFactor0 * speedError + speedFactor1 * this->newPIDSpeedPreviousError1 + speedFactor2 * this->newPIDSpeedPreviousError2 + this->newPIDPreviousTargetAngle;
-		// if (throttle == 0){
-		// 	targetAngle *= 2;
-		// 	clipValue(targetAngle, 0.3);
-		// } else {
-		// 	clipValue(targetAngle, 0.15);
-		// }
+		targetAngle = speedFactor0 * speedError + speedFactor1 * this->pidSpeedPreviousError1 + speedFactor2 * this->pidSpeedPreviousError2 + this->pidPreviousTargetAngle;
 		clipValue(targetAngle, 0.15);
 		// std::cout << speedError << " : " << targetAngle << std::endl;
 		// std::cout << targetAngle << std::endl;
 	}
-	this->newPIDSpeedPreviousError2 = this->newPIDSpeedPreviousError1;
-	this->newPIDSpeedPreviousError1 = speedError;
-	this->newPIDPreviousTargetAngle = targetAngle;
+	this->pidSpeedPreviousError2 = this->pidSpeedPreviousError1;
+	this->pidSpeedPreviousError1 = speedError;
+	this->pidPreviousTargetAngle = targetAngle;
 
 	float angleError = targetAngle - angle;
 
-	float angleFactor0 = this->newPIDAngleKp * (1 + this->newPIDAngleInvTi * loopTime / 2 + this->newPIDAngleTd / loopTime);
-	float angleFactor1 = this->newPIDAngleKp * (this->newPIDAngleInvTi * loopTime / 2 - 2 * this->newPIDAngleTd / loopTime - 1);
-	float angleFactor2 = this->newPIDAngleKp * this->newPIDAngleTd / loopTime;
+	float angleFactor0 = this->pidAngleKp * (1 + this->pidAngleInvTi * loopTime / 2 + this->pidAngleTd / loopTime);
+	float angleFactor1 = this->pidAngleKp * (this->pidAngleInvTi * loopTime / 2 - 2 * this->pidAngleTd / loopTime - 1);
+	float angleFactor2 = this->pidAngleKp * this->pidAngleTd / loopTime;
 
-	float output = angleFactor0 * angleError + angleFactor1 * this->newPIDAnglePreviousError1 + angleFactor2 * this->newPIDAnglePreviousError2 + speed;
+	float output = angleFactor0 * angleError + angleFactor1 * this->pidAnglePreviousError1 + angleFactor2 * this->pidAnglePreviousError2 + speed;
 	clipValue(output, 1.0);
 	clipValue(rotation, 0.3);
 
@@ -285,8 +195,8 @@ void MotorsController::newCalculateSpeedsPID(float angle, float rotationX, float
 	clipValue(speedLeftNew, 1.0);
 	clipValue(speedRightNew, 1.0);
 
-	this->newPIDAnglePreviousError2 = this->newPIDAnglePreviousError1;
-	this->newPIDAnglePreviousError1 = angleError;
+	this->pidAnglePreviousError2 = this->pidAnglePreviousError1;
+	this->pidAnglePreviousError1 = angleError;
 }
 
 void MotorsController::calculateSpeedsLQR(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime) {
