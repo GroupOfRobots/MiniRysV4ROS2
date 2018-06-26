@@ -15,6 +15,7 @@
 #include "rys_interfaces/msg/steering.hpp"
 #include "rys_interfaces/msg/temperature_status.hpp"
 #include "rys_interfaces/msg/battery_status.hpp"
+#include "rys_interfaces/msg/regulation_callback.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 
 bool destruct = false;
@@ -24,6 +25,14 @@ struct SteeringData{
     float rotation;
     int precision;
     SteeringData() : throttle(0), rotation(0), precision(32){}
+};
+
+struct RegulationCallbackStructure{
+    float roll;
+    float setRoll;
+    float speed;
+    float setSpeed;
+    RegulationCallbackStructure() : roll(0), setRoll(0), speed(0), setSpeed(0){}
 };
 
 void sigintHandler(int signum) {
@@ -211,7 +220,8 @@ void TEMPreader(bool& activate, std::mutex& m, bool& destroy, float& f, std::mut
     std::cout << name << ": I'm dying.." << std::endl;
 }
 
-void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDparams[6], IMU::ImuData& imu, std::mutex& imu_m, SteeringData& ster, std::mutex& ster_m){
+void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDparams[6], 
+    IMU::ImuData& imu, std::mutex& imu_m, SteeringData& ster, std::mutex& ster_m, RegulationCallbackStructure& regCall, std::mutex& call_m){
     std::string name = "motors";
     pthread_setname_np(pthread_self(), name.c_str());
     int numOfRuns = 0;
@@ -231,6 +241,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDpar
     bool standUpPhase = false;
     std::chrono::milliseconds standUpTimer;
     std::chrono::milliseconds rate = std::chrono::milliseconds(10);
+    float linearSpeed = 0;
 
     float rotation = 0;
     float throttle = 0;
@@ -326,12 +337,11 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDpar
             rotation = ster.rotation;
             precision = ster.precision;
             ster_m.unlock();
-            // std::cout << throttle << std::endl;
 
             if (!standingUp) {
                 float leftSpeed = controller->getMotorSpeedLeftRaw();
                 float rightSpeed = controller->getMotorSpeedRightRaw();
-                float linearSpeed = (leftSpeed + rightSpeed) / 2;
+                linearSpeed = (leftSpeed + rightSpeed) / 2;
                 float finalLeftSpeed = 0;
                 float finalRightSpeed = 0;
                 controller->calculateSpeeds(roll, rotationX, linearSpeed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTimeRun);
@@ -341,6 +351,12 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDpar
                 else
                     controller->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, precision, false);
             }
+            call_m.lock();
+            regCall.roll = roll;
+            controller->getPIDPreviousTargetAngle(regCall.setRoll);
+            regCall.speed = linearSpeed;
+            regCall.setSpeed = throttle;
+            call_m.unlock();
             
             numOfRuns++;
             if (numOfRuns > 5999) {
@@ -362,7 +378,8 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDpar
     std::cout << name << ": I'm dying.." << std::endl;
 }
 
-void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extData, std::mutex& dm, SteeringData& s, std::mutex& sm, float& temperature, std::mutex& tm, VectorFloat& battery, std::mutex& bm){
+void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extData, std::mutex& dm, SteeringData& s, 
+    std::mutex& sm, float& temperature, std::mutex& tm, VectorFloat& battery, std::mutex& bm, RegulationCallbackStructure& regCall, std::mutex& call_m){
     std::string name = "remoteComm";
     pthread_setname_np(pthread_self(), name.c_str());
     int numOfRuns = 0;
@@ -400,18 +417,19 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
             newSteering = true;
         };
     auto sub = node->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", steeringCallback, qos);
-    auto pub = node->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imuInfrequent", qos);
+    // auto pubImu = node->create_publisher<sensor_msgs::msg::Imu>("/" + robotName + "/sensor/imuInfrequent", qos);
     auto pubTemp = node->create_publisher<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", qos);
     auto pubBat = node->create_publisher<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", qos);
+    auto pubReg = node->create_publisher<rys_interfaces::msg::RegulationCallback>("/" + robotName + "/control/regulation", qos);
 
-    IMU::ImuData localData;
-    auto message = std::make_shared<sensor_msgs::msg::Imu>();
-    message->header.frame_id = "MPU6050";
-    for (int i = 0; i < 9; ++i) {
-        message->orientation_covariance[i] = 0;
-        message->angular_velocity_covariance[i] = 0;
-        message->linear_acceleration_covariance[i] = 0;
-    }
+    // IMU::ImuData localData;
+    // auto message = std::make_shared<sensor_msgs::msg::Imu>();
+    // message->header.frame_id = "MPU6050";
+    // for (int i = 0; i < 9; ++i) {
+    //     message->orientation_covariance[i] = 0;
+    //     message->angular_velocity_covariance[i] = 0;
+    //     message->linear_acceleration_covariance[i] = 0;
+    // }
 
     float localTemperature = 0;
     auto messageTemp = std::make_shared<rys_interfaces::msg::TemperatureStatus>();
@@ -423,29 +441,33 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
     messageBat->header.frame_id = "ADC";
     messageBat->voltage_low = false;
 
+    RegulationCallbackStructure localStruct;
+    auto messageReg = std::make_shared<rys_interfaces::msg::RegulationCallback>();
+    messageReg->header.frame_id = "PID";
+
     while(!destroy){
         m.lock();
         if(activate){
             activate = false;
             m.unlock();
 
-            dm.lock();
-            localData = extData;
-            dm.unlock();
+            // dm.lock();
+            // localData = extData;
+            // dm.unlock();
 
-            message->header.stamp = node->now();
-            message->orientation.x = localData.orientationQuaternion[1];
-            message->orientation.y = localData.orientationQuaternion[2];
-            message->orientation.z = localData.orientationQuaternion[3];
-            message->orientation.w = localData.orientationQuaternion[0];
-            message->angular_velocity.x = localData.angularVelocity[0];
-            message->angular_velocity.y = localData.angularVelocity[1];
-            message->angular_velocity.z = localData.angularVelocity[2];
-            message->linear_acceleration.x = localData.linearAcceleration[0];
-            message->linear_acceleration.y = localData.linearAcceleration[1];
-            message->linear_acceleration.z = localData.linearAcceleration[2];
+            // message->header.stamp = node->now();
+            // message->orientation.x = localData.orientationQuaternion[1];
+            // message->orientation.y = localData.orientationQuaternion[2];
+            // message->orientation.z = localData.orientationQuaternion[3];
+            // message->orientation.w = localData.orientationQuaternion[0];
+            // message->angular_velocity.x = localData.angularVelocity[0];
+            // message->angular_velocity.y = localData.angularVelocity[1];
+            // message->angular_velocity.z = localData.angularVelocity[2];
+            // message->linear_acceleration.x = localData.linearAcceleration[0];
+            // message->linear_acceleration.y = localData.linearAcceleration[1];
+            // message->linear_acceleration.z = localData.linearAcceleration[2];
 
-            pub->publish(message);
+            // pubImu->publish(message);
 
             tm.lock();
             localTemperature = temperature;
@@ -466,6 +488,19 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
             messageBat->voltage_cell3 = localBattery.z;
 
             pubBat->publish(messageBat);
+
+            call_m.lock();
+            localStruct = regCall;
+            call_m.unlock();
+
+            messageReg->header.stamp = node->now();
+            messageReg->roll = localStruct.roll;
+            messageReg->set_roll = localStruct.setRoll;
+            messageReg->speed = localStruct.speed;
+            messageReg->set_speed = localStruct.setSpeed;
+            // std::cout << localStruct.roll << localStruct.setRoll << localStruct.speed << localStruct.setSpeed << std::endl;
+
+            pubReg->publish(messageReg);
 
             rclcpp::spin_some(node);
 
@@ -552,9 +587,12 @@ int main(int argc, char * argv[]){
     std::mutex motors_mutex;
     SteeringData steering_data;
     std::mutex steering_data_mutex;
+    RegulationCallbackStructure regCall;
+    std::mutex call_m;
     std::thread t4(motorsController, std::ref(motors_bool), std::ref(motors_mutex), std::ref(destruct), PIDparams,
                     std::ref(imuData), std::ref(imuData_mutex),
-                    std::ref(steering_data), std::ref(steering_data_mutex));
+                    std::ref(steering_data), std::ref(steering_data_mutex),
+                    std::ref(regCall), std::ref(call_m));
 
     exec->addExec(std::ref(motors_mutex), std::ref(motors_bool), std::chrono::milliseconds(10));
 
@@ -564,7 +602,8 @@ int main(int argc, char * argv[]){
                     std::ref(imuData), std::ref(imuData_mutex),
                     std::ref(steering_data), std::ref(steering_data_mutex),
                     std::ref(temperature), std::ref(t_mutex),
-                    std::ref(batteryStatus), std::ref(b_mutex));
+                    std::ref(batteryStatus), std::ref(b_mutex),
+                    std::ref(regCall), std::ref(call_m));
 
     exec->addExec(std::ref(remoteComm_mutex), std::ref(remoteComm_bool), std::chrono::milliseconds(50));
 

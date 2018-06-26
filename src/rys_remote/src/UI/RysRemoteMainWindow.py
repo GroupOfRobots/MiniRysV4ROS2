@@ -59,6 +59,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		rosBridge.imuChanged.connect(self.imuChangedHandler)
 		rosBridge.temperatureChanged.connect(self.temperatureChangedHandler)
 		rosBridge.rangesChanged.connect(self.rangesChangedHandler)
+		rosBridge.regulationChanged.connect(self.regulationChangedHandler)
 		self.rosBridge = rosBridge
 
 		mapper.mapGenerated.connect(self.mapGeneratedHandler)
@@ -249,6 +250,12 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 
 	def temperatureChangedHandler(self, temperature):
 		self.ui.temperatureBar.setValue(temperature)
+
+	def regulationChangedHandler(self, roll, setRoll, speed, setSpeed):
+		self.ui.rollValueLabel.setText('    Roll: %f' % roll)
+		self.ui.rollSetValueLabel.setText('    Set: %f' % setRoll)
+		self.ui.speedValueLabel.setText('    Speed: %f' % speed)
+		self.ui.speedSetValueLabel.setText('    Set: %f' % setSpeed)
 
 	def regulatorSettingsSetDoneHandler(self, success, errorText):
 		if success:

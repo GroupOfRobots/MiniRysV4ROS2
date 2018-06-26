@@ -37,6 +37,7 @@ class RysRemoteNode(Node):
 		rangesTopicName = '/' + robotName + '/sensor/ranges'
 		temperatureTopicName = '/' + robotName + '/sensor/temperature'
 		odometryTopicName = '/' + robotName + '/control/odometry'
+		regulationTopicName = '/' + robotName + '/control/regulation'
 		# qosProfileDefault = rclpy.qos.qos_profile_default
 		qosProfileSensors = rclpy.qos.qos_profile_sensor_data
 		qosProfileOdometry = rclpy.qos.QoSProfile(
@@ -50,6 +51,7 @@ class RysRemoteNode(Node):
 		self.subscriptionRanges = self.create_subscription(RysMsgs.Ranges, rangesTopicName, callbacks['ranges'], qos_profile = qosProfileSensors)
 		self.subscriptionTemperature = self.create_subscription(RysMsgs.TemperatureStatus, temperatureTopicName, callbacks['temperature'], qos_profile = qosProfileSensors)
 		self.subscriptionOdometry = self.create_subscription(NavigationMsgs.Odometry, odometryTopicName, callbacks['odometry'], qos_profile = qosProfileOdometry)
+		self.subscriptionRegulation = self.create_subscription(RysMsgs.RegulationCallback, regulationTopicName, callbacks['regulation'], qos_profile = qosProfileSensors)
 
 		self.enableTimer = self.create_timer(1.0 / messageRates['enableMotors'], self.enableTimerCallback)
 		self.steeringTimer = self.create_timer(1.0 / messageRates['steering'], self.steeringTimerCallback)

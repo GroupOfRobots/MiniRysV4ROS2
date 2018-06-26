@@ -23,6 +23,8 @@
 #define SPEED_MULTIPLIER 0.5f
 #define DEVICE_NAME "/dev/rpmsg_pru31"
 
+void clipValue(float & value, float max);
+
 class MotorsController {
 	private:
 		/**
@@ -97,6 +99,7 @@ class MotorsController {
 		bool getLQREnabled();
 		bool getPIDSpeedRegulatorEnabled();
 		void getPIDParameters(float & speedKp, float & speedInvTi, float & speedTd, float & angleKp, float & angleInvTi, float & angleTd);
+		void getPIDPreviousTargetAngle(float & angle);
 		void getLQRParameters(float & linearVelocityK, float & angularVelocityK, float & angleK);
 
 		void calculateSpeeds(float angle, float rotationX, float speed, float throttle, float rotation, float &speedLeftNew, float &speedRightNew, float loopTime);

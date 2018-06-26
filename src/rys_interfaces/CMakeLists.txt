@@ -20,6 +20,7 @@ set(msg_files
 	"msg/Ranges.msg"
 	"msg/Steering.msg"
 	"msg/TemperatureStatus.msg"
+	"msg/RegulationCallback.msg"
 )
 set(srv_files
 	"srv/GetRegulatorSettings.srv"
