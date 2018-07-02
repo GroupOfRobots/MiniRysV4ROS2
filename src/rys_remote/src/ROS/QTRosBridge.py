@@ -88,6 +88,9 @@ class QTRosBridge(QThread):
 
 	def regulationCallback(self, message):
 		self.regulationChanged.emit(message.roll, message.set_roll, message.speed, message.set_speed)
+		file = open('remote_log', 'a')
+		file.write(repr(message.header.stamp.sec) + " " + repr(message.header.stamp.nanosec) + " " + str(message.roll) + " " + str(message.set_roll) + " " + str(message.speed) + " " + str(message.set_speed) + "\n")
+		file.close()
 
 	""" QT signal handlers """
 

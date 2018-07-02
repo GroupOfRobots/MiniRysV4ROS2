@@ -572,6 +572,7 @@ int main(int argc, char * argv[]){
     exec->addExec(std::ref(IMUreader_mutex), std::ref(IMUreader_bool), std::chrono::milliseconds(10));
 
     float PIDparams[6] = {0.05, 0.05, 0.0001, 2.0, 10.0, 0};
+    // float PIDparams[6] = {0.5, 0.00001, 0.002, 2.0, 20.0, 0};
     if (argc == 8){
         if (!std::strcmp(argv[1], "-p")) {
             std::cout << "Reading custom PID parameters..." << std::endl;
