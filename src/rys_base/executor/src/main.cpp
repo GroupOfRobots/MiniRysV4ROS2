@@ -17,6 +17,8 @@
 #include "rys_interfaces/msg/battery_status.hpp"
 #include "rys_interfaces/msg/regulation_callback.hpp"
 #include "sensor_msgs/msg/imu.hpp"
+#include "rys_interfaces/srv/set_regulator_settings.hpp"
+#include "rys_interfaces/srv/get_regulator_settings.hpp"
 
 bool destruct = false;
 
@@ -220,7 +222,7 @@ void TEMPreader(bool& activate, std::mutex& m, bool& destroy, float& f, std::mut
     std::cout << name << ": I'm dying.." << std::endl;
 }
 
-void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDparams[6], 
+void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDparams)[6], std::mutex& PID_m, 
     IMU::ImuData& imu, std::mutex& imu_m, SteeringData& ster, std::mutex& ster_m, RegulationCallbackStructure& regCall, std::mutex& call_m){
     std::string name = "motors";
     pthread_setname_np(pthread_self(), name.c_str());
@@ -258,6 +260,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDpar
     controller->setSpeedFilterFactor(1);
     controller->setAngleFilterFactor(1);
     controller->setPIDSpeedRegulatorEnabled(true);
+    PID_m.lock();
     // Ku = 10, T = 60ms = 0.06s ===> K = 0.6*10 = 6, InvTi = 2/0.06 = 33.(3), Td  = 0.06/8 = 0.0075
     // initial
     // controller->setPIDParameters(0.0, 0.0, 0.0, 10.0, 0.0, 0.0);
@@ -268,6 +271,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDpar
     // sth maybe working
     // controller->setPIDParameters(0.1, 0.05, 0.00001, 2.0, 20.0, 0.01);
     controller->setPIDParameters(PIDparams[0], PIDparams[1], PIDparams[2], PIDparams[3], PIDparams[4], PIDparams[5]);
+    PID_m.unlock();
 
     for (int i = 1; i<21 && !destroy; i++){
         std::cout << name << ": " << i << std::endl; 
@@ -378,7 +382,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float PIDpar
     std::cout << name << ": I'm dying.." << std::endl;
 }
 
-void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extData, std::mutex& dm, SteeringData& s, 
+void remoteComm(bool& activate, std::mutex& m, bool& destroy, float (&PIDparams)[6], std::mutex& PID_m, IMU::ImuData& extData, std::mutex& dm, SteeringData& s, 
     std::mutex& sm, float& temperature, std::mutex& tm, VectorFloat& battery, std::mutex& bm, RegulationCallbackStructure& regCall, std::mutex& call_m){
     std::string name = "remoteComm";
     pthread_setname_np(pthread_self(), name.c_str());
@@ -409,7 +413,7 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
     };
 
     auto node = rclcpp::Node::make_shared(nodeName, robotName, false);
-    auto steeringCallback = 
+    auto steeringCallback =
         [&](const rys_interfaces::msg::Steering::SharedPtr message){
             throttle = message->throttle;
             rotation = message->rotation;
@@ -421,6 +425,31 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, IMU::ImuData& extD
     auto pubTemp = node->create_publisher<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", qos);
     auto pubBat = node->create_publisher<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", qos);
     auto pubReg = node->create_publisher<rys_interfaces::msg::RegulationCallback>("/" + robotName + "/control/regulation", qos);
+    auto GetRegulatorSettingsCallback =
+        [&](const std::shared_ptr<rmw_request_id_t> requestHeader,
+        const std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Request> request,
+        std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Response> response){
+            (void) requestHeader;
+            (void) request;
+
+            response->speed_filter_factor = 1.0;
+            response->angle_filter_factor = 1.0;
+            response->lqr_enabled = false;
+            response->pid_speed_regulator_enabled = true;
+            response->lqr_linear_velocity_k = 0.0;
+            response->lqr_angular_velocity_k = 0.0;
+            response->lqr_angle_k = 0.0;
+            PID_m.lock();
+            response->pid_speed_kp = PIDparams[0];
+            response->pid_speed_ki = PIDparams[1];
+            response->pid_speed_kd = PIDparams[2];
+            response->pid_angle_kp = PIDparams[3];
+            response->pid_angle_ki = PIDparams[4];
+            response->pid_angle_kd = PIDparams[5];
+            PID_m.unlock();
+            // std::cout << "TEST" << std::endl;
+        };
+    auto getRegulatorSettingsServer = node->create_service<rys_interfaces::srv::GetRegulatorSettings>("/" + robotName + "/control/regulator_settings/get", GetRegulatorSettingsCallback);
 
     // IMU::ImuData localData;
     // auto message = std::make_shared<sensor_msgs::msg::Imu>();
@@ -590,7 +619,9 @@ int main(int argc, char * argv[]){
     std::mutex steering_data_mutex;
     RegulationCallbackStructure regCall;
     std::mutex call_m;
-    std::thread t4(motorsController, std::ref(motors_bool), std::ref(motors_mutex), std::ref(destruct), PIDparams,
+    std::mutex PID_m;
+    std::thread t4(motorsController, std::ref(motors_bool), std::ref(motors_mutex), std::ref(destruct),
+                    std::ref(PIDparams), std::ref(PID_m),
                     std::ref(imuData), std::ref(imuData_mutex),
                     std::ref(steering_data), std::ref(steering_data_mutex),
                     std::ref(regCall), std::ref(call_m));
@@ -600,6 +631,7 @@ int main(int argc, char * argv[]){
     bool remoteComm_bool = false;
     std::mutex remoteComm_mutex;
     std::thread t5(remoteComm, std::ref(remoteComm_bool), std::ref(remoteComm_mutex), std::ref(destruct),
+                    std::ref(PIDparams), std::ref(PID_m),
                     std::ref(imuData), std::ref(imuData_mutex),
                     std::ref(steering_data), std::ref(steering_data_mutex),
                     std::ref(temperature), std::ref(t_mutex),

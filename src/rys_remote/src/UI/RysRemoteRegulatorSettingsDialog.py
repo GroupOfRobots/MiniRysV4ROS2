@@ -60,7 +60,7 @@ class RysRemoteRegulatorSettingsDialog(QtWidgets.QDialog):
 			self.ui.statusBar.showMessage('Error setting regulator parameters: %s' % errorText, 5000)
 
 	def regulatorSettingsGetDoneHandler(self, parameters):
-		self.ui.statusBar.showMessage('Regulator parameters retrieved!', 3000)
+		# self.ui.statusBar.showMessage('Regulator parameters retrieved!', 3000)
 
 		self.ui.speedFilteringSpinBox.setValue(parameters.speed_filter_factor)
 		self.ui.rollFilteringSpinBox.setValue(parameters.angle_filter_factor)
