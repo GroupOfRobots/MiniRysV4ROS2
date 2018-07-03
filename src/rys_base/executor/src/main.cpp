@@ -248,6 +248,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
     float rotation = 0;
     float throttle = 0;
     int precision = 32;
+    IMU::ImuData localData;
 
     float balancing = true;
 
@@ -260,31 +261,30 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
     controller->setSpeedFilterFactor(1);
     controller->setAngleFilterFactor(1);
     controller->setPIDSpeedRegulatorEnabled(true);
-    PID_m.lock();
-    // Ku = 10, T = 60ms = 0.06s ===> K = 0.6*10 = 6, InvTi = 2/0.06 = 33.(3), Td  = 0.06/8 = 0.0075
-    // initial
-    // controller->setPIDParameters(0.0, 0.0, 0.0, 10.0, 0.0, 0.0);
-    // working angle PID
-    // controller->setPIDParameters(0.0, 0.0, 0.0, 2.0, 20.0, 0);
-    // poorly working speed over angle PID
-    // controller->setPIDParameters(0.05, 0.0, 0.00, 2.0, 20.0, 0);
-    // sth maybe working
-    // controller->setPIDParameters(0.1, 0.05, 0.00001, 2.0, 20.0, 0.01);
-    controller->setPIDParameters(PIDparams[0], PIDparams[1], PIDparams[2], PIDparams[3], PIDparams[4], PIDparams[5]);
-    PID_m.unlock();
 
     for (int i = 1; i<21 && !destroy; i++){
         std::cout << name << ": " << i << std::endl; 
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    IMU::ImuData localData;
-
     while(!destroy){
         m.lock();
         if(activate){
             activate = false;
             m.unlock();
+
+            PID_m.lock();
+            // Ku = 10, T = 60ms = 0.06s ===> K = 0.6*10 = 6, InvTi = 2/0.06 = 33.(3), Td  = 0.06/8 = 0.0075
+            // initial
+            // controller->setPIDParameters(0.0, 0.0, 0.0, 10.0, 0.0, 0.0);
+            // working angle PID
+            // controller->setPIDParameters(0.0, 0.0, 0.0, 2.0, 20.0, 0);
+            // poorly working speed over angle PID
+            // controller->setPIDParameters(0.05, 0.0, 0.00, 2.0, 20.0, 0);
+            // sth maybe working
+            // controller->setPIDParameters(0.1, 0.05, 0.00001, 2.0, 20.0, 0.01);
+            controller->setPIDParameters(PIDparams[0], PIDparams[1], PIDparams[2], PIDparams[3], PIDparams[4], PIDparams[5]);
+            PID_m.unlock();
 
             previousRun = timeNowRun;
             timeNowRun = std::chrono::high_resolution_clock::now();
@@ -425,31 +425,48 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, float (&PIDparams)
     auto pubTemp = node->create_publisher<rys_interfaces::msg::TemperatureStatus>("/" + robotName + "/sensor/temperature", qos);
     auto pubBat = node->create_publisher<rys_interfaces::msg::BatteryStatus>("/" + robotName + "/sensor/battery", qos);
     auto pubReg = node->create_publisher<rys_interfaces::msg::RegulationCallback>("/" + robotName + "/control/regulation", qos);
-    auto GetRegulatorSettingsCallback =
-        [&](const std::shared_ptr<rmw_request_id_t> requestHeader,
-        const std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Request> request,
-        std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Response> response){
-            (void) requestHeader;
-            (void) request;
+    auto GetRegulatorSettingsCallback = [&](const std::shared_ptr<rmw_request_id_t> requestHeader,
+                                            const std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Request> request,
+                                            std::shared_ptr<rys_interfaces::srv::GetRegulatorSettings::Response> response){
+        (void) requestHeader;
+        (void) request;
 
-            response->speed_filter_factor = 1.0;
-            response->angle_filter_factor = 1.0;
-            response->lqr_enabled = false;
-            response->pid_speed_regulator_enabled = true;
-            response->lqr_linear_velocity_k = 0.0;
-            response->lqr_angular_velocity_k = 0.0;
-            response->lqr_angle_k = 0.0;
-            PID_m.lock();
-            response->pid_speed_kp = PIDparams[0];
-            response->pid_speed_ki = PIDparams[1];
-            response->pid_speed_kd = PIDparams[2];
-            response->pid_angle_kp = PIDparams[3];
-            response->pid_angle_ki = PIDparams[4];
-            response->pid_angle_kd = PIDparams[5];
-            PID_m.unlock();
-            // std::cout << "TEST" << std::endl;
-        };
+        response->speed_filter_factor = 1.0;
+        response->angle_filter_factor = 1.0;
+        response->lqr_enabled = false;
+        response->pid_speed_regulator_enabled = true;
+        response->lqr_linear_velocity_k = 0.0;
+        response->lqr_angular_velocity_k = 0.0;
+        response->lqr_angle_k = 0.0;
+        PID_m.lock();
+        response->pid_speed_kp = PIDparams[0];
+        response->pid_speed_ki = PIDparams[1];
+        response->pid_speed_kd = PIDparams[2];
+        response->pid_angle_kp = PIDparams[3];
+        response->pid_angle_ki = PIDparams[4];
+        response->pid_angle_kd = PIDparams[5];
+        PID_m.unlock();
+        // std::cout << "TEST" << std::endl;
+    };
     auto getRegulatorSettingsServer = node->create_service<rys_interfaces::srv::GetRegulatorSettings>("/" + robotName + "/control/regulator_settings/get", GetRegulatorSettingsCallback);
+    auto SetRegulatorSettingsCallback = [&](const std::shared_ptr<rmw_request_id_t> requestHeader,
+                                            const std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Request> request,
+                                            std::shared_ptr<rys_interfaces::srv::SetRegulatorSettings::Response> response){
+        (void) requestHeader;
+
+        PID_m.lock();
+        PIDparams[0] = request->pid_speed_kp;
+        PIDparams[1] = request->pid_speed_ki;
+        PIDparams[2] = request->pid_speed_kd;
+        PIDparams[3] = request->pid_angle_kp;
+        PIDparams[4] = request->pid_angle_ki;
+        PIDparams[5] = request->pid_angle_kd;
+        PID_m.unlock();
+        response->success = true;
+        response->error_text = std::string("success");
+        std::cout << "TEST" << std::endl;
+    };
+    auto setRegulatorSettingsServer = node->create_service<rys_interfaces::srv::SetRegulatorSettings>("/" + robotName + "/control/regulator_settings/set", SetRegulatorSettingsCallback);
 
     // IMU::ImuData localData;
     // auto message = std::make_shared<sensor_msgs::msg::Imu>();
