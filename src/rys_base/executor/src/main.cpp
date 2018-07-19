@@ -173,8 +173,8 @@ void TEMPreader(bool& activate, std::mutex& m, bool& destroy, float& f, std::mut
     const uint8_t inputNumber = 5;
     std::string filename = std::string("/sys/devices/platform/ocp/44e0d000.tscadc/TI-am335x-adc/iio:device0/in_voltage") + std::to_string(inputNumber) + std::string("_raw");
     std::ifstream file;
-    float voltageSum = 0;
-    float voltage = 0;
+    float voltageSum = 0.0;
+    float voltage = 0.0;
     int rawValue = 0;
     int currentReadings = 0;
 
@@ -190,8 +190,7 @@ void TEMPreader(bool& activate, std::mutex& m, bool& destroy, float& f, std::mut
             voltageSum += static_cast<float>(rawValue) / coefficient;
             currentReadings++;
             if (currentReadings == 5){
-                voltage = (voltageSum/5)*100;
-                // std::cout << f << std::endl;
+                voltage = (voltageSum/5.0)*100.0;
                 if (voltage > 60){
                     std::cout << name << ": Critical Temperature Warning: " << voltage << std::endl;
                     destroy = true;
@@ -298,7 +297,6 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
             roll = atan2(2.0 * (localData.orientationQuaternion[0] * localData.orientationQuaternion[1] + localData.orientationQuaternion[2] * localData.orientationQuaternion[3]),
                 1.0 - 2.0 * (localData.orientationQuaternion[1] * localData.orientationQuaternion[1] + localData.orientationQuaternion[2] * localData.orientationQuaternion[2]));
             rotationX = localData.angularVelocity[0];
-            // std::cout << roll << " : " << rotationX << " : " << imu.angularVelocity[1] << std::endl;
 
             layingDown = (roll > 1.0 && previousRoll > 1.0) || (roll < -1.0 && previousRoll < -1.0);
             if(layingDown && !standingUp && balancing){
@@ -349,7 +347,6 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
                 float finalLeftSpeed = 0;
                 float finalRightSpeed = 0;
                 controller->calculateSpeeds(roll, rotationX, linearSpeed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTimeRun);
-                // std::cout << "L: " << finalLeftSpeed << "\t R: " << finalRightSpeed << std::endl;
                 if (balancing)
                     controller->setMotorSpeeds(finalLeftSpeed, finalRightSpeed, 32, false);
                 else
@@ -400,7 +397,6 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, float (&PIDparams)
     s.throttle = throttle;
     s.rotation = rotation;
     s.precision = precision;
-    // std::cout << throttle << rotation << precision << std::endl;
     sm.unlock();
     const std::string robotName = "rys";
     const std::string nodeName = "remoteComm";
@@ -446,7 +442,6 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, float (&PIDparams)
         response->pid_angle_ki = PIDparams[4];
         response->pid_angle_kd = PIDparams[5];
         PID_m.unlock();
-        // std::cout << "TEST" << std::endl;
     };
     auto getRegulatorSettingsServer = node->create_service<rys_interfaces::srv::GetRegulatorSettings>("/" + robotName + "/control/regulator_settings/get", GetRegulatorSettingsCallback);
     auto SetRegulatorSettingsCallback = [&](const std::shared_ptr<rmw_request_id_t> requestHeader,
@@ -464,7 +459,6 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, float (&PIDparams)
         PID_m.unlock();
         response->success = true;
         response->error_text = std::string("success");
-        std::cout << "TEST" << std::endl;
     };
     auto setRegulatorSettingsServer = node->create_service<rys_interfaces::srv::SetRegulatorSettings>("/" + robotName + "/control/regulator_settings/set", SetRegulatorSettingsCallback);
 
@@ -544,7 +538,6 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, float (&PIDparams)
             messageReg->set_roll = localStruct.setRoll;
             messageReg->speed = localStruct.speed;
             messageReg->set_speed = localStruct.setSpeed;
-            // std::cout << localStruct.roll << localStruct.setRoll << localStruct.speed << localStruct.setSpeed << std::endl;
 
             pubReg->publish(messageReg);
 
