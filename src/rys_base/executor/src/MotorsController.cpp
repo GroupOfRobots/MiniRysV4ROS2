@@ -104,6 +104,7 @@ void MotorsController::zeroPIDRegulator(){
 	this->pidSpeedPreviousError2 = 0;
 	this->pidAnglePreviousError1 = 0;
 	this->pidAnglePreviousError2 = 0;
+	this->pidPreviousTargetAngle = 0;
 }
 
 float MotorsController::getSpeedFilterFactor() {
@@ -165,14 +166,15 @@ void MotorsController::calculateSpeedsPID(float angle, float rotationX, float sp
 
 	// if (this->pidSpeedRegulatorEnabled && throttle!=0) {
 	if (this->pidSpeedRegulatorEnabled) {
-		speedError = throttle - (speed - rotationX/SPEED_TO_DEG);
+		// speedError = throttle - (speed - rotationX/SPEED_TO_DEG);
+		speedError = speed - rotationX*RAD_TO_DEG/SPEED_TO_DEG - throttle;
 
 		float speedFactor0 = this->pidSpeedKp * (1 + this->pidSpeedInvTi * loopTime / 2 + this->pidSpeedTd / loopTime);
 		float speedFactor1 = this->pidSpeedKp * (this->pidSpeedInvTi * loopTime / 2 - 2 * this->pidSpeedTd / loopTime - 1);
 		float speedFactor2 = this->pidSpeedKp * this->pidSpeedTd / loopTime;
 
 		targetAngle = speedFactor0 * speedError + speedFactor1 * this->pidSpeedPreviousError1 + speedFactor2 * this->pidSpeedPreviousError2 + this->pidPreviousTargetAngle;
-		clipValue(targetAngle, 0.15);
+		clipValue(targetAngle, 0.25);
 		// std::cout << speedError << " : " << targetAngle << std::endl;
 		// std::cout << targetAngle << std::endl;
 	}

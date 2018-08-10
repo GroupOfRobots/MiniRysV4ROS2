@@ -278,10 +278,12 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
             // controller->setPIDParameters(0.0, 0.0, 0.0, 10.0, 0.0, 0.0);
             // working angle PID
             // controller->setPIDParameters(0.0, 0.0, 0.0, 2.0, 20.0, 0);
+            //// nope
             // poorly working speed over angle PID
             // controller->setPIDParameters(0.05, 0.0, 0.00, 2.0, 20.0, 0);
             // sth maybe working
             // controller->setPIDParameters(0.1, 0.05, 0.00001, 2.0, 20.0, 0.01);
+            ////
             controller->setPIDParameters(PIDparams[0], PIDparams[1], PIDparams[2], PIDparams[3], PIDparams[4], PIDparams[5]);
             PID_m.unlock();
 
@@ -610,7 +612,9 @@ int main(int argc, char * argv[]){
 
     exec->addExec(std::ref(IMUreader_mutex), std::ref(IMUreader_bool), std::chrono::milliseconds(10));
 
-    float PIDparams[6] = {0.05, 0.05, 0.0001, 2.0, 10.0, 0};
+    float PIDparams[6] = {0.1, 40, 0.001, 3.0, 20.0, 0};
+    // float PIDparams[6] = {0.01, 100, 0.1, 3.0, 20.0, 0};
+    // float PIDparams[6] = {0.05, 0.05, 0.0001, 2.0, 10.0, 0};
     // float PIDparams[6] = {0.5, 0.00001, 0.002, 2.0, 20.0, 0};
     if (argc == 8){
         if (!std::strcmp(argv[1], "-p")) {
