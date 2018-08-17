@@ -82,9 +82,11 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 		color = 'red' if self.enabled else 'green'
 		self.ui.enableButton.setStyleSheet('background-color: %s;' % color)
 
-	def balancingEnabledChangedHandler(self, value):
+	# def balancingEnabledChangedHandler(self, value):
+	def balancingEnabledChangedHandler(self):
 		balancingEnabled = self.ui.balancingEnabledCheckBox.isChecked()
 		self.rosBridge.setBalancingEnabled(balancingEnabled)
+		# print('Sending balancing value.')
 		# self.rosBridge.setBalancingEnabled(value)
 
 	def regulatorSettingsButtonHandler(self):
@@ -152,10 +154,21 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			self.repaintSteering()
 
 	def gamepadButtonChangedHandler(self, gamepadButtonEvent):
-		pass
-		# gamepadID = gamepadButtonEvent.gamepadID
-		# button = gamepadButtonEvent.button
-		# value = gamepadButtonEvent.value
+		# pass
+		gamepadID = gamepadButtonEvent.gamepadID
+		button = gamepadButtonEvent.button
+		value = gamepadButtonEvent.value
+		if gamepadID is self.gamepadID:
+			# print('Button: ' + repr(button) + ' Value: ' + repr(value))
+			balancingEnabled = self.ui.balancingEnabledCheckBox.isChecked()
+			if button is 3 and value is True and balancingEnabled is not True:
+				self.ui.balancingEnabledCheckBox.setChecked(True)
+				print('Sending \'Stand up!\' signal.')
+				self.balancingEnabledChangedHandler()
+			if button is 0 and value is True and balancingEnabled is True:
+				self.ui.balancingEnabledCheckBox.setChecked(False)
+				print('Sending \'Fall down!\' signal.')
+				self.balancingEnabledChangedHandler()
 
 	def gamepadListUpdatedHandler(self, gamepadList):
 		self.gamepadID = -1

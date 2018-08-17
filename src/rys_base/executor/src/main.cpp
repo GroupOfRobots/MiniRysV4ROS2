@@ -26,7 +26,8 @@ struct SteeringData{
     float throttle;
     float rotation;
     int precision;
-    SteeringData() : throttle(0), rotation(0), precision(32){}
+    bool balancing;
+    SteeringData() : throttle(0), rotation(0), precision(32), balancing(false){}
 };
 
 struct RegulationCallbackStructure{
@@ -247,9 +248,9 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
     float rotation = 0;
     float throttle = 0;
     int precision = 32;
+    float balancing = false;
     IMU::ImuData localData;
 
-    float balancing = true;
 
     MotorsController * controller = new MotorsController();
     controller->enableMotors();
@@ -300,6 +301,14 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
                 1.0 - 2.0 * (localData.orientationQuaternion[1] * localData.orientationQuaternion[1] + localData.orientationQuaternion[2] * localData.orientationQuaternion[2]));
             rotationX = localData.angularVelocity[0];
 
+            ster_m.lock();
+            throttle = ster.throttle;
+            rotation = ster.rotation;
+            precision = ster.precision;
+            balancing = ster.balancing;
+            ster_m.unlock();
+            controller->setBalancing(balancing);
+
             layingDown = (roll > 1.0 && previousRoll > 1.0) || (roll < -1.0 && previousRoll < -1.0);
             if(layingDown && !standingUp && balancing){
                 standingUp = true;
@@ -335,12 +344,6 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
                 }
                 standUpTimer += rate;
             }
-
-            ster_m.lock();
-            throttle = ster.throttle;
-            rotation = ster.rotation;
-            precision = ster.precision;
-            ster_m.unlock();
 
             if (!standingUp) {
                 float leftSpeed = controller->getMotorSpeedLeftRaw();
@@ -393,12 +396,14 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, float (&PIDparams)
     float throttle = 0;
     float rotation = 0;
     int precision = 32;
+    bool balancing = false;
 
     float newSteering = false;
     sm.lock();
     s.throttle = throttle;
     s.rotation = rotation;
     s.precision = precision;
+    s.balancing = balancing;
     sm.unlock();
     const std::string robotName = "rys";
     const std::string nodeName = "remoteComm";
@@ -416,6 +421,7 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, float (&PIDparams)
             throttle = message->throttle;
             rotation = message->rotation;
             precision = message->precision;
+            balancing = message->balancing;
             newSteering = true;
         };
     auto sub = node->create_subscription<rys_interfaces::msg::Steering>("/" + robotName + "/control/steering", steeringCallback, qos);
@@ -550,6 +556,7 @@ void remoteComm(bool& activate, std::mutex& m, bool& destroy, float (&PIDparams)
                 s.throttle = throttle;
                 s.rotation = rotation;
                 s.precision = precision;
+                s.balancing = balancing;
                 sm.unlock();
                 newSteering = false;
             }
@@ -612,7 +619,8 @@ int main(int argc, char * argv[]){
 
     exec->addExec(std::ref(IMUreader_mutex), std::ref(IMUreader_bool), std::chrono::milliseconds(10));
 
-    float PIDparams[6] = {0.1, 40, 0.001, 3.0, 20.0, 0};
+    float PIDparams[6] = {0.2, 1, 0.005, 2.0, 10.0, 0};
+    // float PIDparams[6] = {0.1, 40, 0.001, 3.0, 20.0, 0};
     // float PIDparams[6] = {0.01, 100, 0.1, 3.0, 20.0, 0};
     // float PIDparams[6] = {0.05, 0.05, 0.0001, 2.0, 10.0, 0};
     // float PIDparams[6] = {0.5, 0.00001, 0.002, 2.0, 20.0, 0};

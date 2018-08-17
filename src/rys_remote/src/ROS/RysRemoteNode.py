@@ -18,10 +18,11 @@ class RysRemoteNode(Node):
 		self.throttle = 0.0
 		self.rotation = 0.0
 		self.precision = 1
+		self.balancing = False
 
 		# Create ROS publishers
 		self.publisherEnableMotors = self.create_publisher(StdMsgs.Bool, '/' + robotName + '/control/enable_motors')
-		self.publisherEnableBalancing = self.create_publisher(StdMsgs.Bool, '/' + robotName + '/control/enable_balancing')
+		# self.publisherEnableBalancing = self.create_publisher(StdMsgs.Bool, '/' + robotName + '/control/enable_balancing')
 		self.publisherSteering = self.create_publisher(RysMsgs.Steering, '/' + robotName + '/control/steering')
 
 		# Create ROS service clients
@@ -79,6 +80,7 @@ class RysRemoteNode(Node):
 		message.throttle = self.throttle
 		message.rotation = self.rotation
 		message.precision = self.precision
+		message.balancing = self.balancing
 		self.publisherSteering.publish(message)
 
 	'''Public methods'''
@@ -93,9 +95,10 @@ class RysRemoteNode(Node):
 		self.precision = int(precision)
 
 	def setBalancingEnabled(self, balancingEnabled):
-		message = StdMsgs.Bool()
-		message.data = balancingEnabled
-		self.publisherEnableBalancing.publish(message)
+		self.balancing = bool(balancingEnabled)
+		# message = StdMsgs.Bool()
+		# message.data = balancingEnabled
+		# self.publisherEnableBalancing.publish(message)
 
 	def requestSetRegulatorSettings(self, parameters):
 		request = RysSrvs.SetRegulatorSettings.Request()
