@@ -216,7 +216,7 @@ class RysRemoteMainWindow(QtWidgets.QMainWindow):
 			self.ui.cell3Bar.setDisabled(False)
 
 	def imuChangedHandler(self, roll, rotationX):
-		self.ui.rollDial.setValue(int(roll))
+		self.ui.rollDial.setValue(int(roll*180/math.pi))
 		self.ui.rollValueLabel.setText('    Roll: %f' % roll)
 		# self.ui.rotationXValueLabel.setText('Rotation: %f' % rotationX)
 

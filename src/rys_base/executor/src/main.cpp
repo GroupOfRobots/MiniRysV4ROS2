@@ -244,6 +244,8 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
     std::chrono::milliseconds standUpTimer;
     std::chrono::milliseconds rate = std::chrono::milliseconds(10);
     float linearSpeed = 0;
+    // float leftSpeed = 0;
+    // float rightSpeed = 0;
 
     float rotation = 0;
     float throttle = 0;
@@ -262,8 +264,13 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
     controller->setAngleFilterFactor(1);
     controller->setPIDSpeedRegulatorEnabled(true);
 
+    std::ofstream file;
+    file.open("testfile");
+    float time = -20000;
+    float previousTargetAngle = 0;
+
     for (int i = 1; i<21 && !destroy; i++){
-        std::cout << name << ": " << i << std::endl; 
+        std::cout << name << ": " << i << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
@@ -292,6 +299,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
             timeNowRun = std::chrono::high_resolution_clock::now();
             auto loopTimeSpanRun = std::chrono::duration_cast<std::chrono::duration<float>>(timeNowRun - previousRun);
             loopTimeRun = loopTimeSpanRun.count();
+            // file << loopTimeRun << "\n";
 
             previousRoll = roll;
             imu_m.lock();
@@ -308,6 +316,11 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
             balancing = ster.balancing;
             ster_m.unlock();
             controller->setBalancing(balancing);
+
+            // leftSpeed = controller->getMotorSpeedLeftRaw();
+            // rightSpeed = controller->getMotorSpeedRightRaw();
+            // linearSpeed = (leftSpeed + rightSpeed) / 2;
+            linearSpeed = (controller->getMotorSpeedLeftRaw() + controller->getMotorSpeedRightRaw()) / 2;
 
             layingDown = (roll > 1.0 && previousRoll > 1.0) || (roll < -1.0 && previousRoll < -1.0);
             if(layingDown && !standingUp && balancing){
@@ -346,9 +359,6 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
             }
 
             if (!standingUp) {
-                float leftSpeed = controller->getMotorSpeedLeftRaw();
-                float rightSpeed = controller->getMotorSpeedRightRaw();
-                linearSpeed = (leftSpeed + rightSpeed) / 2;
                 float finalLeftSpeed = 0;
                 float finalRightSpeed = 0;
                 controller->calculateSpeeds(roll, rotationX, linearSpeed, throttle, rotation, finalLeftSpeed, finalRightSpeed, loopTimeRun);
@@ -363,6 +373,9 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
             regCall.speed = linearSpeed;
             regCall.setSpeed = throttle;
             call_m.unlock();
+            time += loopTimeRun*1000;
+            controller->getPIDPreviousTargetAngle(previousTargetAngle);
+            file << time << " " << roll << " " << previousTargetAngle << " " << linearSpeed << " " << throttle << std::endl;
             
             numOfRuns++;
             if (numOfRuns > 5999) {
@@ -379,6 +392,7 @@ void motorsController(bool& activate, std::mutex& m, bool& destroy, float (&PIDp
         }
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
+    file.close();
     controller->disableMotors();
     delete controller;
     std::cout << name << ": I'm dying.." << std::endl;
